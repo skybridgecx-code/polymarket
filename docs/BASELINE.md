@@ -13,6 +13,7 @@ The system currently does:
 - ingest normalized wallet activity
 - score explainable leader/follower relationships from normalized activity
 - generate paper-trade execution plans and simulated fill outcomes
+- build deterministic review packets and replay evaluations
 - expose the results through CLI commands and a thin FastAPI API
 - run bounded refresh cycles with checkpoint-safe websocket consumption
 
@@ -44,6 +45,8 @@ python -m polymarket_arb.cli scan --limit 5
 python -m polymarket_arb.cli wallet-backfill --limit 10
 python -m polymarket_arb.cli detect-copiers --limit 10
 python -m polymarket_arb.cli paper-trade --limit 5
+python -m polymarket_arb.cli review-packet --packet-type opportunities --limit 5
+python -m polymarket_arb.cli replay-evaluate --baseline-path /tmp/baseline.json --candidate-path /tmp/candidate.json
 python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
 ```
 
@@ -120,6 +123,33 @@ Each paper-trade result includes:
 - `explanation`
 - `risk_flags`
 - `simulated_result`
+
+### Review Packets
+
+Each review packet includes:
+
+- `packet_id`
+- `packet_type`
+- `created_at`
+- `source_references`
+- `summarized_findings`
+- `raw_result_references`
+- `embedded_records`
+- `status`
+- `notes`
+
+### Replay Evaluation
+
+Each replay evaluation includes:
+
+- `evaluation_id`
+- `subject_type`
+- `compared_records_count`
+- `matches_count`
+- `mismatches_count`
+- `drift_reasons`
+- `status`
+- `explanation`
 
 ## Orchestration Baseline
 

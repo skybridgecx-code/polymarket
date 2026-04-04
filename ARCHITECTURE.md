@@ -15,8 +15,9 @@ The frozen baseline contains six bounded layers:
 3. Opportunity scoring
 4. Paper-trade execution research
 5. Wallet relationship scoring
-6. Thin operator surfaces
-7. Bounded refresh orchestration
+6. Review and replay evaluation
+7. Thin operator surfaces
+8. Bounded refresh orchestration
 
 ## Module Boundaries
 
@@ -81,6 +82,20 @@ Rules:
 - no private keys
 - no order placement
 - keep plan generation separate from simulation
+
+### `src/polymarket_arb/review/`
+
+Review and replay boundary:
+
+- packet building for opportunities, relationships, and paper-trade results
+- deterministic embedded export records
+- replay comparison with explicit drift reasons
+
+Rules:
+
+- keep review packet building separate from replay comparison
+- preserve source references and evidence fields
+- no new scoring logic
 
 ### `src/polymarket_arb/relationships/`
 
@@ -155,6 +170,14 @@ Type boundary:
 ### Paper-Trade Path
 
 `ScanService` or fixture input -> `ExecutionPlanBuilder` -> `PaperTradeSimulator` -> `PaperTradeService` -> CLI
+
+### Review Path
+
+existing result outputs or fixtures -> `ReviewPacketService` -> packet JSON
+
+### Replay Path
+
+baseline packet JSON + candidate packet JSON -> `ReplayEvaluationService` -> evaluation JSON
 
 ### Orchestration Path
 

@@ -1,6 +1,6 @@
 # Polymarket Arbitrage Research
 
-Official frozen read-only baseline for Polymarket analytics as of Phase 7A.
+Controlled read-only Polymarket analytics repo with review-packet and replay evaluation support.
 
 The repo currently ships:
 
@@ -9,6 +9,7 @@ The repo currently ships:
 - wallet seed discovery and wallet activity ingestion
 - explainable lead/lag copier relationship detection
 - paper-trade execution plan research and simulated fills
+- review packet generation and replay evaluation
 - read-only FastAPI operator routes
 - bounded real-time refresh orchestration with lightweight checkpointing
 
@@ -39,6 +40,8 @@ python -m polymarket_arb.cli scan --limit 5
 python -m polymarket_arb.cli wallet-backfill --limit 10
 python -m polymarket_arb.cli detect-copiers --limit 10
 python -m polymarket_arb.cli paper-trade --limit 5
+python -m polymarket_arb.cli review-packet --packet-type opportunities --limit 5
+python -m polymarket_arb.cli replay-evaluate --baseline-path /tmp/baseline.json --candidate-path /tmp/candidate.json
 python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
 ```
 
@@ -91,6 +94,7 @@ The checkpoint tracks:
 - `src/polymarket_arb/ingest/`: normalization only
 - `src/polymarket_arb/opportunities/`: opportunity scoring only
 - `src/polymarket_arb/execution/`: paper-trade plan generation and simulation only
+- `src/polymarket_arb/review/`: review packet building and replay evaluation only
 - `src/polymarket_arb/relationships/`: relationship scoring only
 - `src/polymarket_arb/services/`: orchestration of clients and engines
 - `src/polymarket_arb/api/`: thin FastAPI route layer
@@ -113,6 +117,8 @@ python -m polymarket_arb.cli scan --limit 5
 python -m polymarket_arb.cli wallet-backfill --limit 10
 python -m polymarket_arb.cli detect-copiers --limit 10
 python -m polymarket_arb.cli paper-trade --limit 5
+python -m polymarket_arb.cli review-packet --packet-type opportunities --limit 5
+python -m polymarket_arb.cli replay-evaluate --baseline-path /tmp/baseline.json --candidate-path /tmp/candidate.json
 python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
 python -m uvicorn polymarket_arb.api.main:app --reload
 ```

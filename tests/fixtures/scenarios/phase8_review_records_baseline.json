@@ -1,0 +1,194 @@
+{
+  "opportunities": [
+    {
+      "event_slug": "review-opp-accepted",
+      "opportunity_type": "binary_complement",
+      "legs": [
+        {
+          "market_id": "review-market-1",
+          "question": "Review accepted yes?",
+          "outcome": "Yes",
+          "token_id": "review_yes_1",
+          "best_ask": "0.44",
+          "average_fill_price": "0.44",
+          "quantity": "12",
+          "fee_bps": 100
+        },
+        {
+          "market_id": "review-market-1",
+          "question": "Review accepted no?",
+          "outcome": "No",
+          "token_id": "review_no_1",
+          "best_ask": "0.45",
+          "average_fill_price": "0.45",
+          "quantity": "12",
+          "fee_bps": 100
+        }
+      ],
+      "gross_edge_cents": "132",
+      "estimated_fee_cents": "5.412",
+      "net_edge_cents": "126.588",
+      "capacity_shares_or_notional": "12",
+      "status": "accepted",
+      "rejection_reason": null,
+      "explanation": "Accepted review opportunity."
+    },
+    {
+      "event_slug": "review-opp-rejected",
+      "opportunity_type": "neg_risk_basket",
+      "legs": [],
+      "gross_edge_cents": null,
+      "estimated_fee_cents": null,
+      "net_edge_cents": null,
+      "capacity_shares_or_notional": "0",
+      "status": "rejected",
+      "rejection_reason": "not_enough_neg_risk_markets",
+      "explanation": "Rejected review opportunity."
+    }
+  ],
+  "relationships": [
+    {
+      "leader_wallet": "0x1111000000000000000000000000000000000001",
+      "follower_wallet": "0x2222000000000000000000000000000000000002",
+      "relationship_type": "same_leg_same_side_lag",
+      "matched_events_count": 2,
+      "matched_legs_count": 2,
+      "lag_summary_seconds": {
+        "min": 20,
+        "median": 25,
+        "max": 30
+      },
+      "confidence_score": "0.66",
+      "status": "accepted",
+      "rejection_reason": null,
+      "explanation": "Accepted review relationship.",
+      "evidence": [
+        {
+          "event_slug": "review-event-1",
+          "condition_id": "review-cond-1",
+          "token_id": "review-token-1",
+          "side": "BUY",
+          "leader_activity_id": "leader-1",
+          "follower_activity_id": "follower-1",
+          "leader_activity_at": "2026-01-01T00:00:00Z",
+          "follower_activity_at": "2026-01-01T00:00:20Z",
+          "lag_seconds": 20,
+          "leader_source_reference": "/activity?user=0x1111",
+          "follower_source_reference": "/activity?user=0x2222"
+        }
+      ]
+    },
+    {
+      "leader_wallet": "0x3333000000000000000000000000000000000003",
+      "follower_wallet": "0x4444000000000000000000000000000000000004",
+      "relationship_type": "same_leg_same_side_lag",
+      "matched_events_count": 0,
+      "matched_legs_count": 0,
+      "lag_summary_seconds": {
+        "min": null,
+        "median": null,
+        "max": null
+      },
+      "confidence_score": "0",
+      "status": "rejected",
+      "rejection_reason": "no_same_leg_matches",
+      "explanation": "Rejected review relationship.",
+      "evidence": []
+    }
+  ],
+  "paper_trade": [
+    {
+      "plan_id": "paper:review-plan-1",
+      "source_opportunity_reference": "review-opp-accepted:binary_complement:review_yes_1+review_no_1",
+      "opportunity_type": "binary_complement",
+      "source_opportunity_status": "accepted",
+      "source_opportunity_explanation": "Accepted review opportunity.",
+      "displayed_capacity": "12",
+      "proposed_legs": [
+        {
+          "market_id": "review-market-1",
+          "question": "Review accepted yes?",
+          "outcome": "Yes",
+          "token_id": "review_yes_1",
+          "reference_price": "0.44",
+          "proposed_quantity": "10",
+          "fee_bps": 100
+        },
+        {
+          "market_id": "review-market-1",
+          "question": "Review accepted no?",
+          "outcome": "No",
+          "token_id": "review_no_1",
+          "reference_price": "0.45",
+          "proposed_quantity": "10",
+          "fee_bps": 100
+        }
+      ],
+      "proposed_size": "10",
+      "estimated_entry_cost": "8.9",
+      "estimated_fees": "0.0451",
+      "slippage_assumption": {
+        "model": "flat_plus_leg_plus_utilization_bps",
+        "base_bps": 10,
+        "additional_leg_bps": 5,
+        "utilization_bps": 17,
+        "total_bps": 32,
+        "capacity_utilization": "0.8333333333333333333333333333",
+        "explanation": "Review slippage assumption."
+      },
+      "status": "accepted",
+      "rejection_reason": null,
+      "explanation": "Accepted review paper trade.",
+      "risk_flags": [
+        "multi_leg_bundle",
+        "source_candidate_accepted"
+      ],
+      "simulated_result": {
+        "simulated_entry_cost": "8.92848",
+        "simulated_fees": "0.04519",
+        "simulated_total_cost": "8.97367",
+        "simulated_payout_assumption": "10",
+        "simulated_gross_edge_cents": "107.152",
+        "simulated_net_edge_cents": "102.633",
+        "simulated_legs": [
+          {
+            "token_id": "review_yes_1",
+            "reference_price": "0.44",
+            "simulated_fill_price": "0.44141",
+            "quantity": "10",
+            "gross_cost": "4.4141",
+            "fees": "0.02214"
+          },
+          {
+            "token_id": "review_no_1",
+            "reference_price": "0.45",
+            "simulated_fill_price": "0.45144",
+            "quantity": "10",
+            "gross_cost": "4.5144",
+            "fees": "0.02305"
+          }
+        ]
+      }
+    },
+    {
+      "plan_id": "paper:review-plan-2",
+      "source_opportunity_reference": "review-opp-rejected:neg_risk_basket:no-legs",
+      "opportunity_type": "neg_risk_basket",
+      "source_opportunity_status": "rejected",
+      "source_opportunity_explanation": "Rejected review opportunity.",
+      "displayed_capacity": "0",
+      "proposed_legs": [],
+      "proposed_size": null,
+      "estimated_entry_cost": null,
+      "estimated_fees": null,
+      "slippage_assumption": null,
+      "status": "rejected",
+      "rejection_reason": "source_opportunity_rejected",
+      "explanation": "Rejected review paper trade.",
+      "risk_flags": [
+        "source_candidate_rejected"
+      ],
+      "simulated_result": null
+    }
+  ]
+}

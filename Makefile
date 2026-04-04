@@ -4,7 +4,7 @@ RUFF := .venv/bin/ruff
 MYPY := .venv/bin/mypy
 PYTEST := .venv/bin/pytest
 
-.PHONY: setup test lint typecheck validate scan wallet-backfill detect-copiers orchestrate-refresh paper-trade api
+.PHONY: setup test lint typecheck validate scan wallet-backfill detect-copiers orchestrate-refresh paper-trade review-packet replay-evaluate api
 
 setup:
 	python3.11 -m venv .venv
@@ -36,6 +36,13 @@ orchestrate-refresh:
 
 paper-trade:
 	$(PYTHON) -m polymarket_arb.cli paper-trade --limit 5
+
+review-packet:
+	$(PYTHON) -m polymarket_arb.cli review-packet --packet-type opportunities --limit 5
+
+replay-evaluate:
+	@echo "replay-evaluate requires explicit baseline and candidate packet paths." >&2
+	@exit 1
 
 api:
 	$(PYTHON) -m uvicorn polymarket_arb.api.main:app --reload

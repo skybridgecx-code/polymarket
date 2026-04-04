@@ -1,0 +1,119 @@
+{
+  "opportunities": [],
+  "relationships": [],
+  "paper_trade": [
+    {
+      "plan_id": "paper:review-plan-1",
+      "source_opportunity_reference": "review-opp-accepted:binary_complement:review_yes_1+review_no_1",
+      "opportunity_type": "binary_complement",
+      "source_opportunity_status": "accepted",
+      "source_opportunity_explanation": "Accepted review opportunity.",
+      "displayed_capacity": "12",
+      "proposed_legs": [
+        {
+          "market_id": "review-market-1",
+          "question": "Review accepted yes?",
+          "outcome": "Yes",
+          "token_id": "review_yes_1",
+          "reference_price": "0.44",
+          "proposed_quantity": "10",
+          "fee_bps": 100
+        },
+        {
+          "market_id": "review-market-1",
+          "question": "Review accepted no?",
+          "outcome": "No",
+          "token_id": "review_no_1",
+          "reference_price": "0.45",
+          "proposed_quantity": "10",
+          "fee_bps": 100
+        }
+      ],
+      "proposed_size": "10",
+      "estimated_entry_cost": "8.9",
+      "estimated_fees": "0.0451",
+      "slippage_assumption": {
+        "model": "flat_plus_leg_plus_utilization_bps",
+        "base_bps": 10,
+        "additional_leg_bps": 5,
+        "utilization_bps": 17,
+        "total_bps": 32,
+        "capacity_utilization": "0.8333333333333333333333333333",
+        "explanation": "Review slippage assumption."
+      },
+      "status": "accepted",
+      "rejection_reason": null,
+      "explanation": "Accepted review paper trade.",
+      "risk_flags": [
+        "multi_leg_bundle",
+        "source_candidate_accepted"
+      ],
+      "simulated_result": {
+        "simulated_entry_cost": "8.92848",
+        "simulated_fees": "0.04519",
+        "simulated_total_cost": "8.97367",
+        "simulated_payout_assumption": "10",
+        "simulated_gross_edge_cents": "107.152",
+        "simulated_net_edge_cents": "102.633",
+        "simulated_legs": [
+          {
+            "token_id": "review_yes_1",
+            "reference_price": "0.44",
+            "simulated_fill_price": "0.44141",
+            "quantity": "10",
+            "gross_cost": "4.4141",
+            "fees": "0.02214"
+          },
+          {
+            "token_id": "review_no_1",
+            "reference_price": "0.45",
+            "simulated_fill_price": "0.45144",
+            "quantity": "10",
+            "gross_cost": "4.5144",
+            "fees": "0.02305"
+          }
+        ]
+      }
+    },
+    {
+      "plan_id": "paper:review-plan-2",
+      "source_opportunity_reference": "review-opp-rejected:neg_risk_basket:no-legs",
+      "opportunity_type": "neg_risk_basket",
+      "source_opportunity_status": "rejected",
+      "source_opportunity_explanation": "Rejected review opportunity.",
+      "displayed_capacity": "0",
+      "proposed_legs": [],
+      "proposed_size": null,
+      "estimated_entry_cost": null,
+      "estimated_fees": null,
+      "slippage_assumption": null,
+      "status": "accepted",
+      "rejection_reason": null,
+      "explanation": "Drifted review paper trade.",
+      "risk_flags": [
+        "source_candidate_rejected"
+      ],
+      "simulated_result": null
+    },
+    {
+      "plan_id": "paper:review-plan-3",
+      "source_opportunity_reference": "review-opp-extra:binary_complement:extra_yes+extra_no",
+      "opportunity_type": "binary_complement",
+      "source_opportunity_status": "accepted",
+      "source_opportunity_explanation": "Extra review opportunity.",
+      "displayed_capacity": "8",
+      "proposed_legs": [],
+      "proposed_size": "8",
+      "estimated_entry_cost": "7.2",
+      "estimated_fees": "0.03",
+      "slippage_assumption": null,
+      "status": "rejected",
+      "rejection_reason": "kill_switch_simulated_edge_below_buffer",
+      "explanation": "Extra candidate record.",
+      "risk_flags": [
+        "thin_simulated_edge"
+      ],
+      "simulated_result": null
+    }
+  ]
+}

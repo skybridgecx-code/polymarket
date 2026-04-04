@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 7B with a paper-trade execution research layer added on top of the read-only baseline.
+The repo is currently in Phase 8 with review-packet and replay evaluation added on top of the read-only baseline.
 
 ## Completed
 
@@ -80,28 +80,28 @@ Delivered:
 
 ## Current
 
-### Phase 7B
+### Phase 8
 
-Paper-trade execution research.
+Review packets and replay evaluation.
 
 Deliverables:
 
-- execution plan model
-- paper-trade simulation service
-- explicit slippage model
-- explicit kill-switch rules
-- deterministic scenario fixtures and tests
+- review packet models
+- packet builder service
+- replay evaluation service
+- deterministic export format
+- explicit pass/fail and drift reporting
 
 ## Recommended Next Phase
 
-### Phase 7C
+### Phase 9
 
-Operator hardening and paper-trade review workflows.
+Operator hardening and review workflow discipline.
 
 Recommended scope:
 
 - deployment and runtime documentation
-- review workflow for simulated plans
+- review workflow for packets and replay comparisons
 - environment and observability hardening
 - safer operator workflows around refresh cadence and checkpoint inspection
 - packaging and release hygiene

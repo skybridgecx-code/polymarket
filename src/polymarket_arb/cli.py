@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import json
+from typing import cast
 
 import typer
 
 from polymarket_arb.config import get_settings
 from polymarket_arb.logging import configure_logging
+from polymarket_arb.models.review import PacketType
+from polymarket_arb.review import ReplayEvaluationService, ReviewPacketService
 from polymarket_arb.services.copier_detection_service import CopierDetectionService
 from polymarket_arb.services.orchestration_service import RefreshOrchestratorService
 from polymarket_arb.services.paper_trade_service import PaperTradeService
@@ -112,6 +115,59 @@ def paper_trade(
             limit=limit,
             fixture_path=fixture_path,
         )
+    )
+    typer.echo(json.dumps(payload, indent=2, sort_keys=True))
+
+
+@app.command("review-packet")
+def review_packet(
+    packet_type: str = typer.Option(
+        ...,
+        help="Packet subject type: opportunities, relationships, or paper_trade.",
+    ),
+    limit: int = typer.Option(
+        10,
+        min=1,
+        help="Number of records to load into the review packet.",
+    ),
+    fixture_path: str | None = typer.Option(
+        None,
+        help="Optional JSON fixture path for deterministic packet input.",
+    ),
+) -> None:
+    if packet_type not in {"opportunities", "relationships", "paper_trade"}:
+        raise typer.BadParameter(
+            "packet_type must be one of: opportunities, relationships, paper_trade"
+        )
+    normalized_packet_type = cast(PacketType, packet_type)
+
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    payload = asyncio.run(
+        ReviewPacketService(settings).build_packet_output(
+            packet_type=normalized_packet_type,
+            limit=limit,
+            fixture_path=fixture_path,
+        )
+    )
+    typer.echo(json.dumps(payload, indent=2, sort_keys=True))
+
+
+@app.command("replay-evaluate")
+def replay_evaluate(
+    baseline_path: str = typer.Option(
+        ...,
+        help="Baseline review packet JSON path.",
+    ),
+    candidate_path: str = typer.Option(
+        ...,
+        help="Candidate review packet JSON path.",
+    ),
+) -> None:
+    configure_logging(get_settings().log_level)
+    payload = ReplayEvaluationService().evaluate_packet_paths(
+        baseline_path=baseline_path,
+        candidate_path=candidate_path,
     )
     typer.echo(json.dumps(payload, indent=2, sort_keys=True))
 
