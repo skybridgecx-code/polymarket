@@ -12,6 +12,7 @@ The system currently does:
 - discover wallet seeds from leaderboard and holder data
 - ingest normalized wallet activity
 - score explainable leader/follower relationships from normalized activity
+- generate paper-trade execution plans and simulated fill outcomes
 - expose the results through CLI commands and a thin FastAPI API
 - run bounded refresh cycles with checkpoint-safe websocket consumption
 
@@ -19,6 +20,7 @@ The system explicitly does not do:
 
 - place orders
 - sign transactions
+- submit live orders
 - ingest private data
 - authenticate users
 - run a UI
@@ -41,6 +43,7 @@ CLI:
 python -m polymarket_arb.cli scan --limit 5
 python -m polymarket_arb.cli wallet-backfill --limit 10
 python -m polymarket_arb.cli detect-copiers --limit 10
+python -m polymarket_arb.cli paper-trade --limit 5
 python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
 ```
 
@@ -100,6 +103,24 @@ Each relationship includes:
 - `explanation`
 - `evidence`
 
+### Paper Trade
+
+Each paper-trade result includes:
+
+- `plan_id`
+- `source_opportunity_reference`
+- `opportunity_type`
+- `proposed_legs`
+- `proposed_size`
+- `estimated_entry_cost`
+- `estimated_fees`
+- `slippage_assumption`
+- `status`
+- `rejection_reason`
+- `explanation`
+- `risk_flags`
+- `simulated_result`
+
 ## Orchestration Baseline
 
 `RefreshOrchestratorService` is bounded by input limits and websocket message count. It is not an always-on scheduler.
@@ -127,7 +148,7 @@ Default checkpoint file:
 
 ## Recommended Next Phase
 
-After this freeze, the strongest next move is Phase 7B operator hardening:
+After this paper-trade layer, the strongest next move is Phase 7C operator hardening:
 
 - deployment and runtime docs
 - packaging and release hygiene

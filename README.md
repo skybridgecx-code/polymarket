@@ -8,6 +8,7 @@ The repo currently ships:
 - fee-aware opportunity scanning with explicit rejection reasons
 - wallet seed discovery and wallet activity ingestion
 - explainable lead/lag copier relationship detection
+- paper-trade execution plan research and simulated fills
 - read-only FastAPI operator routes
 - bounded real-time refresh orchestration with lightweight checkpointing
 
@@ -18,6 +19,7 @@ The repo explicitly does not ship:
 - UI
 - background workers
 - copy-trading execution
+- live order submission
 - clustering beyond pairwise relationship scoring
 - database or broad persistence layers
 
@@ -36,6 +38,7 @@ python -m polymarket_arb.cli scan --limit 5
 python -m polymarket_arb.cli scan --limit 5
 python -m polymarket_arb.cli wallet-backfill --limit 10
 python -m polymarket_arb.cli detect-copiers --limit 10
+python -m polymarket_arb.cli paper-trade --limit 5
 python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
 ```
 
@@ -87,6 +90,7 @@ The checkpoint tracks:
 - `src/polymarket_arb/clients/`: public read-only external clients
 - `src/polymarket_arb/ingest/`: normalization only
 - `src/polymarket_arb/opportunities/`: opportunity scoring only
+- `src/polymarket_arb/execution/`: paper-trade plan generation and simulation only
 - `src/polymarket_arb/relationships/`: relationship scoring only
 - `src/polymarket_arb/services/`: orchestration of clients and engines
 - `src/polymarket_arb/api/`: thin FastAPI route layer
@@ -108,6 +112,7 @@ Useful smoke commands:
 python -m polymarket_arb.cli scan --limit 5
 python -m polymarket_arb.cli wallet-backfill --limit 10
 python -m polymarket_arb.cli detect-copiers --limit 10
+python -m polymarket_arb.cli paper-trade --limit 5
 python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
 python -m uvicorn polymarket_arb.api.main:app --reload
 ```

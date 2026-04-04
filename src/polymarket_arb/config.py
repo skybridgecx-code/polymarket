@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from typing import cast
@@ -41,6 +42,13 @@ class Settings(BaseSettings):
     websocket_receive_timeout_seconds: float = 2.0
     websocket_reconnect_attempts: int = 2
     orchestration_checkpoint_file: str = "runtime_orchestrator_checkpoint.json"
+    paper_trade_min_size: Decimal = Decimal("5")
+    paper_trade_max_size: Decimal = Decimal("10")
+    paper_trade_max_capacity_utilization: Decimal = Decimal("0.5")
+    paper_trade_min_simulated_edge_cents: Decimal = Decimal("5")
+    paper_trade_base_slippage_bps: int = 10
+    paper_trade_additional_leg_slippage_bps: int = 5
+    paper_trade_utilization_slippage_bps: int = 20
 
     def ensure_directories(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)

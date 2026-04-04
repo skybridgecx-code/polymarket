@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The repo is frozen at the Phase 7A read-only baseline.
+The repo now includes a Phase 7B paper-trade execution research layer on top of the read-only baseline.
 
 Shipped and in scope:
 
@@ -10,6 +10,7 @@ Shipped and in scope:
 - fee-aware opportunity scanning
 - wallet seed discovery and activity ingestion
 - explainable lead/lag copier detection
+- paper-trade execution plan generation and simulated fills
 - read-only FastAPI operator API
 - bounded real-time refresh orchestration with checkpointing
 
@@ -21,6 +22,7 @@ Not shipped:
 - broad persistence or database work
 - background workers
 - execution automation
+- live order submission
 
 ## Read First
 
@@ -43,6 +45,7 @@ CLI:
 python -m polymarket_arb.cli scan --limit 5
 python -m polymarket_arb.cli wallet-backfill --limit 10
 python -m polymarket_arb.cli detect-copiers --limit 10
+python -m polymarket_arb.cli paper-trade --limit 5
 python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
 ```
 
@@ -70,6 +73,7 @@ The file is a lightweight JSON checkpoint used by `RefreshOrchestratorService`. 
 ## Guardrails For Future Phases
 
 - stay read-only unless a future phase explicitly changes that boundary
+- keep paper-trade simulation separate from any future live-capable code path
 - keep clients, normalization, scoring, services, and routes separated
 - do not add route behavior by reimplementing engine logic in FastAPI
 - do not hide rejected outputs unless a future contract explicitly allows filtering
@@ -85,18 +89,20 @@ make validate
 python -m polymarket_arb.cli scan --limit 5
 python -m polymarket_arb.cli wallet-backfill --limit 10
 python -m polymarket_arb.cli detect-copiers --limit 10
+python -m polymarket_arb.cli paper-trade --limit 5
 python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
 python -m uvicorn polymarket_arb.api.main:app --reload
 ```
 
 ## Recommended Next Bounded Prompt
 
-Phase 7B only:
+Phase 7C only:
 
 - improve operator hardening and release discipline
+- document review workflow for paper-trade plans
 - document deployment, runtime env, and checkpoint inspection flows
 - add no new scoring logic
 - add no new routes
-- add no execution logic
+- add no live execution logic
 
 If a future prompt asks for larger product changes, challenge scope first against this frozen baseline.

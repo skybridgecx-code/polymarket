@@ -4,7 +4,7 @@ RUFF := .venv/bin/ruff
 MYPY := .venv/bin/mypy
 PYTEST := .venv/bin/pytest
 
-.PHONY: setup test lint typecheck validate scan wallet-backfill detect-copiers orchestrate-refresh api
+.PHONY: setup test lint typecheck validate scan wallet-backfill detect-copiers orchestrate-refresh paper-trade api
 
 setup:
 	python3.11 -m venv .venv
@@ -33,6 +33,9 @@ detect-copiers:
 
 orchestrate-refresh:
 	$(PYTHON) -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
+
+paper-trade:
+	$(PYTHON) -m polymarket_arb.cli paper-trade --limit 5
 
 api:
 	$(PYTHON) -m uvicorn polymarket_arb.api.main:app --reload

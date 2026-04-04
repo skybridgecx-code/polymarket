@@ -9,6 +9,7 @@ from polymarket_arb.config import get_settings
 from polymarket_arb.logging import configure_logging
 from polymarket_arb.services.copier_detection_service import CopierDetectionService
 from polymarket_arb.services.orchestration_service import RefreshOrchestratorService
+from polymarket_arb.services.paper_trade_service import PaperTradeService
 from polymarket_arb.services.scan_service import ScanService
 from polymarket_arb.services.wallet_backfill_service import WalletBackfillService
 
@@ -87,6 +88,29 @@ def orchestrate_refresh(
             scan_limit=scan_limit,
             relationship_limit=relationship_limit,
             max_websocket_messages=max_websocket_messages,
+        )
+    )
+    typer.echo(json.dumps(payload, indent=2, sort_keys=True))
+
+
+@app.command("paper-trade")
+def paper_trade(
+    limit: int = typer.Option(
+        5,
+        min=1,
+        help="Number of opportunities to transform into paper-trade plans.",
+    ),
+    fixture_path: str | None = typer.Option(
+        None,
+        help="Optional JSON fixture path for deterministic paper-trade input.",
+    ),
+) -> None:
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    payload = asyncio.run(
+        PaperTradeService(settings).build_paper_trade_rows(
+            limit=limit,
+            fixture_path=fixture_path,
         )
     )
     typer.echo(json.dumps(payload, indent=2, sort_keys=True))

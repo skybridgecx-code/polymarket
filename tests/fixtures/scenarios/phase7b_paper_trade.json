@@ -1,0 +1,136 @@
+{
+  "opportunities": [
+    {
+      "event_slug": "phase7b-accepted-complement",
+      "opportunity_type": "binary_complement",
+      "legs": [
+        {
+          "market_id": "pt-market-1",
+          "question": "Accepted complement Yes?",
+          "outcome": "Yes",
+          "token_id": "pt_yes_1",
+          "best_ask": "0.44",
+          "average_fill_price": "0.44",
+          "quantity": "30",
+          "fee_bps": 100
+        },
+        {
+          "market_id": "pt-market-1",
+          "question": "Accepted complement No?",
+          "outcome": "No",
+          "token_id": "pt_no_1",
+          "best_ask": "0.46",
+          "average_fill_price": "0.46",
+          "quantity": "30",
+          "fee_bps": 100
+        }
+      ],
+      "gross_edge_cents": "300",
+      "estimated_fee_cents": "14.844",
+      "net_edge_cents": "285.156",
+      "capacity_shares_or_notional": "30",
+      "status": "accepted",
+      "rejection_reason": null,
+      "explanation": "Accepted source opportunity with ample edge."
+    },
+    {
+      "event_slug": "phase7b-source-rejected",
+      "opportunity_type": "binary_complement",
+      "legs": [
+        {
+          "market_id": "pt-market-2",
+          "question": "Rejected source Yes?",
+          "outcome": "Yes",
+          "token_id": "pt_yes_2",
+          "best_ask": "0.52",
+          "average_fill_price": "0.52",
+          "quantity": "10",
+          "fee_bps": 100
+        },
+        {
+          "market_id": "pt-market-2",
+          "question": "Rejected source No?",
+          "outcome": "No",
+          "token_id": "pt_no_2",
+          "best_ask": "0.5",
+          "average_fill_price": "0.5",
+          "quantity": "10",
+          "fee_bps": 100
+        }
+      ],
+      "gross_edge_cents": "0",
+      "estimated_fee_cents": "0",
+      "net_edge_cents": "0",
+      "capacity_shares_or_notional": "0",
+      "status": "rejected",
+      "rejection_reason": "no_gross_edge",
+      "explanation": "Rejected source opportunity because displayed pricing has no edge."
+    },
+    {
+      "event_slug": "phase7b-thin-edge",
+      "opportunity_type": "binary_complement",
+      "legs": [
+        {
+          "market_id": "pt-market-3",
+          "question": "Thin edge Yes?",
+          "outcome": "Yes",
+          "token_id": "pt_yes_3",
+          "best_ask": "0.493",
+          "average_fill_price": "0.493",
+          "quantity": "20",
+          "fee_bps": 200
+        },
+        {
+          "market_id": "pt-market-3",
+          "question": "Thin edge No?",
+          "outcome": "No",
+          "token_id": "pt_no_3",
+          "best_ask": "0.493",
+          "average_fill_price": "0.493",
+          "quantity": "20",
+          "fee_bps": 200
+        }
+      ],
+      "gross_edge_cents": "28",
+      "estimated_fee_cents": "19.992",
+      "net_edge_cents": "8.008",
+      "capacity_shares_or_notional": "20",
+      "status": "accepted",
+      "rejection_reason": null,
+      "explanation": "Accepted source opportunity with a very thin edge."
+    },
+    {
+      "event_slug": "phase7b-low-capacity",
+      "opportunity_type": "binary_complement",
+      "legs": [
+        {
+          "market_id": "pt-market-4",
+          "question": "Low capacity Yes?",
+          "outcome": "Yes",
+          "token_id": "pt_yes_4",
+          "best_ask": "0.42",
+          "average_fill_price": "0.42",
+          "quantity": "3",
+          "fee_bps": 100
+        },
+        {
+          "market_id": "pt-market-4",
+          "question": "Low capacity No?",
+          "outcome": "No",
+          "token_id": "pt_no_4",
+          "best_ask": "0.43",
+          "average_fill_price": "0.43",
+          "quantity": "3",
+          "fee_bps": 100
+        }
+      ],
+      "gross_edge_cents": "45",
+      "estimated_fee_cents": "1.4622",
+      "net_edge_cents": "43.5378",
+      "capacity_shares_or_notional": "3",
+      "status": "accepted",
+      "rejection_reason": null,
+      "explanation": "Accepted source opportunity with too little displayed capacity for policy."
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is frozen at Phase 7A as the official read-only baseline and handoff point.
+The repo is currently in Phase 7B with a paper-trade execution research layer added on top of the read-only baseline.
 
 ## Completed
 
@@ -80,31 +80,33 @@ Delivered:
 
 ## Current
 
-### Phase 7A
+### Phase 7B
 
-Baseline freeze and operator handoff.
+Paper-trade execution research.
 
 Deliverables:
 
-- docs aligned to shipped code
-- explicit baseline contract
-- operator commands and validation steps
-- future-phase guardrails
+- execution plan model
+- paper-trade simulation service
+- explicit slippage model
+- explicit kill-switch rules
+- deterministic scenario fixtures and tests
 
 ## Recommended Next Phase
 
-### Phase 7B
+### Phase 7C
 
-Operator hardening, not new scoring.
+Operator hardening and paper-trade review workflows.
 
 Recommended scope:
 
 - deployment and runtime documentation
+- review workflow for simulated plans
 - environment and observability hardening
 - safer operator workflows around refresh cadence and checkpoint inspection
 - packaging and release hygiene
 
-Do not start trading, auth, UI, or new model/scoring work in that phase.
+Do not start live trading, auth, UI, or new model/scoring work in that phase.
 
 ## Later
 

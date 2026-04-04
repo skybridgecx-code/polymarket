@@ -13,9 +13,10 @@ The frozen baseline contains six bounded layers:
 1. Public ingestion clients
 2. Normalization
 3. Opportunity scoring
-4. Wallet relationship scoring
-5. Thin operator surfaces
-6. Bounded refresh orchestration
+4. Paper-trade execution research
+5. Wallet relationship scoring
+6. Thin operator surfaces
+7. Bounded refresh orchestration
 
 ## Module Boundaries
 
@@ -63,6 +64,23 @@ Rules:
 - consumes normalized market data only
 - no client calls
 - no route logic
+
+### `src/polymarket_arb/execution/`
+
+Paper-trade research boundary:
+
+- execution plan generation from originating opportunities
+- explicit slippage assumptions
+- simulated fills
+- kill-switch and circuit-breaker rejection rules
+
+Rules:
+
+- paper trading only
+- no auth
+- no private keys
+- no order placement
+- keep plan generation separate from simulation
 
 ### `src/polymarket_arb/relationships/`
 
@@ -134,6 +152,10 @@ Type boundary:
 
 `WalletBackfillService` -> normalized wallet activity -> `RelationshipEngine` -> `CopierDetectionService` -> CLI/API
 
+### Paper-Trade Path
+
+`ScanService` or fixture input -> `ExecutionPlanBuilder` -> `PaperTradeSimulator` -> `PaperTradeService` -> CLI
+
 ### Orchestration Path
 
 `RefreshOrchestratorService` -> `ScanService` + `CopierDetectionService` -> derived websocket asset ids -> `MarketWebSocketClient` -> checkpoint file -> `/health`
@@ -163,6 +185,7 @@ Health states are deterministic from checkpoint content and current time:
 ## Explicit Non-Goals
 
 - trading
+- live execution
 - auth
 - UI
 - broad persistence
