@@ -36,7 +36,11 @@ class WalletBackfillService:
         self._gamma_client = gamma_client
         self._data_api_client = data_api_client
 
-    async def build_wallet_backfill(self, *, limit: int) -> dict[str, Any]:
+    async def collect_wallet_backfill(
+        self,
+        *,
+        limit: int,
+    ) -> tuple[list[str], list[NormalizedWalletSeed], list[NormalizedWalletActivity]]:
         gamma_client = self._gamma_client or GammaClient(self._settings)
         data_api_client = self._data_api_client or DataApiClient(self._settings)
         owns_gamma_client = self._gamma_client is None
@@ -54,19 +58,24 @@ class WalletBackfillService:
                 limit=limit,
                 data_api_client=data_api_client,
             )
-
-            return {
-                "selected_wallets": selected_wallets,
-                "wallet_seeds": [seed.model_dump(mode="json") for seed in wallet_seeds],
-                "wallet_activities": [
-                    activity.model_dump(mode="json") for activity in wallet_activities
-                ],
-            }
+            return selected_wallets, wallet_seeds, wallet_activities
         finally:
             if owns_gamma_client:
                 await gamma_client.aclose()
             if owns_data_api_client:
                 await data_api_client.aclose()
+
+    async def build_wallet_backfill(self, *, limit: int) -> dict[str, Any]:
+        selected_wallets, wallet_seeds, wallet_activities = await self.collect_wallet_backfill(
+            limit=limit
+        )
+        return {
+            "selected_wallets": selected_wallets,
+            "wallet_seeds": [seed.model_dump(mode="json") for seed in wallet_seeds],
+            "wallet_activities": [
+                activity.model_dump(mode="json") for activity in wallet_activities
+            ],
+        }
 
     async def discover_wallet_seeds(
         self,

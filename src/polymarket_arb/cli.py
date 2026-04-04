@@ -7,6 +7,7 @@ import typer
 
 from polymarket_arb.config import get_settings
 from polymarket_arb.logging import configure_logging
+from polymarket_arb.services.copier_detection_service import CopierDetectionService
 from polymarket_arb.services.scan_service import ScanService
 from polymarket_arb.services.wallet_backfill_service import WalletBackfillService
 
@@ -43,6 +44,20 @@ def wallet_backfill(
     settings = get_settings()
     configure_logging(settings.log_level)
     payload = asyncio.run(WalletBackfillService(settings).build_wallet_backfill(limit=limit))
+    typer.echo(json.dumps(payload, indent=2, sort_keys=True))
+
+
+@app.command("detect-copiers")
+def detect_copiers(
+    limit: int = typer.Option(
+        10,
+        min=1,
+        help="Number of wallets to backfill before pair scoring.",
+    ),
+) -> None:
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    payload = asyncio.run(CopierDetectionService(settings).build_relationship_reports(limit=limit))
     typer.echo(json.dumps(payload, indent=2, sort_keys=True))
 
 
