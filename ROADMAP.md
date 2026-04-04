@@ -1,82 +1,111 @@
 # Roadmap
 
-## Phase 1
+## Status
+
+The repo is frozen at Phase 7A as the official read-only baseline and handoff point.
+
+## Completed
+
+### Phase 1
 
 Repo foundation and deterministic scanner shell.
 
-Deliverables:
+Delivered:
 
 - Python packaging and tooling
 - typed config
-- Gamma events client
-- CLOB books client
-- normalized event, market, and book models
-- `scan` CLI
-- fixtures and unit tests
+- Gamma and CLOB clients
+- raw and normalized market models
+- deterministic `scan` CLI
 
-## Phase 2
+### Phase 2
 
 Fee-aware opportunity engine.
 
-Deliverables:
+Delivered:
 
-- neg-risk analyzer
-- complement analyzer
-- fee model
-- liquidity screen
-- explanations and rejection reasons
+- binary complement analysis
+- neg-risk basket analysis
+- fee calculation
+- liquidity screening
+- ranked candidates with explanations and rejection reasons
 
-## Phase 3
+### Phase 3
 
 Wallet seed discovery and activity ingestion.
 
-Deliverables:
+Delivered:
 
-- leaderboard seeds
-- top holder import
-- activity fetcher
-- normalized wallet activity
-- DuckDB and Parquet persistence
+- leaderboard seed discovery
+- top-holder seed discovery
+- wallet activity fetcher
+- normalized wallet seed and activity records
+- deterministic `wallet-backfill` CLI output
 
-## Phase 4
+### Phase 4
 
-Lead-lag copier detection.
+Lead/lag copier detection.
 
-Deliverables:
+Delivered:
 
-- same-leg matcher
-- lag window scoring
-- repeated-event confidence logic
-- relationship reports with evidence
+- same-leg same-side matching
+- bounded lag-window matching
+- repeated-event pair scoring
+- confidence scoring
+- evidence-backed accepted and rejected relationship reports
 
-## Phase 5
+### Phase 5
 
-Read-only API and operator reports.
+Read-only operator API.
 
-Deliverables:
+Delivered:
 
-- FastAPI routes
-- health endpoint
-- latest opportunity and wallet evidence routes
+- FastAPI app entrypoint
+- `GET /health`
+- `GET /opportunities`
+- `GET /wallets/backfill`
+- `GET /relationships/copiers`
 
-## Phase 6
+### Phase 6
 
-Real-time stream and refresh orchestration.
+Real-time refresh orchestration and checkpoint-safe state.
 
-Deliverables:
+Delivered:
 
-- market WebSocket consumer
-- refresh scheduler
+- market websocket consumer
+- bounded refresh orchestration
 - stale-state detection
-- restart-safe checkpoints
+- lightweight checkpoint file
+- reconnect and resume handling
 
-## Phase 7
+## Current
 
-Execution research only.
+### Phase 7A
+
+Baseline freeze and operator handoff.
 
 Deliverables:
 
-- paper-trade simulation
-- explicit execution risk documentation
-- hard isolation from analytics core
+- docs aligned to shipped code
+- explicit baseline contract
+- operator commands and validation steps
+- future-phase guardrails
 
+## Recommended Next Phase
+
+### Phase 7B
+
+Operator hardening, not new scoring.
+
+Recommended scope:
+
+- deployment and runtime documentation
+- environment and observability hardening
+- safer operator workflows around refresh cadence and checkpoint inspection
+- packaging and release hygiene
+
+Do not start trading, auth, UI, or new model/scoring work in that phase.
+
+## Later
+
+Only after the frozen baseline is stable in real operator use should the repo consider execution research, and that work should remain explicitly isolated from the read-only analytics core.

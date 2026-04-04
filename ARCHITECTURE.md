@@ -2,87 +2,180 @@
 
 ## What Matters
 
-The system is analytics-first and read-only in the early phases. It exists to turn public Polymarket data into evidence-backed operator workflows, not automated execution.
+The system is a Python-first, read-only analytics stack. It exists to turn public Polymarket market and wallet data into deterministic operator outputs with explicit evidence, explanations, and rejection reasons.
 
-## Best Path
+This repo is not an execution system.
 
-Keep the system monolithic and Python-first until real pressure justifies more complexity. Separate raw payload ingestion from normalization and downstream analytics so every later score can trace back to source evidence.
+## Current Shipped System
 
-## Current Phase
+The frozen baseline contains six bounded layers:
 
-Phase 1 implements only the scanner shell:
+1. Public ingestion clients
+2. Normalization
+3. Opportunity scoring
+4. Wallet relationship scoring
+5. Thin operator surfaces
+6. Bounded refresh orchestration
 
-- Gamma event discovery
-- CLOB book reads
-- raw payload wrappers
-- normalized event, market, and book models
-- deterministic CLI output
+## Module Boundaries
 
-## Target Layers
+### `src/polymarket_arb/clients/`
 
-### Ingestion
+External read-only adapters:
 
-- `clients/gamma.py`
-- `clients/clob.py`
-- `clients/data_api.py`
-- `clients/ws_market.py`
-- `models/raw.py`
-- `models/normalized.py`
+- `gamma.py`: active event and market discovery
+- `clob.py`: order books and fee rates
+- `data_api.py`: leaderboard, holders, and wallet activity
+- `ws_market.py`: bounded market websocket consumption
 
 Rules:
 
-- keep raw payloads separate from normalized records
-- stamp normalized records with source ids and fetch timestamps
-- avoid business logic inside API clients
+- no scoring logic
+- no normalization logic beyond trivial transport handling
+- no business decisions about acceptance or rejection
 
-### Opportunity Engine
+### `src/polymarket_arb/ingest/`
 
-Planned for later:
+Normalization boundary:
 
-- discovery
-- basket construction
-- neg-risk analysis
-- complement analysis
-- fee model
-- liquidity screen
-- ranking and explanations
+- converts raw external payloads into internal normalized models
+- preserves source identifiers and timestamps
+- handles sparse or inconsistent public payloads explicitly
 
-### Wallet Intelligence
+Rules:
 
-Planned for later:
+- no scoring
+- no route logic
+- no orchestration logic
 
-- wallet seed discovery
-- wallet activity ingestion
-- leg matching
-- lead-lag scoring
-- clustering
-- confidence scoring
+### `src/polymarket_arb/opportunities/`
 
-### Storage
+Opportunity engine boundary:
 
-Start local-first:
+- binary complement analysis
+- neg-risk basket analysis
+- fee calculation
+- liquidity and slippage screening
+- ranked output with explanation and rejection metadata
 
-- DuckDB for analytical state
-- Parquet for append-only snapshots
-- small config files for deterministic execution
+Rules:
 
-### Operator Surfaces
+- consumes normalized market data only
+- no client calls
+- no route logic
 
-Phase order:
+### `src/polymarket_arb/relationships/`
 
-1. CLI
-2. read-only FastAPI
-3. thin dashboard if needed
+Relationship engine boundary:
 
-## Risks / Tradeoffs
+- same-leg same-side matching
+- bounded lag-window matching
+- repeated-event relationship scoring
+- explicit false-positive guards
+- evidence-backed accepted or rejected reports
 
-- Public APIs are inconsistent enough that normalization needs to be defensive.
-- Live scan output cannot be time-stable, so only code paths and formatting should be deterministic.
-- Premature wallet or execution work would create noise before the scanner is trustworthy.
+Rules:
 
-## Validation
+- consumes normalized wallet activity only
+- no ingestion logic
+- no API logic
 
-- unit tests for config and normalization
-- CLI smoke run against live public endpoints
-- strict lint and typecheck gates
+### `src/polymarket_arb/services/`
 
+Composition layer:
+
+- `scan_service.py`: clients + normalization + opportunity engine
+- `wallet_backfill_service.py`: wallet seed discovery + activity collection
+- `copier_detection_service.py`: wallet backfill + relationship engine
+- `orchestration_service.py`: bounded refresh cycle + checkpoint/state handling
+
+Rules:
+
+- service layer composes existing modules
+- service layer should not redefine scoring formulas already owned by engines
+- route and CLI layers should call services rather than duplicate logic
+
+### `src/polymarket_arb/api/`
+
+Thin FastAPI operator surface:
+
+- `GET /health`
+- `GET /opportunities`
+- `GET /wallets/backfill`
+- `GET /relationships/copiers`
+
+Rules:
+
+- no new scoring
+- no heavy orchestration logic
+- preserve explanation, rejection, and evidence fields
+
+### `src/polymarket_arb/models/`
+
+Type boundary:
+
+- `raw.py`: external payload wrappers
+- `normalized.py`: normalized market and wallet records
+- `opportunity.py`: opportunity output models
+- `relationship.py`: relationship output models
+- `orchestration.py`: websocket event, checkpoint, and health models
+
+## Data Flow
+
+### Opportunity Path
+
+`GammaClient` + `ClobClient` -> raw models -> normalization -> `OpportunityEngine` -> `ScanService` -> CLI/API
+
+### Wallet Path
+
+`DataApiClient` + `GammaClient` -> raw models -> normalization -> `WalletBackfillService` -> CLI/API
+
+### Relationship Path
+
+`WalletBackfillService` -> normalized wallet activity -> `RelationshipEngine` -> `CopierDetectionService` -> CLI/API
+
+### Orchestration Path
+
+`RefreshOrchestratorService` -> `ScanService` + `CopierDetectionService` -> derived websocket asset ids -> `MarketWebSocketClient` -> checkpoint file -> `/health`
+
+## Checkpoint And Staleness Model
+
+Checkpointing is intentionally small. The repo stores only what is required to resume bounded refresh safely:
+
+- refresh timestamps
+- websocket connect and event timestamps
+- reconnect and disconnect counters
+- subscribed asset ids
+- last limits used
+- last error
+- stale reasons
+
+Default location:
+
+- `state/runtime_orchestrator_checkpoint.json`
+
+Health states are deterministic from checkpoint content and current time:
+
+- `idle`
+- `ok`
+- `stale`
+
+## Explicit Non-Goals
+
+- trading
+- auth
+- UI
+- broad persistence
+- background job platform
+- strategy execution
+- hidden filtering of weak or rejected outputs
+
+## Validation Boundary
+
+Baseline validation is:
+
+- `make validate`
+- CLI smoke runs
+- local API smoke runs
+
+Future phases should preserve this separation. If a new feature needs changes across clients, normalization, engines, services, and routes all at once, that is a design smell and should be challenged first.

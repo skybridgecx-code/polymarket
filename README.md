@@ -1,25 +1,25 @@
 # Polymarket Arbitrage Research
 
-Read-only Polymarket analytics infrastructure for finding candidate dislocations and, later, explainable wallet lead-lag patterns.
+Official frozen read-only baseline for Polymarket analytics as of Phase 7A.
 
-## Phase Boundary
+The repo currently ships:
 
-This repo is currently scoped to Phase 1 only:
+- read-only Gamma, CLOB, Data API, and market websocket ingestion
+- fee-aware opportunity scanning with explicit rejection reasons
+- wallet seed discovery and wallet activity ingestion
+- explainable lead/lag copier relationship detection
+- read-only FastAPI operator routes
+- bounded real-time refresh orchestration with lightweight checkpointing
 
-- Python project foundation
-- typed config
-- public Gamma and CLOB read clients
-- raw and normalized market models
-- deterministic `scan` CLI command
-- unit tests for config and normalization
-
-Explicitly out of scope in this phase:
+The repo explicitly does not ship:
 
 - trading or order placement
-- wallet analytics
-- API server
-- WebSocket ingestion
-- real-time refresh orchestration
+- auth or private key handling
+- UI
+- background workers
+- copy-trading execution
+- clustering beyond pairwise relationship scoring
+- database or broad persistence layers
 
 ## Quick Start
 
@@ -30,46 +30,91 @@ make validate
 python -m polymarket_arb.cli scan --limit 5
 ```
 
-## CLI
+## Current CLI
 
 ```bash
 python -m polymarket_arb.cli scan --limit 5
+python -m polymarket_arb.cli wallet-backfill --limit 10
+python -m polymarket_arb.cli detect-copiers --limit 10
+python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
 ```
 
-The `scan` command fetches active Gamma events, filters out closed markets, reads current CLOB books for each token, and prints deterministic JSON containing:
+All CLI commands emit deterministic JSON shapes. Live values vary because public market data changes.
 
-- event slug
-- market count
-- market question
-- token ids
-- best bid and best ask per token
+## Current API
 
-## Layout
+Start the read-only API:
 
-```text
-src/polymarket_arb/
-  cli.py
-  config.py
-  logging.py
-  clients/
-  ingest/
-  models/
-  services/
-tests/
-  fixtures/
-  unit/
+```bash
+python -m uvicorn polymarket_arb.api.main:app --reload
 ```
 
-## Quality Gates
+Available routes:
 
-- `make lint`
-- `make typecheck`
-- `make test`
-- `make validate`
+- `GET /health`
+- `GET /opportunities?limit=5`
+- `GET /wallets/backfill?limit=10`
+- `GET /relationships/copiers?limit=10`
 
-## Notes
+`/health` exposes orchestration and staleness state. The other routes are thin wrappers over existing service-layer logic and keep rejected outputs visible.
 
-- Gamma payloads currently return several array-like fields as JSON-encoded strings.
-- Gamma event filtering is not sufficient by itself; market-level normalization also drops closed markets.
-- CLOB orderbook asks are normalized by price rather than trusting response order.
+## Orchestration And Checkpointing
 
+`orchestrate-refresh` is a bounded refresh pass, not a daemon. It:
+
+- refreshes opportunities through `ScanService`
+- refreshes copier reports through `CopierDetectionService`
+- derives websocket subscriptions from current opportunity legs
+- consumes a bounded number of market websocket messages
+- writes a lightweight checkpoint file in `state/`
+
+Default checkpoint file:
+
+- `state/runtime_orchestrator_checkpoint.json`
+
+The checkpoint tracks:
+
+- last scan refresh time
+- last relationship refresh time
+- last websocket connect and event times
+- reconnect and disconnect counts
+- subscribed asset ids
+- last error
+- stale reasons
+
+## Module Boundaries
+
+- `src/polymarket_arb/clients/`: public read-only external clients
+- `src/polymarket_arb/ingest/`: normalization only
+- `src/polymarket_arb/opportunities/`: opportunity scoring only
+- `src/polymarket_arb/relationships/`: relationship scoring only
+- `src/polymarket_arb/services/`: orchestration of clients and engines
+- `src/polymarket_arb/api/`: thin FastAPI route layer
+- `src/polymarket_arb/models/`: raw, normalized, opportunity, relationship, and orchestration models
+
+Raw payload handling remains separate from normalization and scoring.
+
+## Validation
+
+Core gate:
+
+```bash
+make validate
+```
+
+Useful smoke commands:
+
+```bash
+python -m polymarket_arb.cli scan --limit 5
+python -m polymarket_arb.cli wallet-backfill --limit 10
+python -m polymarket_arb.cli detect-copiers --limit 10
+python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
+python -m uvicorn polymarket_arb.api.main:app --reload
+```
+
+## Read Next
+
+- [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
+- [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
+- [ROADMAP.md](/Users/muhammadaatif/polymarket-arb/ROADMAP.md)
+- [CODEX_HANDOFF.md](/Users/muhammadaatif/polymarket-arb/CODEX_HANDOFF.md)
