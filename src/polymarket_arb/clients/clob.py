@@ -3,7 +3,7 @@ from __future__ import annotations
 import httpx
 
 from polymarket_arb.config import Settings
-from polymarket_arb.models.raw import RawClobBook
+from polymarket_arb.models.raw import RawClobBook, RawClobFeeRate
 from polymarket_arb.utils.time import utc_now
 
 
@@ -27,6 +27,18 @@ class ClobClient:
             payload=payload,
         )
 
+    async def get_fee_rate(self, token_id: str) -> RawClobFeeRate:
+        response = await self._client.get("/fee-rate", params={"token_id": token_id})
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise TypeError(f"Expected dict payload from CLOB /fee-rate, got {type(payload)!r}")
+        return RawClobFeeRate(
+            source="clob.fee_rate",
+            fetched_at=utc_now(),
+            token_id=token_id,
+            payload=payload,
+        )
+
     async def aclose(self) -> None:
         await self._client.aclose()
-

@@ -22,3 +22,11 @@ class RawClobBook(BaseModel):
     token_id: str
     payload: dict[str, Any]
 
+
+class RawClobFeeRate(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    source: Literal["clob.fee_rate"]
+    fetched_at: datetime
+    token_id: str
+    payload: dict[str, Any]

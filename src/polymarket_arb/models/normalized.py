@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from polymarket_arb.models.raw import RawClobBook, RawGammaEvent
+from polymarket_arb.models.raw import RawClobBook, RawClobFeeRate, RawGammaEvent
 
 
 def _parse_string_list(value: Any) -> list[str]:
@@ -119,6 +119,28 @@ class NormalizedBook(BaseModel):
             min_order_size=min_order_size,
             tick_size=tick_size,
             neg_risk=bool(payload.get("neg_risk", False)),
+        )
+
+
+class NormalizedFeeRate(BaseModel):
+    token_id: str
+    source: str
+    fetched_at: datetime
+    base_fee_bps: int
+
+    @classmethod
+    def from_raw(cls, record: RawClobFeeRate) -> NormalizedFeeRate:
+        payload = record.payload
+        raw_base_fee = payload.get("base_fee")
+        if raw_base_fee is None:
+            raw_base_fee = payload.get("baseFee")
+        base_fee_bps = int(str(raw_base_fee or 0))
+
+        return cls(
+            token_id=record.token_id,
+            source=record.source,
+            fetched_at=record.fetched_at,
+            base_fee_bps=base_fee_bps,
         )
 
 

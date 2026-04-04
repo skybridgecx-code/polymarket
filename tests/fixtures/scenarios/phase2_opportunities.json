@@ -1,0 +1,240 @@
+{
+  "events": [
+    {
+      "id": "event-neg-risk",
+      "slug": "btc-range-april-2026",
+      "title": "Where does BTC finish April 2026?",
+      "active": true,
+      "closed": false,
+      "markets": [
+        {
+          "id": "market-nr-1",
+          "question": "BTC finishes above $90k?",
+          "slug": "btc-above-90k-april-2026",
+          "outcomes": "[\"Yes\", \"No\"]",
+          "clobTokenIds": "[\"nr_yes_1\", \"nr_no_1\"]",
+          "active": true,
+          "closed": false,
+          "acceptingOrders": true,
+          "negRisk": true
+        },
+        {
+          "id": "market-nr-2",
+          "question": "BTC finishes between $80k and $90k?",
+          "slug": "btc-between-80k-and-90k-april-2026",
+          "outcomes": "[\"Yes\", \"No\"]",
+          "clobTokenIds": "[\"nr_yes_2\", \"nr_no_2\"]",
+          "active": true,
+          "closed": false,
+          "acceptingOrders": true,
+          "negRisk": true
+        }
+      ]
+    },
+    {
+      "id": "event-complement",
+      "slug": "fed-hike-june-2026",
+      "title": "Will the Fed hike in June 2026?",
+      "active": true,
+      "closed": false,
+      "markets": [
+        {
+          "id": "market-comp-1",
+          "question": "Fed hikes in June 2026?",
+          "slug": "fed-hike-june-2026",
+          "outcomes": "[\"Yes\", \"No\"]",
+          "clobTokenIds": "[\"comp_yes_1\", \"comp_no_1\"]",
+          "active": true,
+          "closed": false,
+          "acceptingOrders": true,
+          "negRisk": false
+        }
+      ]
+    },
+    {
+      "id": "event-missing-fee",
+      "slug": "oil-100-july-2026",
+      "title": "Will oil hit $100 by July 2026?",
+      "active": true,
+      "closed": false,
+      "markets": [
+        {
+          "id": "market-missing-fee-1",
+          "question": "Oil hits $100 by July 2026?",
+          "slug": "oil-100-july-2026",
+          "outcomes": "[\"Yes\", \"No\"]",
+          "clobTokenIds": "[\"missing_fee_yes_1\", \"missing_fee_no_1\"]",
+          "active": true,
+          "closed": false,
+          "acceptingOrders": true,
+          "negRisk": false
+        }
+      ]
+    },
+    {
+      "id": "event-no-liquidity",
+      "slug": "eth-etf-approval-2026",
+      "title": "Will an ETH ETF be approved in 2026?",
+      "active": true,
+      "closed": false,
+      "markets": [
+        {
+          "id": "market-no-liquidity-1",
+          "question": "ETH ETF approved in 2026?",
+          "slug": "eth-etf-approval-2026",
+          "outcomes": "[\"Yes\", \"No\"]",
+          "clobTokenIds": "[\"liq_yes_1\", \"liq_no_1\"]",
+          "active": true,
+          "closed": false,
+          "acceptingOrders": true,
+          "negRisk": false
+        }
+      ]
+    }
+  ],
+  "books": {
+    "nr_yes_1": {
+      "market": "market-nr-1",
+      "asset_id": "nr_yes_1",
+      "timestamp": "1775329271083",
+      "hash": "hash-nr-yes-1",
+      "bids": [],
+      "asks": [
+        { "price": "0.32", "size": "80" },
+        { "price": "0.35", "size": "40" }
+      ],
+      "min_order_size": "1",
+      "tick_size": "0.01",
+      "neg_risk": true
+    },
+    "nr_no_1": {
+      "market": "market-nr-1",
+      "asset_id": "nr_no_1",
+      "timestamp": "1775329271083",
+      "hash": "hash-nr-no-1",
+      "bids": [],
+      "asks": [
+        { "price": "0.72", "size": "80" }
+      ],
+      "min_order_size": "1",
+      "tick_size": "0.01",
+      "neg_risk": true
+    },
+    "nr_yes_2": {
+      "market": "market-nr-2",
+      "asset_id": "nr_yes_2",
+      "timestamp": "1775329271083",
+      "hash": "hash-nr-yes-2",
+      "bids": [],
+      "asks": [
+        { "price": "0.33", "size": "80" },
+        { "price": "0.38", "size": "40" }
+      ],
+      "min_order_size": "1",
+      "tick_size": "0.01",
+      "neg_risk": true
+    },
+    "nr_no_2": {
+      "market": "market-nr-2",
+      "asset_id": "nr_no_2",
+      "timestamp": "1775329271083",
+      "hash": "hash-nr-no-2",
+      "bids": [],
+      "asks": [
+        { "price": "0.71", "size": "80" }
+      ],
+      "min_order_size": "1",
+      "tick_size": "0.01",
+      "neg_risk": true
+    },
+    "comp_yes_1": {
+      "market": "market-comp-1",
+      "asset_id": "comp_yes_1",
+      "timestamp": "1775329271083",
+      "hash": "hash-comp-yes-1",
+      "bids": [],
+      "asks": [
+        { "price": "0.46", "size": "30" },
+        { "price": "0.48", "size": "20" }
+      ],
+      "min_order_size": "1",
+      "tick_size": "0.01",
+      "neg_risk": false
+    },
+    "comp_no_1": {
+      "market": "market-comp-1",
+      "asset_id": "comp_no_1",
+      "timestamp": "1775329271083",
+      "hash": "hash-comp-no-1",
+      "bids": [],
+      "asks": [
+        { "price": "0.50", "size": "25" },
+        { "price": "0.53", "size": "20" }
+      ],
+      "min_order_size": "1",
+      "tick_size": "0.01",
+      "neg_risk": false
+    },
+    "missing_fee_yes_1": {
+      "market": "market-missing-fee-1",
+      "asset_id": "missing_fee_yes_1",
+      "timestamp": "1775329271083",
+      "hash": "hash-missing-fee-yes-1",
+      "bids": [],
+      "asks": [
+        { "price": "0.49", "size": "20" }
+      ],
+      "min_order_size": "1",
+      "tick_size": "0.01",
+      "neg_risk": false
+    },
+    "missing_fee_no_1": {
+      "market": "market-missing-fee-1",
+      "asset_id": "missing_fee_no_1",
+      "timestamp": "1775329271083",
+      "hash": "hash-missing-fee-no-1",
+      "bids": [],
+      "asks": [
+        { "price": "0.48", "size": "20" }
+      ],
+      "min_order_size": "1",
+      "tick_size": "0.01",
+      "neg_risk": false
+    },
+    "liq_yes_1": {
+      "market": "market-no-liquidity-1",
+      "asset_id": "liq_yes_1",
+      "timestamp": "1775329271083",
+      "hash": "hash-liq-yes-1",
+      "bids": [],
+      "asks": [
+        { "price": "0.44", "size": "12" }
+      ],
+      "min_order_size": "1",
+      "tick_size": "0.01",
+      "neg_risk": false
+    },
+    "liq_no_1": {
+      "market": "market-no-liquidity-1",
+      "asset_id": "liq_no_1",
+      "timestamp": "1775329271083",
+      "hash": "hash-liq-no-1",
+      "bids": [],
+      "asks": [],
+      "min_order_size": "1",
+      "tick_size": "0.01",
+      "neg_risk": false
+    }
+  },
+  "fee_rates": {
+    "nr_yes_1": { "base_fee": "0" },
+    "nr_no_1": { "base_fee": "0" },
+    "nr_yes_2": { "base_fee": "0" },
+    "nr_no_2": { "base_fee": "0" },
+    "comp_yes_1": { "base_fee": "100" },
+    "comp_no_1": { "base_fee": "100" },
+    "missing_fee_yes_1": { "base_fee": "100" },
+    "liq_yes_1": { "base_fee": "100" },
+    "liq_no_1": { "base_fee": "100" }
+  }
+}
