@@ -4,6 +4,7 @@ from collections.abc import Callable
 from typing import Any, cast
 
 from fastapi import FastAPI, Query, Request
+from pydantic import BaseModel
 
 from polymarket_arb.api.schemas import (
     HealthResponse,
@@ -13,12 +14,14 @@ from polymarket_arb.api.schemas import (
 )
 from polymarket_arb.config import Settings, get_settings
 from polymarket_arb.services.copier_detection_service import CopierDetectionService
+from polymarket_arb.services.orchestration_service import RefreshOrchestratorService
 from polymarket_arb.services.scan_service import ScanService
 from polymarket_arb.services.wallet_backfill_service import WalletBackfillService
 
 ScanServiceFactory = Callable[[Settings], ScanService]
 WalletBackfillServiceFactory = Callable[[Settings], WalletBackfillService]
 CopierDetectionServiceFactory = Callable[[Settings], CopierDetectionService]
+OrchestrationServiceFactory = Callable[[Settings], RefreshOrchestratorService]
 
 
 def _default_scan_service_factory(settings: Settings) -> ScanService:
@@ -33,6 +36,10 @@ def _default_copier_detection_service_factory(settings: Settings) -> CopierDetec
     return CopierDetectionService(settings)
 
 
+def _default_orchestration_service_factory(settings: Settings) -> RefreshOrchestratorService:
+    return RefreshOrchestratorService(settings)
+
+
 def create_app(
     *,
     scan_service_factory: ScanServiceFactory = _default_scan_service_factory,
@@ -42,15 +49,23 @@ def create_app(
     copier_detection_service_factory: CopierDetectionServiceFactory = (
         _default_copier_detection_service_factory
     ),
+    orchestration_service_factory: OrchestrationServiceFactory = (
+        _default_orchestration_service_factory
+    ),
 ) -> FastAPI:
     app = FastAPI(title="Polymarket Arb API", version="0.1.0")
     app.state.scan_service_factory = scan_service_factory
     app.state.wallet_backfill_service_factory = wallet_backfill_service_factory
     app.state.copier_detection_service_factory = copier_detection_service_factory
+    app.state.orchestration_service_factory = orchestration_service_factory
 
     @app.get("/health", response_model=HealthResponse)
     async def health() -> HealthResponse:
-        return HealthResponse(status="ok")
+        service = app.state.orchestration_service_factory(get_settings())
+        payload = service.build_health_status()
+        if isinstance(payload, BaseModel):
+            return HealthResponse.model_validate(payload.model_dump(mode="json"))
+        return HealthResponse.model_validate(payload)
 
     @app.get("/opportunities", response_model=OpportunitiesResponse)
     async def opportunities(

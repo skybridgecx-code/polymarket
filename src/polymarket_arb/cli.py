@@ -8,6 +8,7 @@ import typer
 from polymarket_arb.config import get_settings
 from polymarket_arb.logging import configure_logging
 from polymarket_arb.services.copier_detection_service import CopierDetectionService
+from polymarket_arb.services.orchestration_service import RefreshOrchestratorService
 from polymarket_arb.services.scan_service import ScanService
 from polymarket_arb.services.wallet_backfill_service import WalletBackfillService
 
@@ -58,6 +59,36 @@ def detect_copiers(
     settings = get_settings()
     configure_logging(settings.log_level)
     payload = asyncio.run(CopierDetectionService(settings).build_relationship_reports(limit=limit))
+    typer.echo(json.dumps(payload, indent=2, sort_keys=True))
+
+
+@app.command("orchestrate-refresh")
+def orchestrate_refresh(
+    scan_limit: int = typer.Option(
+        5,
+        min=1,
+        help="Number of events to refresh for opportunity scanning.",
+    ),
+    relationship_limit: int = typer.Option(
+        10,
+        min=1,
+        help="Number of wallets to backfill before refreshing relationships.",
+    ),
+    max_websocket_messages: int = typer.Option(
+        1,
+        min=0,
+        help="Maximum number of websocket market messages to consume in this bounded run.",
+    ),
+) -> None:
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    payload = asyncio.run(
+        RefreshOrchestratorService(settings).run_refresh_cycle(
+            scan_limit=scan_limit,
+            relationship_limit=relationship_limit,
+            max_websocket_messages=max_websocket_messages,
+        )
+    )
     typer.echo(json.dumps(payload, indent=2, sort_keys=True))
 
 

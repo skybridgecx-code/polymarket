@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     state_dir: Path = Field(default=Path("./state"), validation_alias="STATE_DIR")
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
     request_timeout_seconds: float = 10.0
+    scan_stale_after_seconds: int = 300
+    relationship_stale_after_seconds: int = 300
+    websocket_stale_after_seconds: int = 120
+    websocket_receive_timeout_seconds: float = 2.0
+    websocket_reconnect_attempts: int = 2
+    orchestration_checkpoint_file: str = "runtime_orchestrator_checkpoint.json"
 
     def ensure_directories(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)

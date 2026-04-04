@@ -124,11 +124,30 @@ class _FakeCopierDetectionService:
         ]
 
 
+class _FakeOrchestrationService:
+    def build_health_status(self) -> dict[str, Any]:
+        return {
+            "status": "ok",
+            "stale": False,
+            "stale_reasons": [],
+            "checkpoint_path": "/tmp/runtime_orchestrator_checkpoint.json",
+            "last_scan_refresh_at": "2026-04-04T00:00:00Z",
+            "last_relationship_refresh_at": "2026-04-04T00:00:05Z",
+            "last_websocket_connect_at": "2026-04-04T00:00:06Z",
+            "last_websocket_event_at": "2026-04-04T00:00:07Z",
+            "websocket_reconnect_count": 1,
+            "websocket_disconnect_count": 1,
+            "subscribed_asset_ids_count": 3,
+            "last_error": None,
+        }
+
+
 def _app() -> TestClient:
     app = create_app(
         scan_service_factory=lambda settings: cast(Any, _FakeScanService()),
         wallet_backfill_service_factory=lambda settings: cast(Any, _FakeWalletBackfillService()),
         copier_detection_service_factory=lambda settings: cast(Any, _FakeCopierDetectionService()),
+        orchestration_service_factory=lambda settings: cast(Any, _FakeOrchestrationService()),
     )
     return TestClient(app)
 
@@ -138,7 +157,9 @@ def test_health_route_returns_ok() -> None:
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json()["status"] == "ok"
+    assert response.json()["stale"] is False
+    assert response.json()["subscribed_asset_ids_count"] == 3
 
 
 def test_opportunities_route_uses_existing_service_output() -> None:

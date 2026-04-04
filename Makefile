@@ -4,7 +4,7 @@ RUFF := .venv/bin/ruff
 MYPY := .venv/bin/mypy
 PYTEST := .venv/bin/pytest
 
-.PHONY: setup test lint typecheck validate scan wallet-backfill detect-copiers api
+.PHONY: setup test lint typecheck validate scan wallet-backfill detect-copiers orchestrate-refresh api
 
 setup:
 	python3.11 -m venv .venv
@@ -31,6 +31,8 @@ wallet-backfill:
 detect-copiers:
 	$(PYTHON) -m polymarket_arb.cli detect-copiers --limit 10
 
+orchestrate-refresh:
+	$(PYTHON) -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
+
 api:
-	@echo "api is not implemented until Phase 5." >&2
-	@exit 1
+	$(PYTHON) -m uvicorn polymarket_arb.api.main:app --reload

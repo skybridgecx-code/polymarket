@@ -58,3 +58,11 @@ class RawDataUserActivity(BaseModel):
     fetched_at: datetime
     wallet_address: str
     payload: dict[str, Any]
+
+
+class RawWsMarketMessage(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    source: Literal["ws.market"]
+    received_at: datetime
+    payload: dict[str, Any]

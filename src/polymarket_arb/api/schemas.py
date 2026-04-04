@@ -7,6 +7,17 @@ from pydantic import BaseModel, RootModel
 
 class HealthResponse(BaseModel):
     status: str
+    stale: bool
+    stale_reasons: list[str]
+    checkpoint_path: str
+    last_scan_refresh_at: str | None
+    last_relationship_refresh_at: str | None
+    last_websocket_connect_at: str | None
+    last_websocket_event_at: str | None
+    websocket_reconnect_count: int
+    websocket_disconnect_count: int
+    subscribed_asset_ids_count: int
+    last_error: str | None
 
 
 class OpportunityLegResponse(BaseModel):
