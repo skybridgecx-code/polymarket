@@ -33,6 +33,10 @@ def test_normalize_events_filters_closed_markets_and_parses_tokens() -> None:
     assert len(events[0].markets) == 1
     market = events[0].markets[0]
     assert market.market_id == "824952"
+    assert (
+        market.condition_id
+        == "0x9839f501564630701e7453b9c35f4da4ce18acdf89e3794f2d6b6ba0f7dbdc7f"
+    )
     assert market.outcomes == ["Yes", "No"]
     assert market.token_ids == [
         "111128191581505463501777127559667396812474366956707382672202929745167742497287",

@@ -8,6 +8,7 @@ import typer
 from polymarket_arb.config import get_settings
 from polymarket_arb.logging import configure_logging
 from polymarket_arb.services.scan_service import ScanService
+from polymarket_arb.services.wallet_backfill_service import WalletBackfillService
 
 app = typer.Typer(add_completion=False, help="Read-only Polymarket analytics CLI.")
 
@@ -29,6 +30,20 @@ def scan(
     configure_logging(settings.log_level)
     rows = asyncio.run(ScanService(settings).build_scan_rows(limit=limit))
     typer.echo(json.dumps(rows, indent=2, sort_keys=True))
+
+
+@app.command("wallet-backfill")
+def wallet_backfill(
+    limit: int = typer.Option(
+        10,
+        min=1,
+        help="Number of wallet seeds to discover and backfill.",
+    ),
+) -> None:
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    payload = asyncio.run(WalletBackfillService(settings).build_wallet_backfill(limit=limit))
+    typer.echo(json.dumps(payload, indent=2, sort_keys=True))
 
 
 def main() -> None:

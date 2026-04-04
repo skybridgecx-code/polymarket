@@ -7,7 +7,14 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from polymarket_arb.models.raw import RawClobBook, RawClobFeeRate, RawGammaEvent
+from polymarket_arb.models.raw import (
+    RawClobBook,
+    RawClobFeeRate,
+    RawDataLeaderboardEntry,
+    RawDataTopHolderGroup,
+    RawDataUserActivity,
+    RawGammaEvent,
+)
 
 
 def _parse_string_list(value: Any) -> list[str]:
@@ -40,6 +47,32 @@ def _parse_optional_datetime(value: Any) -> datetime | None:
             return datetime.fromtimestamp(int(stripped) / 1000, tz=UTC)
         return datetime.fromisoformat(stripped.replace("Z", "+00:00"))
     raise TypeError(f"Unsupported datetime value: {value!r}")
+
+
+def _parse_optional_decimal(value: Any) -> Decimal | None:
+    if value in (None, ""):
+        return None
+    return Decimal(str(value))
+
+
+def _parse_optional_int(value: Any) -> int | None:
+    if value in (None, ""):
+        return None
+    return int(str(value))
+
+
+def _parse_optional_string(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _normalize_wallet_address(value: Any) -> str | None:
+    wallet = _parse_optional_string(value)
+    if wallet is None:
+        return None
+    return wallet.lower()
 
 
 class PriceLevel(BaseModel):
@@ -147,6 +180,7 @@ class NormalizedFeeRate(BaseModel):
 class NormalizedMarket(BaseModel):
     event_id: str
     market_id: str
+    condition_id: str | None
     slug: str
     question: str
     outcomes: list[str]
@@ -170,6 +204,7 @@ class NormalizedMarket(BaseModel):
         return cls(
             event_id=event_id,
             market_id=str(payload["id"]),
+            condition_id=_parse_optional_string(payload.get("conditionId")),
             slug=str(payload.get("slug") or payload.get("question") or payload["id"]),
             question=str(payload.get("question") or ""),
             outcomes=_parse_string_list(payload.get("outcomes")),
@@ -227,4 +262,190 @@ class NormalizedEvent(BaseModel):
             source=record.source,
             fetched_at=record.fetched_at,
             markets=open_markets,
+        )
+
+
+class NormalizedWalletSeed(BaseModel):
+    source: str
+    source_record_id: str
+    source_reference: str
+    discovered_at: datetime
+    wallet_address: str
+    seed_kind: str
+    display_name: str | None
+    pseudonym: str | None
+    profile_image_url: str | None
+    verified: bool | None
+    leaderboard_rank: int | None
+    leaderboard_volume: Decimal | None
+    leaderboard_pnl: Decimal | None
+    condition_id: str | None
+    market_id: str | None
+    market_slug: str | None
+    event_slug: str | None
+    token_id: str | None
+    outcome: str | None
+    outcome_index: int | None
+    position_size: Decimal | None
+
+    @classmethod
+    def from_leaderboard_entry(cls, record: RawDataLeaderboardEntry) -> NormalizedWalletSeed:
+        payload = record.payload
+        wallet_address = _normalize_wallet_address(payload.get("proxyWallet"))
+        if wallet_address is None:
+            raise ValueError("Leaderboard entry is missing proxyWallet.")
+
+        rank = _parse_optional_int(payload.get("rank"))
+        return cls(
+            source=record.source,
+            source_record_id=(
+                f"{record.source}:{record.time_period.lower()}:{record.order_by.lower()}:"
+                f"{rank or 'na'}:{wallet_address}"
+            ),
+            source_reference=(
+                f"/v1/leaderboard?timePeriod={record.time_period}&orderBy={record.order_by}"
+            ),
+            discovered_at=record.fetched_at,
+            wallet_address=wallet_address,
+            seed_kind="leaderboard",
+            display_name=_parse_optional_string(payload.get("userName")),
+            pseudonym=None,
+            profile_image_url=_parse_optional_string(payload.get("profileImage")),
+            verified=(
+                bool(payload.get("verifiedBadge"))
+                if payload.get("verifiedBadge") is not None
+                else None
+            ),
+            leaderboard_rank=rank,
+            leaderboard_volume=_parse_optional_decimal(payload.get("vol")),
+            leaderboard_pnl=_parse_optional_decimal(payload.get("pnl")),
+            condition_id=None,
+            market_id=None,
+            market_slug=None,
+            event_slug=None,
+            token_id=None,
+            outcome=None,
+            outcome_index=None,
+            position_size=None,
+        )
+
+    @classmethod
+    def from_top_holder_group(
+        cls,
+        *,
+        record: RawDataTopHolderGroup,
+        holder_payload: dict[str, Any],
+        market: NormalizedMarket | None,
+        event_slug: str | None,
+    ) -> NormalizedWalletSeed:
+        wallet_address = _normalize_wallet_address(holder_payload.get("proxyWallet"))
+        token_id = _parse_optional_string(holder_payload.get("asset"))
+        if wallet_address is None:
+            raise ValueError("Top-holder payload is missing proxyWallet.")
+
+        outcome_index = _parse_optional_int(holder_payload.get("outcomeIndex"))
+        return cls(
+            source=record.source,
+            source_record_id=(
+                f"{record.source}:{market.condition_id if market is not None else 'unknown'}:"
+                f"{token_id or 'unknown'}:{wallet_address}:{outcome_index or 'na'}"
+            ),
+            source_reference=(
+                "/holders?market="
+                + ",".join(record.condition_ids)
+            ),
+            discovered_at=record.fetched_at,
+            wallet_address=wallet_address,
+            seed_kind="top_holder",
+            display_name=_parse_optional_string(holder_payload.get("name")),
+            pseudonym=_parse_optional_string(holder_payload.get("pseudonym")),
+            profile_image_url=_parse_optional_string(
+                holder_payload.get("profileImageOptimized") or holder_payload.get("profileImage")
+            ),
+            verified=(
+                bool(holder_payload.get("verified"))
+                if holder_payload.get("verified") is not None
+                else None
+            ),
+            leaderboard_rank=None,
+            leaderboard_volume=None,
+            leaderboard_pnl=None,
+            condition_id=market.condition_id if market is not None else None,
+            market_id=market.market_id if market is not None else None,
+            market_slug=market.slug if market is not None else None,
+            event_slug=event_slug,
+            token_id=token_id,
+            outcome=(
+                market.outcomes[outcome_index]
+                if (
+                    market is not None
+                    and outcome_index is not None
+                    and outcome_index < len(market.outcomes)
+                )
+                else None
+            ),
+            outcome_index=outcome_index,
+            position_size=_parse_optional_decimal(holder_payload.get("amount")),
+        )
+
+
+class NormalizedWalletActivity(BaseModel):
+    source: str
+    source_record_id: str
+    source_reference: str
+    fetched_at: datetime
+    activity_at: datetime | None
+    wallet_address: str
+    activity_type: str
+    transaction_hash: str | None
+    condition_id: str | None
+    market_slug: str | None
+    event_slug: str | None
+    title: str | None
+    token_id: str | None
+    side: str | None
+    outcome: str | None
+    outcome_index: int | None
+    size: Decimal | None
+    usdc_size: Decimal | None
+    price: Decimal | None
+
+    @classmethod
+    def from_raw(cls, record: RawDataUserActivity) -> NormalizedWalletActivity:
+        payload = record.payload
+        wallet_address = (
+            _normalize_wallet_address(payload.get("proxyWallet"))
+            or record.wallet_address.lower()
+        )
+        activity_at = _parse_optional_datetime(payload.get("timestamp"))
+        transaction_hash = _parse_optional_string(payload.get("transactionHash"))
+        condition_id = _parse_optional_string(payload.get("conditionId"))
+        token_id = _parse_optional_string(payload.get("asset"))
+        activity_type = str(payload.get("type") or "UNKNOWN").strip().upper()
+        fallback_id = (
+            f"{wallet_address}:{activity_type}:"
+            f"{int(activity_at.timestamp()) if activity_at is not None else 'na'}:"
+            f"{condition_id or token_id or 'na'}"
+        )
+
+        return cls(
+            source=record.source,
+            source_record_id=f"{record.source}:{transaction_hash or fallback_id}",
+            source_reference=f"/activity?user={wallet_address}",
+            fetched_at=record.fetched_at,
+            activity_at=activity_at,
+            wallet_address=wallet_address,
+            activity_type=activity_type,
+            transaction_hash=transaction_hash,
+            condition_id=condition_id,
+            market_slug=_parse_optional_string(payload.get("slug")),
+            event_slug=_parse_optional_string(payload.get("eventSlug")),
+            title=_parse_optional_string(payload.get("title")),
+            token_id=token_id,
+            side=_parse_optional_string(payload.get("side")),
+            outcome=_parse_optional_string(payload.get("outcome")),
+            outcome_index=_parse_optional_int(payload.get("outcomeIndex")),
+            size=_parse_optional_decimal(payload.get("size")),
+            usdc_size=_parse_optional_decimal(payload.get("usdcSize")),
+            price=_parse_optional_decimal(payload.get("price")),
         )

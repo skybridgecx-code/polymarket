@@ -10,6 +10,7 @@
     "markets": [
       {
         "id": "516926",
+        "conditionId": "0x19ee98e348c0ccb341d1b9566fa14521566e9b2ea7aed34dc407a0ec56be36a2",
         "question": "MicroStrategy sells any Bitcoin in 2025?",
         "slug": "microstrategy-sell-any-bitcoin-in-2025",
         "outcomes": "[\"Yes\", \"No\"]",
@@ -21,6 +22,7 @@
       },
       {
         "id": "824952",
+        "conditionId": "0x9839f501564630701e7453b9c35f4da4ce18acdf89e3794f2d6b6ba0f7dbdc7f",
         "question": "MicroStrategy sells any Bitcoin by December 31, 2026?",
         "slug": "microstrategy-sell-any-bitcoin-in-2026",
         "outcomes": "[\"Yes\", \"No\"]",
@@ -33,4 +35,3 @@
     ]
   }
 ]
-

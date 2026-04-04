@@ -26,10 +26,8 @@ scan:
 	$(PYTHON) -m polymarket_arb.cli scan --limit 5
 
 wallet-backfill:
-	@echo "wallet-backfill is not implemented until Phase 3." >&2
-	@exit 1
+	$(PYTHON) -m polymarket_arb.cli wallet-backfill --limit 10
 
 api:
 	@echo "api is not implemented until Phase 5." >&2
 	@exit 1
-

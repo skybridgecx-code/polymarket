@@ -30,3 +30,31 @@ class RawClobFeeRate(BaseModel):
     fetched_at: datetime
     token_id: str
     payload: dict[str, Any]
+
+
+class RawDataLeaderboardEntry(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    source: Literal["data_api.leaderboard"]
+    fetched_at: datetime
+    time_period: str
+    order_by: str
+    payload: dict[str, Any]
+
+
+class RawDataTopHolderGroup(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    source: Literal["data_api.holders"]
+    fetched_at: datetime
+    condition_ids: list[str]
+    payload: dict[str, Any]
+
+
+class RawDataUserActivity(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    source: Literal["data_api.activity"]
+    fetched_at: datetime
+    wallet_address: str
+    payload: dict[str, Any]

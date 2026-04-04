@@ -1,0 +1,161 @@
+{
+  "events": [
+    {
+      "id": "event-1",
+      "slug": "fed-cut-september-2026",
+      "title": "Will the Fed cut in September 2026?",
+      "active": true,
+      "closed": false,
+      "markets": [
+        {
+          "id": "market-1",
+          "conditionId": "0xcondition1",
+          "question": "Fed cuts in September 2026?",
+          "slug": "fed-cut-september-2026",
+          "outcomes": "[\"Yes\", \"No\"]",
+          "clobTokenIds": "[\"token_yes_1\", \"token_no_1\"]",
+          "active": true,
+          "closed": false,
+          "acceptingOrders": true,
+          "negRisk": false
+        },
+        {
+          "id": "market-2",
+          "conditionId": "0xcondition2",
+          "question": "Fed holds in September 2026?",
+          "slug": "fed-hold-september-2026",
+          "outcomes": "[\"Yes\", \"No\"]",
+          "clobTokenIds": "[\"token_yes_2\", \"token_no_2\"]",
+          "active": true,
+          "closed": false,
+          "acceptingOrders": true,
+          "negRisk": false
+        }
+      ]
+    }
+  ],
+  "leaderboard": [
+    {
+      "rank": "1",
+      "proxyWallet": "0xAAA0000000000000000000000000000000000001",
+      "userName": "DeskOne",
+      "xUsername": "",
+      "verifiedBadge": true,
+      "vol": 1000.5,
+      "pnl": 12.75,
+      "profileImage": "https://example.com/a.png"
+    },
+    {
+      "rank": "2",
+      "proxyWallet": "0xBBB0000000000000000000000000000000000002",
+      "userName": "",
+      "xUsername": "",
+      "verifiedBadge": false,
+      "vol": 900.25,
+      "pnl": -5.5,
+      "profileImage": ""
+    }
+  ],
+  "holders": [
+    {
+      "token": "token_yes_1",
+      "holders": [
+        {
+          "proxyWallet": "0xBBB0000000000000000000000000000000000002",
+          "bio": "",
+          "asset": "token_yes_1",
+          "pseudonym": "Repeat-Desk",
+          "amount": 150.75,
+          "displayUsernamePublic": true,
+          "outcomeIndex": 0,
+          "name": "DeskTwo",
+          "profileImage": "",
+          "profileImageOptimized": "",
+          "verified": false
+        },
+        {
+          "proxyWallet": "0xCCC0000000000000000000000000000000000003",
+          "bio": "",
+          "asset": "token_yes_1",
+          "pseudonym": "Fresh-Holder",
+          "amount": 120.5,
+          "displayUsernamePublic": true,
+          "outcomeIndex": 0,
+          "name": "DeskThree",
+          "profileImage": "",
+          "profileImageOptimized": "",
+          "verified": false
+        }
+      ]
+    },
+    {
+      "token": "token_no_1",
+      "holders": [
+        {
+          "proxyWallet": "0xDDD0000000000000000000000000000000000004",
+          "bio": "",
+          "asset": "token_no_1",
+          "pseudonym": "",
+          "amount": 80.0,
+          "displayUsernamePublic": true,
+          "outcomeIndex": 1,
+          "name": "",
+          "profileImage": "",
+          "profileImageOptimized": "",
+          "verified": false
+        }
+      ]
+    }
+  ],
+  "activities_by_wallet": {
+    "0xaaa0000000000000000000000000000000000001": [
+      {
+        "proxyWallet": "0xAAA0000000000000000000000000000000000001",
+        "timestamp": 1710000000,
+        "conditionId": "0xcondition1",
+        "type": "TRADE",
+        "size": 25.5,
+        "usdcSize": 13.005,
+        "transactionHash": "0xtxaaa1",
+        "price": 0.51,
+        "asset": "token_yes_1",
+        "side": "BUY",
+        "outcomeIndex": 0,
+        "title": "Fed cuts in September 2026?",
+        "slug": "fed-cut-september-2026",
+        "eventSlug": "fed-cut-september-2026",
+        "outcome": "Yes",
+        "name": "DeskOne",
+        "pseudonym": "A",
+        "bio": "",
+        "profileImage": "",
+        "profileImageOptimized": ""
+      }
+    ],
+    "0xbbb0000000000000000000000000000000000002": [
+      {
+        "proxyWallet": "0xBBB0000000000000000000000000000000000002",
+        "timestamp": 1710000300,
+        "conditionId": "0xcondition1",
+        "type": "MERGE",
+        "size": 10,
+        "usdcSize": 10,
+        "transactionHash": "",
+        "price": 0,
+        "asset": "",
+        "side": "",
+        "outcomeIndex": 999,
+        "title": "Fed cuts in September 2026?",
+        "slug": "fed-cut-september-2026",
+        "eventSlug": "fed-cut-september-2026",
+        "outcome": "",
+        "name": "",
+        "pseudonym": "B",
+        "bio": "",
+        "profileImage": "",
+        "profileImageOptimized": ""
+      }
+    ],
+    "0xccc0000000000000000000000000000000000003": []
+  }
+}
