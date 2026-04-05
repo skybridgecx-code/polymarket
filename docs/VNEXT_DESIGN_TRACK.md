@@ -220,6 +220,42 @@ Decision gate to unlock the next phase:
 
 - approval that the promotion path is concrete enough to govern future-system design and later implementation gating without weakening the frozen baseline boundary
 
+### Phase 13G
+
+Objective:
+
+- define the data, telemetry, audit, and observability boundaries that a future execution-capable system would require before implementation could move forward
+
+Why it exists:
+
+- observability in a future execution-capable system is not a debugging convenience; it is part of the control surface required to reconstruct critical decisions, bound automation, and support operator, risk, and reconciliation workflows
+
+What it would change:
+
+- design documents only
+- explicit telemetry, audit, event, metric, and traceability requirements
+- explicit minimum observability requirements before any later implementation phase can be considered
+
+What it must not change:
+
+- the frozen baseline repo
+- Python behavior
+- routes
+- CLI commands
+- scoring logic
+- policy behavior in the frozen baseline
+- live trading behavior
+
+Validation required before moving on:
+
+- critical future-system decision paths are explicitly observable and reconstructible on paper
+- minimum telemetry, audit, and correlation requirements are concrete enough to reject under-instrumented implementation work
+- the design keeps future observability outside the frozen baseline rather than quietly widening current operator surfaces
+
+Decision gate to unlock the next phase:
+
+- approval that the observability boundary is complete enough to support future-system surface design and later implementation gating without weakening the frozen baseline trust boundary
+
 ### Phase 14
 
 Objective:
@@ -325,9 +361,10 @@ The phases above are intentionally serial:
 2. risk/control-layer design
 3. reconciliation and failure-recovery design
 4. promotion-gate and pre-live validation design
-5. separate live-capable system surface design
-6. detailed portfolio-control integration design
-7. stricter pre-live testing design
+5. data and observability boundary design
+6. separate live-capable system surface design
+7. detailed portfolio-control integration design
+8. stricter pre-live testing design
 
 No later phase should start until the prior phase has an explicit approval decision. No phase in this document authorizes implementation by default.
 
@@ -739,15 +776,121 @@ Before any live-capable proposal can even be brought forward, the minimum eviden
 - rollback conditions would be improvised during incidents instead of defined in advance
 - operator trust in the frozen baseline boundary would erode
 
+## Data, Audit, And Observability
+
+### Purpose Of This Section
+
+This section defines the future telemetry, audit, event, metric, and traceability surfaces required for any execution-capable system. The goal is to ensure that critical actions, decisions, failures, and overrides would be reconstructible rather than inferred after the fact.
+
+### Why Observability Must Be Designed Before Implementation
+
+In a future execution-capable system, observability is part of correctness and control, not just troubleshooting. If critical actions cannot be attributed, correlated, and reviewed under failure, then risk controls, reconciliation, and operator approvals would all be weaker than they appear on paper.
+
+### Required Event, Log, And Metric Surfaces
+
+At minimum, a future execution-capable system would need explicit surfaces for:
+
+- decision events for control, approval, hold, deny, disable, and escalation paths
+- order-intent and execution-attempt events
+- venue acknowledgement, reject, cancel, and fill events
+- reconciliation state changes and divergence classifications
+- retry and recovery actions
+- operator intervention and manual override events
+- kill-switch and circuit-breaker activations
+- portfolio and exposure state changes
+- system health metrics, latency metrics, and queue/backlog pressure metrics
+- structured error events for external dependency failures
+
+These surfaces should be structured and queryable rather than dependent on ad hoc plain-text logs.
+
+### Audit And Traceability Requirements
+
+Any future system would need:
+
+- durable identifiers for actions, attempts, and related external events
+- correlation IDs that connect decision, execution, recovery, and operator-review paths
+- immutable audit records for materially important state transitions
+- explicit attribution for automated decisions and human overrides
+- timestamped records with enough context to reconstruct who decided what, when, and why
+- traceability from upstream research artifact to downstream proposed or attempted action
+
+Every critical decision path in a future system should be reconstructible.
+
+### What Operators, Risk Controls, And Reconciliation Would Need To Observe
+
+Operators would need visibility into:
+
+- current control state
+- escalations, disables, and unresolved ambiguities
+- current recovery status and blocked actions
+
+Risk/control layers would need visibility into:
+
+- live exposure state
+- pending actions
+- failed or ambiguous actions
+- override and kill-switch activity
+
+Reconciliation layers would need visibility into:
+
+- venue truth versus internal state
+- checkpoint progress
+- retry eligibility
+- unresolved divergence and stale-state conditions
+
+### Retention, Correlation, And Review Expectations
+
+At design level, the future system would need:
+
+- retention long enough to support incident review and replay-backed investigation
+- correlation across decision, control, execution, and recovery events
+- reviewable event histories that survive reconnects, retries, and partial failures
+- bounded summarization layers that do not replace raw audit records
+
+Retention policy details do not need to be implemented in this phase, but the requirement for reviewable historical traces must be explicit before implementation work begins.
+
+### Minimum Observability Requirements Before Implementation
+
+Before any future implementation could move forward, the minimum observability set would include:
+
+- structured event surfaces for critical state transitions
+- correlation IDs across control, execution, and recovery paths
+- immutable audit records for high-risk decisions and overrides
+- metrics for health, latency, queueing, and failure pressure
+- traceability from upstream research artifacts into downstream decision paths
+- operator-review visibility for blocked, held, denied, retried, and escalated states
+
+### What Must Remain Outside The Frozen Baseline
+
+The frozen baseline must not be widened to become the observability system for a future execution-capable stack. That future observability surface belongs outside the current read-only repo because it would need to observe live-capable decisions, retries, external effects, and operator interventions that do not exist in the baseline.
+
+### Guardrails And Non-Goals
+
+- this is not a dashboard design phase
+- this is not a data-warehouse implementation phase
+- this is not a reason to widen the frozen baseline CLI or API
+- this is not permission to add background telemetry systems now
+- every autonomous future action must be attributable, bounded, and reviewable
+- observability must support control and correctness, not just post hoc debugging
+
+### Risks Of Under-Designing Telemetry And Observability
+
+- critical decisions would become hard to reconstruct
+- operators could lose confidence in what the system actually did
+- risk and reconciliation layers would act on incomplete or ambiguous facts
+- retries and overrides could become unauditable
+- incidents would take longer to classify and contain
+
 ## Recommended Order Of Future Work
 
 1. finish the execution-boundary definition
 2. define the risk/control layer and its authority boundaries
 3. define reconciliation and failure-recovery ownership and limits
 4. define promotion gates and pre-live validation evidence for stricter non-live testing
-5. define the separate future execution-capable system surface
-6. define detailed portfolio-control integration for that future system
-7. define stricter forward-testing boundaries before any implementation phase is proposed
+5. define the data, audit, and observability boundary for the future system
+6. define the separate future execution-capable system surface
+7. define detailed portfolio-control integration for that future system
+8. define stricter forward-testing boundaries before any implementation phase is proposed
 
 ## Candidate Future Design Areas
 
@@ -814,6 +957,19 @@ Likely scope:
 - stricter integration-style testing
 - explicit go/no-go gates between stages
 
+### Data And Observability Boundary
+
+Design goal:
+
+- define the event, metric, audit, and traceability surfaces required so a future execution-capable system can be reviewed, controlled, and reconciled under failure
+
+Likely scope:
+
+- structured event taxonomy
+- audit trail requirements
+- correlation and retention expectations
+- minimum observability gates before implementation
+
 ## Risks Of Prematurely Going Live
 
 The main risks are structural, not cosmetic:
@@ -824,7 +980,7 @@ The main risks are structural, not cosmetic:
 - replay and review are useful audit tools, but they are not execution reconciliation
 - adding live behavior too early would collapse boundaries that are currently clear and defensible
 
-## Explicit Non-Goals For Phase 13F
+## Explicit Non-Goals For Phase 13G
 
 This design track does not add:
 
