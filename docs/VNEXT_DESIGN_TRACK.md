@@ -440,6 +440,44 @@ Decision gate to unlock the next phase:
 
 - explicit approval that the first implementation candidate is narrow, non-live, and bounded enough that discussing it does not weaken the design-only trust boundary
 
+### Phase 13M
+
+Objective:
+
+- define the candidate-validation package required before the Phase 13L first implementation candidate could begin
+
+Why it exists:
+
+- defining a narrow first candidate is still insufficient unless the exact validation package is explicit; otherwise implementation pressure can substitute partial artifacts, informal review, or weak acceptance evidence for real readiness
+
+What it would change:
+
+- design documents only
+- explicit proof-artifact requirements before the first candidate could start
+- explicit review-packet, audit, and acceptance evidence expectations
+- explicit deterministic or fixture-backed check specifications for the candidate-validation package
+- explicit signoff evidence, failure conditions, promotion criteria, and blocking conditions
+
+What it must not change:
+
+- the frozen baseline repo
+- Python behavior
+- routes
+- CLI commands
+- scoring logic
+- policy behavior in the frozen baseline
+- live trading behavior
+
+Validation required before moving on:
+
+- the validation package is specific enough to reject informal or partial evidence
+- check specifications remain design-only and do not become runnable implementation tasks
+- blocking conditions remain strong enough to keep the candidate deferred even when some evidence exists
+
+Decision gate to unlock the next phase:
+
+- explicit approval that the candidate-validation package is concrete enough to prevent premature implementation of the Phase 13L candidate
+
 ### Phase 14
 
 Objective:
@@ -551,9 +589,10 @@ The phases above are intentionally serial:
 8. integration sequencing and minimal implementation-order design
 9. explicit stop/go criteria and "not yet safe" conditions
 10. first-implementation candidate definition
-11. separate live-capable system surface design
-12. detailed portfolio-control integration design
-13. stricter pre-live testing design
+11. first-candidate validation-package definition
+12. separate live-capable system surface design
+13. detailed portfolio-control integration design
+14. stricter pre-live testing design
 
 No later phase should start until the prior phase has an explicit approval decision. No phase in this document authorizes implementation by default.
 
@@ -1609,6 +1648,119 @@ If those validation expectations cannot be met in advance, implementation must n
 - the design track could silently shift from risk-aware preparation into premature system-building
 - pressure to connect to venues, credentials, or live state would arrive too early
 
+## Candidate-Validation Package Definition
+
+### Purpose Of This Section
+
+This section defines the validation package required before the Phase 13L first implementation candidate could begin. It does not authorize implementation. It defines the minimum evidence bundle that must exist first.
+
+### Why A Validation Package Is Required
+
+A narrow candidate can still be unsafe if its validation burden is vague. The future observability and audit foundation must therefore earn permission through explicit evidence, review artifacts, deterministic check specifications, and blocking conditions that remain effective even when only some of the package is complete.
+
+### Proof Artifacts Required Before Implementation Starts
+
+Before the Phase 13L candidate could begin, the validation package must contain all of the following proof artifacts:
+
+- a candidate-boundary statement proving the work remains outside the frozen baseline and outside any venue-facing surface
+- a candidate-scope statement proving the work is limited to non-live observability and audit foundations
+- an audit-surface definition covering future decision-path events, correlation keys, and immutable audit-record boundaries
+- an acceptance-specification set covering required observable behaviors and required non-behaviors
+- a signoff bundle covering governance, risk/control, reconciliation, and promotion-gate sufficiency for this candidate
+- a blocking-conditions register proving which unresolved issues still prohibit start
+
+If any artifact is missing, the package is incomplete and implementation must not start.
+
+### Review Packet, Audit, And Acceptance Evidence
+
+The package must include reviewable evidence such as:
+
+- a review packet showing why this candidate is still the narrowest acceptable first move
+- an audit evidence packet showing which future critical paths would become attributable and reconstructible if the candidate existed
+- an acceptance evidence packet showing what the candidate must prove before it could be considered valid
+- explicit evidence that broader alternatives remain deferred
+
+These artifacts must be reviewable as design records. They are not implementation outputs and they must not be treated as substitutes for later operational evidence.
+
+### Deterministic Or Fixture-Backed Check Specifications
+
+The package must define check specifications only, not runnable checks. At minimum, the specifications must describe:
+
+- deterministic structure checks for future event and audit-record contracts
+- deterministic correlation checks for future decision, approval, control, and recovery identifiers
+- deterministic non-live boundary checks proving the candidate cannot emit venue-facing actions
+- fixture-backed reconstructibility checks proving future critical paths could be replayed from retained records
+- fixture-backed negative checks proving missing correlation, missing audit linkage, or missing attribution would fail validation
+
+These specifications must be concrete enough that later implementation work could not quietly downgrade them into vague "best effort" checks.
+
+### Observability Proof Requirements
+
+The package must include proof requirements for:
+
+- reconstructibility of future critical decision paths
+- stable correlation across future governance, control, reconciliation, and recovery records
+- attribution of future automated versus manual decisions
+- retention assumptions necessary for audit review and replay-style analysis
+- explicit evidence that materially important future actions would be reviewable without relying on ad hoc operator memory
+
+If observability proof is still partial, ambiguous, or deferred, the candidate must remain blocked.
+
+### Governance, Risk, And Reconciliation Signoff Evidence
+
+The package must include explicit signoff evidence that:
+
+- governance agrees the candidate does not expand autonomy or blur approval boundaries
+- risk/control agrees the candidate is sufficient to support later bounded control review without claiming control enforcement already exists
+- reconciliation agrees the candidate is sufficient to support later bounded failure and divergence review without claiming reconciliation automation already exists
+- promotion-gate design agrees the candidate remains non-live and stage-gated
+
+Signoff evidence must be attributable and reviewable. Informal agreement or implied consent is not enough.
+
+### Candidate Failure Conditions
+
+The candidate-validation package must define failure conditions such as:
+
+- the candidate boundary leaks back into the frozen baseline repo
+- the candidate requires auth, credentials, signing, venue connectivity, or live state mutation
+- future critical paths are still not reconstructible from the proposed audit and observability surfaces
+- the candidate cannot prove clear attribution between automated and manual future decisions
+- the package weakens deferred boundaries by implying governance, control, reconciliation, or execution work is already implementation-ready
+
+If any failure condition is present, the candidate must not begin.
+
+### Promotion Criteria
+
+The package must define promotion criteria showing that:
+
+- the candidate remains the narrowest acceptable first move
+- every required proof artifact exists and is internally consistent
+- check specifications are complete enough to reject missing attribution, missing correlation, and missing non-live boundaries
+- governance, risk/control, reconciliation, and promotion-gate signoff evidence is complete
+- no red-line condition from Phase 13K is triggered
+
+Promotion here means only "eligible for later implementation discussion." It does not mean implementation is approved.
+
+### Blocking Conditions Even When Some Evidence Exists
+
+The candidate must remain blocked even if some evidence exists whenever:
+
+- any proof artifact is present but conflicts with another artifact
+- signoff evidence is incomplete across governance, risk/control, reconciliation, or promotion-gate review
+- check specifications are present but cannot prove non-live boundaries or reconstructibility
+- the package assumes later implementation will solve current ambiguity
+- broader alternatives are still implicitly coupled to the candidate
+- any unresolved issue could widen the candidate beyond observability and audit foundations
+
+Partial progress is not enough. Mixed evidence is still blocking evidence.
+
+### Risks Of Weak Candidate Validation
+
+- a narrow candidate could become a Trojan horse for broader implementation work
+- future auditability could look stronger on paper than it really is
+- governance and control layers could be asked to trust evidence that was never specified tightly enough
+- later implementation could inherit untested ambiguity in the very foundation meant to reduce ambiguity
+
 ## Recommended Order Of Future Work
 
 1. finish the execution-boundary definition
@@ -1621,9 +1773,10 @@ If those validation expectations cannot be met in advance, implementation must n
 8. define the minimal safe implementation order and dependency gates
 9. define explicit stop/go criteria and "not yet safe" conditions
 10. define the narrowest acceptable first implementation candidate
-11. define the separate future execution-capable system surface
-12. define detailed portfolio-governance integration for that future system
-13. define stricter forward-testing boundaries before any implementation phase is proposed
+11. define the candidate-validation package for that first implementation candidate
+12. define the separate future execution-capable system surface
+13. define detailed portfolio-governance integration for that future system
+14. define stricter forward-testing boundaries before any implementation phase is proposed
 
 ## Candidate Future Design Areas
 
@@ -1769,6 +1922,20 @@ Likely scope:
 - prerequisite evidence mapping from prior design phases
 - reasons broader candidates remain deferred
 
+### Candidate-Validation Package Definition
+
+Design goal:
+
+- define the proof-artifact package, review evidence, check specifications, signoff evidence, failure conditions, and promotion criteria required before the first implementation candidate could even be discussed as startable
+
+Likely scope:
+
+- candidate-boundary proof artifacts
+- review packet and audit evidence requirements
+- deterministic and fixture-backed check specifications
+- cross-layer signoff evidence
+- blocking conditions for incomplete or conflicting evidence
+
 ## Risks Of Prematurely Going Live
 
 The main risks are structural, not cosmetic:
@@ -1779,7 +1946,7 @@ The main risks are structural, not cosmetic:
 - replay and review are useful audit tools, but they are not execution reconciliation
 - adding live behavior too early would collapse boundaries that are currently clear and defensible
 
-## Explicit Non-Goals For Phase 13L
+## Explicit Non-Goals For Phase 13M
 
 This design track does not add:
 
