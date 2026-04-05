@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 10D with a final docs-only baseline freeze and handoff polish layered on top of the shipped Phase 9 system.
+The repo is currently in Phase 11 with bounded operator validation discipline layered on top of the frozen shipped baseline.
 
 ## Completed
 
@@ -148,13 +148,11 @@ Delivered:
 - failure-mode quick reference for current stale reasons and websocket no-message exit behavior
 - concise operator triage flow
 
-## Current
-
 ### Phase 10D
 
 Final baseline freeze and release/handoff polish.
 
-Deliverables:
+Delivered:
 
 - final docs consistency sweep across the shipped baseline docs
 - one clear current shipped-system summary
@@ -163,9 +161,23 @@ Deliverables:
 - one concise recommended next step after the frozen baseline
 - removal of stale wording and duplicate phase-thread guidance
 
+## Current
+
+### Phase 11
+
+Bounded operator validation discipline.
+
+Deliverables:
+
+- compact operator validation guide for the shipped commands
+- fixture-backed verification guidance where available
+- explicit validation flow for refresh, checkpoint, `/health`, paper-trade, review-packet, and replay-evaluate
+- exact sanity checks for output structures
+- docs aligned to shipped Phase 11 validation discipline
+
 ## Recommended Next Step
 
-Bounded operator validation discipline:
+After the validation guide is in place, the next step should be bounded operator validation execution:
 
 - bounded smoke-test checklist for operator flows
 - fixture-backed verification of the runbook commands

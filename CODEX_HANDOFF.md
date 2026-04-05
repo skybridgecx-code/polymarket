@@ -13,7 +13,7 @@ The repo is a shipped read-only Polymarket analytics and paper-trade research ba
 - deterministic review packet generation and replay comparison
 - read-only FastAPI operator API
 - bounded real-time refresh orchestration with checkpointing
-- operator runbook, examples, checklists, and failure-mode guidance
+- operator runbook, examples, checklists, failure-mode guidance, and validation guide
 
 Not shipped:
 
@@ -41,6 +41,10 @@ This frozen baseline does not add:
 3. [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
 4. [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
 5. [CODEX_HANDOFF.md](/Users/muhammadaatif/polymarket-arb/CODEX_HANDOFF.md)
+
+Operator validation guide:
+
+- [docs/OPERATOR_VALIDATION.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_VALIDATION.md)
 
 ## Operator Commands
 
@@ -103,6 +107,10 @@ Use the runbook for exact checkpoint inspection, operator checklists, and failur
 
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
 
+Use the validation guide for exact repeatable operator checks:
+
+- [docs/OPERATOR_VALIDATION.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_VALIDATION.md)
+
 ## Guardrails For Future Phases
 
 - stay read-only unless a future phase explicitly changes that boundary
@@ -133,7 +141,7 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 
 ## Recommended Next Step
 
-Bounded operator validation discipline:
+Bounded operator validation execution:
 
 - verify the runbook commands against fixture-backed flows
 - verify checkpoint and `/health` inspection flow

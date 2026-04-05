@@ -26,6 +26,10 @@ Operator read order:
 4. [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
 5. [CODEX_HANDOFF.md](/Users/muhammadaatif/polymarket-arb/CODEX_HANDOFF.md)
 
+Operator validation guide:
+
+- [docs/OPERATOR_VALIDATION.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_VALIDATION.md)
+
 The system explicitly does not do:
 
 - place orders
@@ -240,6 +244,10 @@ The canonical operator guide for runtime expectations, command selection, checkp
 
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
 
+The canonical validation guide for exact repeatable operator checks is:
+
+- [docs/OPERATOR_VALIDATION.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_VALIDATION.md)
+
 ## Repo Operating Rules
 
 - keep the system read-only
@@ -253,7 +261,7 @@ The canonical operator guide for runtime expectations, command selection, checkp
 
 ## Recommended Next Step
 
-After this frozen baseline, the strongest next move is bounded operator validation discipline:
+After this frozen baseline, the strongest next move is bounded operator validation execution against the shipped surface:
 
 - bounded operator smoke-test workflow
 - fixture-backed runbook verification

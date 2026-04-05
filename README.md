@@ -48,6 +48,10 @@ Operator read order:
 4. [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
 5. [CODEX_HANDOFF.md](/Users/muhammadaatif/polymarket-arb/CODEX_HANDOFF.md)
 
+Operator validation entry:
+
+- [docs/OPERATOR_VALIDATION.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_VALIDATION.md)
+
 ## Quick Start
 
 ```bash
@@ -136,6 +140,10 @@ Use the operator runbook for the exact operator workflow:
 
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
 
+Use the validation guide for exact repeatable verification steps:
+
+- [docs/OPERATOR_VALIDATION.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_VALIDATION.md)
+
 ## Module Boundaries
 
 - `src/polymarket_arb/clients/`: public read-only external clients
@@ -176,6 +184,7 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 ## Read Next
 
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
+- [docs/OPERATOR_VALIDATION.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_VALIDATION.md)
 - [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
 - [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
 - [ROADMAP.md](/Users/muhammadaatif/polymarket-arb/ROADMAP.md)

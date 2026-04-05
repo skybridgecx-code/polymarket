@@ -14,6 +14,10 @@ Operator read order:
 4. [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
 5. [CODEX_HANDOFF.md](/Users/muhammadaatif/polymarket-arb/CODEX_HANDOFF.md)
 
+Operator validation guide:
+
+- [docs/OPERATOR_VALIDATION.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_VALIDATION.md)
+
 ## Current Shipped System
 
 The frozen baseline contains eight bounded layers:
@@ -250,8 +254,9 @@ Operator note:
 Operator workflow details live in:
 
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
+- [docs/OPERATOR_VALIDATION.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_VALIDATION.md)
 
-That runbook is documentation-only. It describes how to operate the shipped system; it does not alter orchestration, scoring, review, or policy behavior.
+Those docs are documentation-only. They describe how to operate and validate the shipped system; they do not alter orchestration, scoring, review, or policy behavior.
 
 ## Explicit Non-Goals
 
