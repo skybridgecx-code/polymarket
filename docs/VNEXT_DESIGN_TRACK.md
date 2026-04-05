@@ -328,6 +328,43 @@ Decision gate to unlock the next phase:
 
 - approval that governance and override boundaries are complete enough to support future-system surface design and later implementation gating without weakening the frozen baseline trust boundary
 
+### Phase 13J
+
+Objective:
+
+- define the minimal safe implementation order for future layers, the dependencies between them, and the sequencing rules that must govern any move from design into implementation
+
+Why it exists:
+
+- implementation sequencing is a risk-control decision, not a project-management convenience; later layers must not be built on unproven control surfaces, and no future execution-capable implementation should outrun governance, observability, reconciliation, and control design
+
+What it would change:
+
+- design documents only
+- explicit dependency ordering between future layers
+- explicit gate criteria for when a layer may move from design to implementation
+- explicit identification of unsafe implementation orders
+
+What it must not change:
+
+- the frozen baseline repo
+- Python behavior
+- routes
+- CLI commands
+- scoring logic
+- policy behavior in the frozen baseline
+- live trading behavior
+
+Validation required before moving on:
+
+- implementation dependencies are concrete enough to reject unsafe build order proposals
+- required evidence for design-to-implementation transition is explicit for each future layer
+- the sequencing rules do not blur the line between the frozen baseline and any future implementation work
+
+Decision gate to unlock the next phase:
+
+- approval that the sequencing model is concrete enough to govern future implementation planning without weakening the frozen baseline trust boundary
+
 ### Phase 14
 
 Objective:
@@ -436,9 +473,10 @@ The phases above are intentionally serial:
 5. data and observability boundary design
 6. portfolio and capital-allocation design
 7. governance, approval, and override design
-8. separate live-capable system surface design
-9. detailed portfolio-control integration design
-10. stricter pre-live testing design
+8. integration sequencing and minimal implementation-order design
+9. separate live-capable system surface design
+10. detailed portfolio-control integration design
+11. stricter pre-live testing design
 
 No later phase should start until the prior phase has an explicit approval decision. No phase in this document authorizes implementation by default.
 
@@ -1181,6 +1219,118 @@ Before implementation of any future governance, approval, or override layer is a
 - operators could normalize escalation-free behavior because nobody clearly owns denial authority
 - future incidents would be harder to investigate because approval chains would be unclear
 
+## Integration Sequencing And Minimal Implementation Order
+
+### Purpose Of This Section
+
+This section defines the minimal safe implementation order for future layers and the dependency rules that must govern any move from design into implementation. Its purpose is to prevent implementation from outrunning the very control surfaces that are supposed to contain it.
+
+### Why Implementation Order Matters
+
+If implementation starts in the wrong order, later controls will be forced to retrofit authority onto already-running behavior. That is structurally unsafe. Sequencing must therefore be treated as part of the control model itself, not as scheduling convenience.
+
+### Required Dependencies Between Future Layers
+
+The future layers have hard dependencies:
+
+- the execution boundary must exist before any future execution-capable system surface is discussed as implementable
+- the risk/control layer must exist before any execution surface can be trusted with scoped autonomy
+- reconciliation and failure-recovery design must exist before any execution path can be considered safe under failure
+- promotion-gate and pre-live validation design must exist before any implementation claims can be staged credibly
+- observability must exist before controls, reconciliation, and approvals can be reviewable in practice
+- portfolio and capital-allocation design must exist before competing strategy intents can share scarce capital safely
+- governance and approval design must exist before any subsystem can be permitted to cross gates or receive override authority
+
+These dependencies are cumulative, not optional.
+
+### Minimal Safe Implementation Order
+
+The minimal safe order for any future implementation work would be:
+
+1. observability and audit foundations for future-system critical paths
+2. governance, approval, and override enforcement primitives
+3. risk/control enforcement primitives
+4. reconciliation and failure-recovery primitives
+5. portfolio and capital-allocation primitives
+6. future execution-capable system surface implementation
+7. stricter forward-testing implementation only after the earlier layers are provably active
+
+This is the minimum safe order because later layers depend on the earlier ones for reviewability, containment, and failure handling.
+
+### What Must Be Proven Before Each Layer May Move Into Implementation
+
+Before observability implementation:
+
+- critical future-system decision paths are explicitly defined
+- audit, event, and correlation requirements are approved
+
+Before governance implementation:
+
+- role boundaries and separation of duties are approved
+- override scope, expiry, and review rules are approved
+
+Before risk/control implementation:
+
+- approval authority exists for enabling or constraining control behavior
+- observability and governance surfaces are sufficient to review control actions
+
+Before reconciliation implementation:
+
+- control actions and external state transitions are observable and attributable
+- retry, checkpoint, and intervention rules are approved
+
+Before portfolio/capital-allocation implementation:
+
+- control and reconciliation layers can expose reliable current-state inputs
+- concentration, netting, and de-allocation rules are approved
+
+Before future execution-surface implementation:
+
+- all earlier layers are approved as implementable
+- the execution boundary remains explicit and enforceable
+- promotion evidence shows the non-live path is trustworthy enough to justify tighter testing
+
+Before stricter forward-testing implementation:
+
+- earlier layers are implemented with auditable outputs
+- stop conditions and rollback triggers are active and reviewable
+
+### Unsafe Implementation Orders And Why They Are Unsafe
+
+The following orders are explicitly unsafe:
+
+- implementing the future execution surface before governance or approval controls
+  - unsafe because the system could gain practical autonomy without explicit authority boundaries
+- implementing execution before observability
+  - unsafe because critical actions would not be reconstructible under failure
+- implementing execution before reconciliation
+  - unsafe because external divergence would be discovered too late
+- implementing portfolio allocation before risk/control and reconciliation
+  - unsafe because capital decisions would rely on untrusted state and weak containment
+- implementing forward-testing before earlier control layers
+  - unsafe because staged validation would exercise behavior that cannot yet be reviewed or contained
+
+### Recommended Narrow Sequence For Future Work
+
+The narrow recommended sequence is:
+
+1. keep the frozen baseline unchanged
+2. complete all design-only control surfaces
+3. approve observability and governance as the first implementation candidates
+4. approve risk/control and reconciliation implementation only after the first layer is reviewable
+5. approve portfolio/capital-allocation implementation only after control and reconciliation are trustworthy
+6. discuss future execution-surface implementation only after the earlier layers are proven
+
+Each step requires an explicit gate review before the next step starts.
+
+### Risks Of Skipping Sequence Discipline
+
+- implementation could outrun control boundaries
+- governance could become retroactive rather than authoritative
+- reconciliation could become a patch for already-shipped unsafe behavior
+- operators could be asked to trust a system they cannot review or contain
+- rollback paths would be weaker because sequencing assumptions were never made explicit
+
 ## Recommended Order Of Future Work
 
 1. finish the execution-boundary definition
@@ -1190,9 +1340,10 @@ Before implementation of any future governance, approval, or override layer is a
 5. define the data, audit, and observability boundary for the future system
 6. define the portfolio and capital-allocation boundary for the future system
 7. define governance, approval, and override authority boundaries
-8. define the separate future execution-capable system surface
-9. define detailed portfolio-governance integration for that future system
-10. define stricter forward-testing boundaries before any implementation phase is proposed
+8. define the minimal safe implementation order and dependency gates
+9. define the separate future execution-capable system surface
+10. define detailed portfolio-governance integration for that future system
+11. define stricter forward-testing boundaries before any implementation phase is proposed
 
 ## Candidate Future Design Areas
 
@@ -1299,6 +1450,19 @@ Likely scope:
 - override scope and expiry rules
 - audit and review requirements for governance actions
 
+### Integration Sequencing And Minimal Implementation Order
+
+Design goal:
+
+- define the dependency chain and minimal safe implementation order so future build work cannot outrun control, observability, reconciliation, or governance requirements
+
+Likely scope:
+
+- implementation dependency mapping
+- unsafe order examples
+- gate criteria before design becomes implementation
+- narrow stepwise sequence for future implementation candidates
+
 ## Risks Of Prematurely Going Live
 
 The main risks are structural, not cosmetic:
@@ -1309,7 +1473,7 @@ The main risks are structural, not cosmetic:
 - replay and review are useful audit tools, but they are not execution reconciliation
 - adding live behavior too early would collapse boundaries that are currently clear and defensible
 
-## Explicit Non-Goals For Phase 13I
+## Explicit Non-Goals For Phase 13J
 
 This design track does not add:
 
