@@ -478,6 +478,44 @@ Decision gate to unlock the next phase:
 
 - explicit approval that the candidate-validation package is concrete enough to prevent premature implementation of the Phase 13L candidate
 
+### Phase 13N
+
+Objective:
+
+- define, at design level only, the single implementation-readiness review packet required before a separate implementation branch for the first candidate could even be opened
+
+Why it exists:
+
+- Phase 13M defines what evidence must exist; Phase 13N defines the structured review artifact that assembles, evaluates, and issues a binding disposition on that evidence so that branch-open permission becomes a concrete, auditable governance act rather than an informal readiness claim
+
+What it would change:
+
+- design documents only
+- explicit review packet template for the first implementation candidate
+- required sections, evidence references, and artifact attachments
+- defined signoff authority, pass/fail/blocked dispositions, and branch-open conditions
+- defined deferral conditions and incomplete-packet handling rules
+
+What it must not change:
+
+- the frozen baseline repo
+- Python behavior
+- routes
+- CLI commands
+- scoring logic
+- policy behavior in the frozen baseline
+- live trading behavior
+
+Validation required before moving on:
+
+- the review packet template is complete enough that a reviewer could evaluate it without additional design work
+- pass, fail, blocked, and deferred dispositions are concrete enough to prevent informal approval
+- branch-open conditions and deferral conditions are specific enough to reject partial or self-authorizing readiness claims
+
+Decision gate to unlock the next phase:
+
+- explicit approval that the implementation-readiness review packet definition is concrete enough to govern the opening of any future implementation branch without weakening the design-only trust boundary
+
 ### Phase 14
 
 Objective:
@@ -590,9 +628,10 @@ The phases above are intentionally serial:
 9. explicit stop/go criteria and "not yet safe" conditions
 10. first-implementation candidate definition
 11. first-candidate validation-package definition
-12. separate live-capable system surface design
-13. detailed portfolio-control integration design
-14. stricter pre-live testing design
+12. implementation-readiness review packet definition
+13. separate live-capable system surface design
+14. detailed portfolio-control integration design
+15. stricter pre-live testing design
 
 No later phase should start until the prior phase has an explicit approval decision. No phase in this document authorizes implementation by default.
 
@@ -1761,6 +1800,165 @@ Partial progress is not enough. Mixed evidence is still blocking evidence.
 - governance and control layers could be asked to trust evidence that was never specified tightly enough
 - later implementation could inherit untested ambiguity in the very foundation meant to reduce ambiguity
 
+## Implementation-Readiness Review Packet
+
+### Purpose Of This Section
+
+This section defines the single review artifact that assembles, evaluates, and dispositions the Phase 13M candidate-validation evidence. Its purpose is to make the decision to open a separate implementation branch an explicit, auditable governance act rather than an informal readiness claim.
+
+### Why A Review Packet Is Required
+
+Assembling candidate-validation evidence is not the same as reviewing it. A future reviewer needs a structured artifact that presents evidence in a defined order, assigns dispositions to each element, records unresolved issues, and issues a final pass, fail, or blocked outcome. Without that structure, partial evidence could be used to justify an informal decision to proceed, and the design-only trust boundary would erode through accumulated incremental exceptions.
+
+### Review Packet Template
+
+The implementation-readiness review packet must contain the following sections in order:
+
+1. candidate identity statement: the exact candidate definition from Phase 13L, carried verbatim or by explicit reference, with confirmation it has not been modified since approval
+2. validation package evidence index: the complete list of proof artifacts defined in Phase 13M, with current status for each: present, absent, incomplete, or disputed
+3. phase prerequisite compliance record: for each of Phases 13C through 13K, the specific artifact and its approval record, confirming none remain unapproved or implicitly satisfied
+4. signoff record: explicit signoff entries for governance, risk/control, reconciliation, and promotion-gate authority; each entry must name the authorizing role from Phase 13I, the scope of the signoff, and whether any caveats or conditions were attached
+5. unresolved issues register: an explicit list of every known open issue, dispute, ambiguity, or gap; each entry must carry a classification of blocking, non-blocking, or deferred and a rationale; none may be silently omitted
+6. broader-alternatives deferral record: explicit confirmation that broader deferred candidates from Phase 13L remain deferred; if any were modified, that modification is an unresolved issue
+7. disposition: a single explicit outcome: pass, fail, or blocked
+8. branch-open conditions: present only if disposition is pass; lists the exact conditions under which a separate implementation branch may be opened and what first-act constraints would apply
+9. deferral record: present only if disposition is fail or blocked; states exactly what must change before the packet could be resubmitted
+
+### Required Sections And Evidence References
+
+Every section must be present and completed. A section may not be marked not applicable. If a section cannot be completed, that inability is itself a blocking unresolved issue.
+
+Evidence references must be:
+
+- document-level: naming the specific document and the section or revision
+- non-circular: no section may satisfy itself by referencing a claim it also makes
+- explicit: informal statements, oral agreements, and out-of-band summaries are not valid evidence references
+
+### Which Artifacts From Prior Phases Must Be Attached Or Referenced
+
+The packet must reference an approved artifact and its specific approval decision for each of the following:
+
+- Phase 13C: approved execution-boundary document
+- Phase 13D: approved risk/control-layer document
+- Phase 13E: approved reconciliation and failure-recovery document
+- Phase 13F: approved promotion-gate and pre-live validation document
+- Phase 13G: approved observability-boundary document
+- Phase 13H: approved portfolio and capital-allocation document
+- Phase 13I: approved governance, approval, and override document, including the signoff authority definitions
+- Phase 13J: approved integration sequencing document with the specific gate decision for the observability candidate
+- Phase 13K: approved stop/go criteria document with confirmation that no red-line condition is triggered for this candidate
+- Phase 13L: approved first-candidate definition document
+- Phase 13M: approved candidate-validation package document
+
+Each reference must include the specific approval decision or gate outcome, not merely the document name.
+
+### Who Must Sign What
+
+Signoff authority is defined by Phase 13I. For this packet specifically:
+
+- governance signoff: must confirm the candidate does not expand autonomy, does not self-authorize, and does not blur separation of duties; must be granted by the role Phase 13I names as governance authority
+- risk/control signoff: must confirm the candidate does not create risk decisions before the risk/control layer is implemented; must be granted by the role Phase 13I names as control authority
+- reconciliation signoff: must confirm the candidate does not create recovery actions before the reconciliation layer is implemented; must be granted by the role Phase 13I names as reconciliation authority
+- promotion-gate signoff: must confirm the candidate remains non-live and is stage-gated as described in Phase 13F; must be granted by the role Phase 13I names as promotion-gate authority
+
+No signoff may be self-granted by the party proposing implementation. No signoff may retroactively excuse conditions that do not exist at the time of review.
+
+### Pass, Fail, And Blocked Dispositions
+
+A pass disposition requires all of the following to be true:
+
+- the candidate identity is unchanged from Phase 13L approval
+- all Phase 13M proof artifacts are present and internally consistent
+- all Phase 13C through 13K prerequisites are met with approved artifacts
+- all four signoffs are present, attributable, and unconditional
+- the unresolved issues register contains zero blocking issues
+- broader alternatives remain deferred with no implicit coupling
+- no Phase 13K red-line condition is triggered
+
+A fail disposition applies when at least one of the following is true:
+
+- the candidate identity has changed without a new approval cycle
+- one or more required proof artifacts are absent
+- one or more Phase 13C through 13K prerequisites are unmet
+- signoff from one or more required authorities is absent
+- the unresolved issues register is missing or known to be incomplete
+
+A blocked disposition applies when the packet is substantially populated but at least one of the following is true:
+
+- one or more proof artifacts are present but conflict with each other or with another artifact
+- one or more signoffs carry caveats that themselves require resolution before they are unconditional
+- the unresolved issues register contains one or more blocking issues
+- evidence exists but assumes future implementation will resolve current ambiguity
+- broader alternatives are present but implicitly entangled with the candidate
+
+A blocked disposition is not a pass with conditions. It requires full resolution of every blocking issue and a complete resubmission.
+
+### How Unresolved Issues, Disputes, And Missing Evidence Must Be Recorded
+
+Every item in the unresolved issues register must carry:
+
+- a description of the issue
+- a classification: blocking, non-blocking, or deferred
+- the artifact or section it affects
+- the rationale for its classification
+- identification of who raised it
+
+Non-blocking issues do not prevent a pass if all other pass criteria are met. They must still be recorded and must not be silently dropped between submissions.
+
+Deferred issues must be explicitly scoped. An issue may only be deferred if it demonstrably does not affect the current candidate's boundary, validation package, or signoff requirements. If the scope of a deferral is unclear, the issue is blocking.
+
+Missing evidence and absent evidence are not the same. Missing means the evidence was sought and not found. Absent means it was never sought. Both are blocking.
+
+### What A Not-Approved-Yet Outcome Must Contain
+
+A not-approved-yet outcome, whether fail or blocked, must record:
+
+- the disposition explicitly stated as fail or blocked
+- the full unresolved issues register including every blocking item
+- the list of all absent or incomplete proof artifacts
+- the list of all missing or conditional signoffs
+- the exact conditions that must be met before the packet may be resubmitted
+- confirmation that broader deferred candidates remain deferred
+- a statement that no implementation branch may be opened until a later resubmission achieves a pass disposition
+
+A not-approved-yet outcome must not contain language implying implementation is close, that informal progress satisfies part of the standard, or that a partial pass is acceptable.
+
+### What Exact Conditions Would Allow A Separate Implementation Branch To Be Opened
+
+A separate implementation branch for the Phase 13L candidate may be opened only when all of the following conditions are simultaneously true:
+
+- the review packet carries a pass disposition
+- all four required signoffs are present and unconditional
+- the unresolved issues register contains zero blocking issues
+- the candidate identity is unchanged from the Phase 13L-approved definition
+- no Phase 13K red-line condition is triggered
+- broader deferred candidates are confirmed deferred with no implicit entanglement
+- the act of opening the branch is itself recorded as a governance act traceable to this packet's pass disposition
+
+No implementation branch may be opened based on a fail or blocked disposition, regardless of how much evidence is otherwise present.
+
+### What Exact Conditions Would Force Deferral Even If Much Of The Packet Is Complete
+
+Deferral is forced even if most of the packet is complete whenever any of the following is true:
+
+- any Phase 13M proof artifact is absent or internally inconsistent
+- any Phase 13C through 13K prerequisite carries an unresolved approval dispute
+- governance signoff is absent, conditional, or self-granted
+- any Phase 13K red-line condition remains triggered
+- the candidate identity has silently widened or narrowed from its Phase 13L-approved form without a new approval cycle
+- any signoff contains a caveat whose resolution has not itself been reviewed and approved by the relevant authority
+- the unresolved issues register is absent, incomplete, or contains any blocking issue
+
+In each of these cases, the correct action is to record the deferral fully in a not-approved-yet outcome, resolve the blocking issues, and resubmit the complete packet. There is no partial-pass path and no exception track.
+
+### Risks Of A Weak Review Packet
+
+- implementation could begin based on informal readiness claims rather than documented evidence
+- governance, control, and reconciliation signoffs could become performative rather than substantive
+- partial evidence could accumulate implementation pressure without meeting the full standard
+- the design-only trust boundary could erode through a sequence of individually small informal exceptions
+- a later incident could reveal that a signoff was conditional in ways that were never resolved
+
 ## Recommended Order Of Future Work
 
 1. finish the execution-boundary definition
@@ -1774,9 +1972,10 @@ Partial progress is not enough. Mixed evidence is still blocking evidence.
 9. define explicit stop/go criteria and "not yet safe" conditions
 10. define the narrowest acceptable first implementation candidate
 11. define the candidate-validation package for that first implementation candidate
-12. define the separate future execution-capable system surface
-13. define detailed portfolio-governance integration for that future system
-14. define stricter forward-testing boundaries before any implementation phase is proposed
+12. define the implementation-readiness review packet for the first candidate
+13. define the separate future execution-capable system surface
+14. define detailed portfolio-governance integration for that future system
+15. define stricter forward-testing boundaries before any implementation phase is proposed
 
 ## Candidate Future Design Areas
 
@@ -1936,6 +2135,20 @@ Likely scope:
 - cross-layer signoff evidence
 - blocking conditions for incomplete or conflicting evidence
 
+### Implementation-Readiness Review Packet
+
+Design goal:
+
+- define the single structured artifact that assembles and dispositions the candidate-validation evidence, assigns explicit pass/fail/blocked outcomes, and either permits a separate implementation branch to be opened or forces explicit deferral with a recorded rationale
+
+Likely scope:
+
+- review packet template and required sections
+- artifact attachment and evidence reference requirements
+- signoff authority and disposition criteria
+- branch-open conditions and deferral conditions
+- incomplete-packet, disputed-evidence, and not-approved-yet handling rules
+
 ## Risks Of Prematurely Going Live
 
 The main risks are structural, not cosmetic:
@@ -1946,7 +2159,7 @@ The main risks are structural, not cosmetic:
 - replay and review are useful audit tools, but they are not execution reconciliation
 - adding live behavior too early would collapse boundaries that are currently clear and defensible
 
-## Explicit Non-Goals For Phase 13M
+## Explicit Non-Goals For Phase 13N
 
 This design track does not add:
 
