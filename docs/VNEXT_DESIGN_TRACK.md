@@ -184,48 +184,51 @@ Decision gate to unlock the next phase:
 
 - approval that reconciliation and failure-recovery design is complete enough to support later promotion-gate and stricter testing design without inventing live behavior
 
+### Phase 13F
+
+Objective:
+
+- define the staged promotion path and pre-live validation gates that would be required before any future live-capable implementation is even proposed
+
+Why it exists:
+
+- promotion from the frozen baseline into execution-adjacent work must be earned through concrete evidence, not assumed from design completeness or paper-trade results
+
+What it would change:
+
+- design documents only
+- explicit validation stages
+- explicit evidence requirements, stop conditions, rollback triggers, and prohibited actions at each stage
+
+What it must not change:
+
+- the frozen baseline repo
+- Python behavior
+- routes
+- CLI commands
+- scoring logic
+- policy behavior in the frozen baseline
+- live trading behavior
+
+Validation required before moving on:
+
+- staged promotion requirements are concrete enough to reject unsafe advancement
+- every stage has explicit required evidence and rollback triggers
+- shadow-mode or dry-run stages remain explicitly non-live in this design phase
+
+Decision gate to unlock the next phase:
+
+- approval that the promotion path is concrete enough to govern future-system design and later implementation gating without weakening the frozen baseline boundary
+
 ### Phase 14
 
 Objective:
 
-- design the promotion gate from the frozen baseline to stricter operator release discipline
+- design the live-capable system surface that would exist outside the frozen baseline boundary once promotion gates and control layers are already defined
 
 Why it exists:
 
-- the current baseline is validated, but promotion criteria for any tighter execution-adjacent environment are not yet formalized
-
-What it would change:
-
-- operator release criteria
-- promotion thresholds
-- documented go/no-go rules for advancing the frozen baseline into stricter testing and review discipline, not into live execution
-
-What it must not change:
-
-- execution behavior
-- auth boundaries
-- order placement boundaries
-- live-capable system behavior
-
-Validation required before moving on:
-
-- explicit promotion criteria are documented
-- rejection criteria for unsafe promotion are documented
-- operator validation execution requirements are concrete and reviewable
-
-Decision gate to unlock the next phase:
-
-- approval that promotion criteria are complete enough to support later future-system and stricter-testing design without weakening the frozen baseline
-
-### Phase 15
-
-Objective:
-
-- design the live-capable system surface that would exist outside the frozen baseline boundary
-
-Why it exists:
-
-- once the boundary is defined, the future execution-capable system still needs its own owned surface and responsibilities
+- once the boundary, control, recovery, and promotion layers are defined, the future execution-capable system still needs its own owned surface and responsibilities
 
 What it would change:
 
@@ -247,9 +250,9 @@ Validation required before moving on:
 
 Decision gate to unlock the next phase:
 
-- approval that the separate future system surface is clear enough to support later forward-testing design and eventual implementation gating without collapsing trust boundaries
+- approval that the separate future system surface is clear enough to support later detailed portfolio-control integration without collapsing trust boundaries
 
-### Phase 16
+### Phase 15
 
 Objective:
 
@@ -281,7 +284,7 @@ Decision gate to unlock the next phase:
 
 - approval that the control layer is detailed enough to support stricter forward-testing design and eventual implementation gating
 
-### Phase 17
+### Phase 16
 
 Objective:
 
@@ -299,9 +302,9 @@ What it would change:
 
 What it must not change:
 
-- current baseline behavior
-- current read-only operator surface
-- live trading boundaries
+- current baseline policy behavior
+- current checkpoint model
+- current paper-trade outputs
 
 Validation required before moving on:
 
@@ -309,7 +312,7 @@ Validation required before moving on:
 - stage-exit requirements are documented
 - forward-testing boundaries remain explicitly separate from live order submission approval
 
-Decision gate to unlock any later implementation phase:
+Decision gate to unlock the next phase:
 
 - separate approval that the design track is complete enough to justify discussing implementation
 - separate approval that live-capable work is allowed at all
@@ -321,9 +324,10 @@ The phases above are intentionally serial:
 1. execution-boundary design
 2. risk/control-layer design
 3. reconciliation and failure-recovery design
-4. promotion gate design
+4. promotion-gate and pre-live validation design
 5. separate live-capable system surface design
-6. stricter pre-live testing design
+6. detailed portfolio-control integration design
+7. stricter pre-live testing design
 
 No later phase should start until the prior phase has an explicit approval decision. No phase in this document authorizes implementation by default.
 
@@ -629,14 +633,121 @@ Before implementation of any future reconciliation or failure-recovery layer is 
 - manual intervention could happen too late because automated recovery remained active too long
 - incident response would be slowed by ambiguous ownership and missing checkpoints
 
+## Promotion And Pre-Live Validation
+
+### Purpose Of This Section
+
+This section defines how future work would earn the right to advance from the frozen baseline into stricter testing stages. It exists to make promotion evidence explicit before any live-capable implementation is even proposed.
+
+### Why Staged Promotion Is Required
+
+The frozen baseline is trusted because it is bounded, read-only, and inspectable. A future system would introduce materially different failure modes, permissions, and external consequences. That step cannot be justified by intuition, isolated demos, or paper-trade success alone. Promotion must be staged, evidence-backed, and reversible.
+
+### Proposed Validation Stages
+
+The future promotion path would remain non-live unless a later phase explicitly changes that boundary. At minimum, the stages would be:
+
+1. fixture-backed verification
+2. deterministic replay validation
+3. stricter paper-trade or simulation validation
+4. shadow-mode or dry-run validation in a still-non-live environment
+
+### Gate Criteria For Each Stage
+
+#### Stage 1: Fixture-Backed Verification
+
+Required evidence:
+
+- deterministic fixtures cover expected success, rejection, and failure-containment paths
+- output contracts remain stable and reviewable
+- acceptance checks are repeatable without uncontrolled network dependence
+
+Stop conditions and rollback triggers:
+
+- fixture drift becomes unexplained
+- deterministic checks stop being reproducible
+- critical rejected or weak paths are no longer explicit
+
+#### Stage 2: Deterministic Replay Validation
+
+Required evidence:
+
+- replay artifacts can reconstruct decisions and mismatches from recorded facts
+- divergence cases are observable and attributable
+- replay-based failure classification is stable enough to support operator review
+
+Stop conditions and rollback triggers:
+
+- replay cannot explain discrepancies consistently
+- key failure classes cannot be replayed from retained records
+- auditability weakens under edge-case scenarios
+
+#### Stage 3: Stricter Paper-Trade Or Simulation Validation
+
+Required evidence:
+
+- simulation-stage controls, rejection paths, and policy decisions remain explicit under higher-stress scenarios
+- promotion metrics are defined and reviewed rather than improvised
+- operator review packets remain sufficient to explain why a candidate stage result was allowed, held, or denied
+
+Stop conditions and rollback triggers:
+
+- policy or simulation outputs become hard to interpret
+- review or replay artifacts stop supporting reliable operator judgment
+- simulated edge or fill assumptions begin to drive promotion without enough evidence
+
+#### Stage 4: Shadow-Mode Or Dry-Run Validation
+
+Required evidence:
+
+- the future system can produce proposed decisions without creating live side effects
+- proposed actions can be compared against external reality without order placement
+- reconciliation, control, and promotion evidence remain reviewable under real-time conditions
+
+Stop conditions and rollback triggers:
+
+- shadow-mode outputs cannot be reconciled reliably
+- operator review becomes too ambiguous to approve advancement
+- dry-run behavior suggests pressure to bypass non-live boundaries
+
+### What Must Remain Prohibited Until Those Gates Are Passed
+
+Until the gates above are passed and separately approved:
+
+- no live order submission
+- no auth or private key handling in the frozen baseline repo
+- no widening of current CLI or API surfaces into execution behavior
+- no reinterpretation of paper-trade results as executable orders
+- no use of review or replay artifacts as substitutes for live reconciliation controls
+
+### Minimum Evidence Before Any Live-Capable Proposal
+
+Before any live-capable proposal can even be brought forward, the minimum evidence set would include:
+
+- stable fixture-backed verification coverage
+- deterministic replay evidence for core mismatch and failure classes
+- reviewed paper-trade and policy evidence under stricter scenarios
+- documented control, reconciliation, and promotion stop conditions
+- operator-reviewed shadow-mode or dry-run evidence that remains explicitly non-live
+- explicit approval that the design track has satisfied its pre-implementation evidence burden
+
+### Risks Of Skipping Stages
+
+- implementation pressure would outrun evidence
+- paper-trade success could be mistaken for execution readiness
+- failure recovery and control designs would be tested too late
+- rollback conditions would be improvised during incidents instead of defined in advance
+- operator trust in the frozen baseline boundary would erode
+
 ## Recommended Order Of Future Work
 
 1. finish the execution-boundary definition
 2. define the risk/control layer and its authority boundaries
 3. define reconciliation and failure-recovery ownership and limits
-4. define promotion gates for stricter non-live testing and operator release discipline
+4. define promotion gates and pre-live validation evidence for stricter non-live testing
 5. define the separate future execution-capable system surface
-6. define stricter pre-live testing before any implementation phase is proposed
+6. define detailed portfolio-control integration for that future system
+7. define stricter forward-testing boundaries before any implementation phase is proposed
 
 ## Candidate Future Design Areas
 
@@ -713,7 +824,7 @@ The main risks are structural, not cosmetic:
 - replay and review are useful audit tools, but they are not execution reconciliation
 - adding live behavior too early would collapse boundaries that are currently clear and defensible
 
-## Explicit Non-Goals For Phase 13E
+## Explicit Non-Goals For Phase 13F
 
 This design track does not add:
 
