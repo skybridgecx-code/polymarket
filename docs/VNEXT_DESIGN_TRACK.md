@@ -402,6 +402,44 @@ Decision gate to unlock the next phase:
 
 - explicit approval that the vNext track has objective stop/go criteria strong enough to keep the branch design-only until evidence, not momentum, supports a later implementation discussion
 
+### Phase 13L
+
+Objective:
+
+- define, at criteria level only, the narrowest acceptable first implementation candidate for the vNext track and the exact boundaries that would keep that candidate contained
+
+Why it exists:
+
+- once stop/go criteria exist, the next risk is drifting into an overly broad first implementation target; the first candidate must therefore be defined narrowly enough that failure stays contained and broader execution-capable work remains deferred
+
+What it would change:
+
+- design documents only
+- explicit definition of the narrowest acceptable first implementation candidate
+- explicit touch and no-touch boundaries for that candidate
+- explicit prerequisite evidence from Phases 13C through 13K
+- explicit validation expectations before even that narrow candidate could begin
+
+What it must not change:
+
+- the frozen baseline repo
+- Python behavior
+- routes
+- CLI commands
+- scoring logic
+- policy behavior in the frozen baseline
+- live trading behavior
+
+Validation required before moving on:
+
+- the first-candidate definition is narrow enough to reject broader or execution-adjacent proposals
+- touch and no-touch boundaries are concrete enough to keep the candidate outside the frozen baseline
+- validation expectations remain criteria only and do not drift into implementation planning
+
+Decision gate to unlock the next phase:
+
+- explicit approval that the first implementation candidate is narrow, non-live, and bounded enough that discussing it does not weaken the design-only trust boundary
+
 ### Phase 14
 
 Objective:
@@ -512,9 +550,10 @@ The phases above are intentionally serial:
 7. governance, approval, and override design
 8. integration sequencing and minimal implementation-order design
 9. explicit stop/go criteria and "not yet safe" conditions
-10. separate live-capable system surface design
-11. detailed portfolio-control integration design
-12. stricter pre-live testing design
+10. first-implementation candidate definition
+11. separate live-capable system surface design
+12. detailed portfolio-control integration design
+13. stricter pre-live testing design
 
 No later phase should start until the prior phase has an explicit approval decision. No phase in this document authorizes implementation by default.
 
@@ -1462,6 +1501,114 @@ If a proposed first candidate does not satisfy all of those criteria, it is not 
 - reconciliation would be forced to rationalize unsafe behavior instead of containing it
 - the frozen baseline trust boundary would erode because future-system pressure would leak back into the research repo
 
+## First-Implementation Candidate Definition
+
+### Purpose Of This Section
+
+This section defines the narrowest acceptable first implementation candidate for the vNext track. It exists to make the safest first move explicit without authorizing implementation and without widening the candidate into a disguised execution project.
+
+### Why A Narrow First Candidate Is Required
+
+The first implementation candidate must be narrow enough that failure remains well-contained, review remains practical, and no external market effect is possible. If the first candidate is too broad, it will outrun the governance, observability, reconciliation, and control work that is supposed to contain it.
+
+### The Narrowest Acceptable First Candidate
+
+At criteria level only, the narrowest acceptable first implementation candidate is:
+
+- a future-system observability and audit foundation that remains non-live, separate from the frozen baseline, and incapable of emitting venue-facing actions
+
+This candidate is narrower and safer than an execution surface, a control engine, a reconciliation engine, or a portfolio-allocation engine because it can improve reviewability without creating market-side effects.
+
+### What It May Touch
+
+The candidate may touch only future-system support surfaces such as:
+
+- structured event definitions for future critical decision paths
+- correlation and traceability primitives for future-system records
+- immutable audit-record boundaries for future approvals, control actions, and recovery-relevant state changes
+- bounded review-oriented telemetry contracts for a future non-live system
+- non-live validation hooks needed to prove that the future observability surface is attributable and reconstructible
+
+It may exist only outside the frozen baseline repo and only as a control-supporting foundation for later non-live work.
+
+### What It Must Not Touch
+
+The candidate must not touch:
+
+- the frozen baseline repo or its current CLI, API, services, or models
+- auth, signing, credentials, or private key handling
+- order-intent creation, order submission, cancelation, replace logic, or venue adapters
+- live position mutation or exposure mutation
+- risk-control decisions beyond recording future-system facts
+- reconciliation actions beyond future auditability and traceability contracts
+- strategy logic, scoring logic, or portfolio allocation logic
+- UI surfaces or background worker expansion
+
+If a proposal needs any of those surfaces, it is not the narrowest acceptable first candidate.
+
+### Prerequisite Evidence From Phases 13C Through 13K
+
+Before even this narrow candidate is discussable, all of the following must already be satisfied:
+
+- Phase 13C:
+  - the execution boundary is approved and there is no ambiguity about what remains inside the frozen baseline
+- Phase 13D:
+  - the risk/control layer is designed well enough that future observability requirements are anchored to explicit control decisions
+- Phase 13E:
+  - reconciliation and failure-recovery design is explicit enough to know which state transitions must be reconstructible
+- Phase 13F:
+  - promotion-gate design is explicit enough to keep the candidate non-live and stage-gated
+- Phase 13G:
+  - observability requirements are approved at design level, including audit, event, metric, and correlation expectations
+- Phase 13H:
+  - portfolio and capital-allocation design is explicit enough to know which future allocation decisions would require auditability
+- Phase 13I:
+  - governance and override boundaries are approved so audit trails have explicit authority semantics
+- Phase 13J:
+  - sequencing approval confirms that observability can be the first implementation candidate without being overtaken by broader system work
+- Phase 13K:
+  - stop/go criteria confirm there are no unresolved "not yet safe" blockers for this specific narrow candidate
+
+If any prerequisite remains incomplete, disputed, or implicit, the candidate must remain deferred.
+
+### Why This Candidate Is Safer Than Broader Alternatives
+
+This candidate is safer because:
+
+- it cannot create external market effects
+- it does not require auth, signing, or venue connectivity
+- it supports later governance, control, reconciliation, and promotion evidence instead of bypassing them
+- failure in this candidate would reveal missing reviewability without directly increasing execution autonomy
+
+Broader alternatives are explicitly deferred, including:
+
+- governance enforcement primitives
+- risk/control enforcement primitives
+- reconciliation and recovery primitives
+- portfolio/capital-allocation primitives
+- any future execution-surface implementation
+
+Those alternatives are deferred because they can materially constrain or enable future behavior, and they depend on an already-proven observability and audit foundation.
+
+### Validation Expectations Before Implementation Could Begin
+
+Before this candidate could begin, the validation expectations must include:
+
+- explicit approval that the candidate is still non-live and outside the frozen baseline
+- explicit proof that the candidate cannot emit or trigger venue-facing actions
+- explicit proof that the candidate records future critical paths in a way operators could reconstruct
+- explicit rollback criteria if the candidate begins to widen into execution, control, or reconciliation behavior
+- explicit review that broader deferred candidates remain deferred
+
+If those validation expectations cannot be met in advance, implementation must not start.
+
+### Risks Of Choosing A Broader First Candidate
+
+- broader candidates would inherit weak reviewability and weak auditability from day one
+- control or reconciliation behavior could appear before its evidence surface exists
+- the design track could silently shift from risk-aware preparation into premature system-building
+- pressure to connect to venues, credentials, or live state would arrive too early
+
 ## Recommended Order Of Future Work
 
 1. finish the execution-boundary definition
@@ -1473,9 +1620,10 @@ If a proposed first candidate does not satisfy all of those criteria, it is not 
 7. define governance, approval, and override authority boundaries
 8. define the minimal safe implementation order and dependency gates
 9. define explicit stop/go criteria and "not yet safe" conditions
-10. define the separate future execution-capable system surface
-11. define detailed portfolio-governance integration for that future system
-12. define stricter forward-testing boundaries before any implementation phase is proposed
+10. define the narrowest acceptable first implementation candidate
+11. define the separate future execution-capable system surface
+12. define detailed portfolio-governance integration for that future system
+13. define stricter forward-testing boundaries before any implementation phase is proposed
 
 ## Candidate Future Design Areas
 
@@ -1608,6 +1756,19 @@ Likely scope:
 - "do not proceed" signals for unresolved ambiguity
 - criteria-only definition of an acceptable first implementation candidate
 
+### First-Implementation Candidate Definition
+
+Design goal:
+
+- define the safest first non-live implementation candidate and the exact boundaries that keep it narrower than execution, control, reconciliation, or portfolio behavior
+
+Likely scope:
+
+- criteria-only candidate definition
+- explicit touch and no-touch boundaries
+- prerequisite evidence mapping from prior design phases
+- reasons broader candidates remain deferred
+
 ## Risks Of Prematurely Going Live
 
 The main risks are structural, not cosmetic:
@@ -1618,7 +1779,7 @@ The main risks are structural, not cosmetic:
 - replay and review are useful audit tools, but they are not execution reconciliation
 - adding live behavior too early would collapse boundaries that are currently clear and defensible
 
-## Explicit Non-Goals For Phase 13K
+## Explicit Non-Goals For Phase 13L
 
 This design track does not add:
 
