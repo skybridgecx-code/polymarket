@@ -256,6 +256,42 @@ Decision gate to unlock the next phase:
 
 - approval that the observability boundary is complete enough to support future-system surface design and later implementation gating without weakening the frozen baseline trust boundary
 
+### Phase 13H
+
+Objective:
+
+- define the future portfolio and capital-allocation layer that would sit outside the frozen baseline and govern capital usage across strategies and opportunity groups
+
+Why it exists:
+
+- a future execution-capable system would need an explicit layer that decides how much capital can be allocated, where it can be allocated, how competing intents are resolved, and when de-allocation or rebalance pressure must override strategy appetite
+
+What it would change:
+
+- design documents only
+- explicit portfolio and capital-allocation ownership
+- explicit allocation, exposure-budgeting, limit, netting, and conflict-resolution rules at design level
+
+What it must not change:
+
+- the frozen baseline repo
+- Python behavior
+- routes
+- CLI commands
+- scoring logic
+- policy behavior in the frozen baseline
+- live trading behavior
+
+Validation required before moving on:
+
+- capital-allocation authority and non-goals are explicit
+- portfolio-level and strategy-level limit boundaries are concrete enough to reject under-specified implementation work
+- the design keeps portfolio allocation outside the frozen baseline rather than reinterpreting paper-trade artifacts as live capital controls
+
+Decision gate to unlock the next phase:
+
+- approval that the portfolio and capital-allocation boundary is complete enough to support future-system surface design and later implementation gating without weakening the frozen baseline trust boundary
+
 ### Phase 14
 
 Objective:
@@ -292,17 +328,17 @@ Decision gate to unlock the next phase:
 
 Objective:
 
-- refine portfolio control integration and capital-governance detail for any future live-capable system
+- refine portfolio-governance sequencing and cross-component integration detail for any future live-capable system
 
 Why it exists:
 
-- once high-level control ownership is defined, the future system still needs a narrower design for how portfolio-level controls, capital governance, and escalation sequencing fit around that owned control layer
+- once portfolio allocation ownership is defined, the future system still needs a narrower design for how allocation decisions, escalation sequencing, and cross-component control interactions fit around that owned layer
 
 What it would change:
 
-- design for portfolio allocation controls
 - limit evaluation order across scopes
-- escalation sequencing between automated holds, kill switches, and operator approval boundaries
+- escalation sequencing between allocation pressure, automated holds, kill switches, and operator approval boundaries
+- cross-component handoff rules between strategy intents, portfolio controls, and future execution services
 
 What it must not change:
 
@@ -312,7 +348,7 @@ What it must not change:
 
 Validation required before moving on:
 
-- portfolio-level control interactions are documented
+- portfolio-level allocation and control interactions are documented
 - capital-governance escalation rules are documented
 - operator override and approval semantics remain documented as design only
 
@@ -362,9 +398,10 @@ The phases above are intentionally serial:
 3. reconciliation and failure-recovery design
 4. promotion-gate and pre-live validation design
 5. data and observability boundary design
-6. separate live-capable system surface design
-7. detailed portfolio-control integration design
-8. stricter pre-live testing design
+6. portfolio and capital-allocation design
+7. separate live-capable system surface design
+8. detailed portfolio-control integration design
+9. stricter pre-live testing design
 
 No later phase should start until the prior phase has an explicit approval decision. No phase in this document authorizes implementation by default.
 
@@ -881,6 +918,140 @@ The frozen baseline must not be widened to become the observability system for a
 - retries and overrides could become unauditable
 - incidents would take longer to classify and contain
 
+## Portfolio And Capital Allocation
+
+### Purpose Of This Section
+
+This section defines the future portfolio and capital-allocation layer that would decide how capital is budgeted, constrained, netted, and reallocated across strategies, markets, events, and themes in any later execution-capable system.
+
+### Why This Layer Must Be Separate From The Frozen Baseline
+
+The frozen baseline can score opportunities, simulate plans, and emit policy decisions on simulated rows, but it does not own live capital, real exposure, or cross-strategy portfolio tradeoffs. A future capital-allocation layer would govern scarce capital and materially constrain external actions, so it must remain outside the frozen baseline repo and outside the current paper-trade path.
+
+### What This Layer Would Own
+
+The future layer would own:
+
+- capital allocation across strategies and opportunity groups
+- exposure budgeting across portfolio, strategy, market, event, and theme scopes
+- gross exposure limits
+- net exposure limits
+- concentration limits across markets, events, and themes
+- conflict resolution between competing strategy intents
+- design-level netting and offset recognition rules
+- rebalance and de-allocation triggers
+- capital reservation and release rules
+
+This layer would decide what fraction of available capital may be committed, where it may be committed, and when existing allocations must be reduced or blocked.
+
+### Capital Allocation And Exposure Budgeting Responsibilities
+
+At design level, the future layer would need explicit rules for:
+
+- how capital is partitioned across strategies or opportunity groups
+- how unused capital becomes available for reallocation
+- how exposure budgets are enforced before additional intent is approved
+- how gross and net exposures are measured consistently across scopes
+- how strategy-level limits interact with portfolio-level ceilings
+
+The layer must make allocation pressure explicit rather than letting each strategy assume independent capital availability.
+
+### Concentration Limits And Conflict Resolution
+
+The future layer would need explicit handling for:
+
+- concentration limits across highly related markets
+- concentration limits across events with shared drivers
+- concentration limits across themes or narratives
+- competing strategy intents that target overlapping exposure
+- conflicts between a high-conviction strategy and a tighter portfolio-level cap
+
+Conflict resolution must be rule-based and reviewable. It cannot rely on whichever strategy reaches the system first.
+
+### Netting And Offset Recognition
+
+At design level, the future layer would need explicit rules for:
+
+- when exposures are considered offsetting
+- when apparent offsets should not be treated as true netting
+- how partially overlapping exposures are counted
+- how offset recognition interacts with gross limits, net limits, and concentration limits
+
+Netting rules must stay conservative enough that false offsets do not hide actual portfolio risk.
+
+### Rebalance And De-Allocation Triggers
+
+The future layer would need explicit rebalance or de-allocation triggers such as:
+
+- breach or near-breach of gross or net exposure budgets
+- concentration thresholds
+- operator-imposed reductions
+- kill-switch or circuit-breaker pressure from other control layers
+- loss of confidence in a strategy, market, or venue state
+- unresolved reconciliation ambiguity that makes current allocations unsafe
+
+Any rebalance or de-allocation action would need to remain bounded, attributable, and reviewable.
+
+### Inputs This Layer May Consume
+
+The future layer may consume only explicit, reviewable inputs such as:
+
+- upstream research outputs and grouped opportunity artifacts
+- future strategy-intent proposals from a separate execution-capable system
+- current portfolio and exposure state
+- concentration and theme-mapping definitions
+- recognized offset and netting rules
+- risk-control states such as holds, disables, and kill switches
+- reconciliation states that make some capital unavailable or uncertain
+- operator approvals, denials, or temporary overrides
+
+### Bounded Decisions This Layer May Emit
+
+The future layer may emit only bounded allocation decisions such as:
+
+- maximum capital or notional available to a strategy or opportunity group
+- approval, reduction, or denial of additional allocation
+- allocation freezes for specific strategies, markets, events, or themes
+- forced de-allocation or rebalance requirements
+- recognition or non-recognition of allowed offsets under predefined rules
+- escalation requirements when conflicts cannot be resolved automatically
+
+Every emitted decision must be attributable, bounded, and reviewable.
+
+### What It Must Not Be Allowed To Do Without Separate Controls
+
+The future portfolio layer must not be allowed to:
+
+- generate strategy ideas
+- bypass risk-control decisions
+- bypass auth, signing, or execution approval boundaries
+- expand portfolio limits automatically without explicit approved rules
+- assume netting where the rule set is incomplete
+- allocate capital based on hidden heuristics without auditability
+- treat simulated paper-trade performance as sufficient evidence for live allocation
+
+### Prerequisites Before Any Implementation Is Allowed
+
+Before implementation of any future portfolio and capital-allocation layer is allowed, all of the following must be true:
+
+- the execution boundary is approved
+- the risk/control layer is approved
+- the reconciliation layer is approved
+- promotion and pre-live validation gates are approved
+- observability and audit requirements are approved
+- portfolio scopes, limit definitions, and netting rules are documented
+- override and escalation authority are documented
+- separate approval is granted to move from design-only work into implementation work
+
+### Risks Of Under-Designing Portfolio Allocation And Exposure Control
+
+- multiple strategies could unknowingly compete for the same scarce capital
+- gross and net exposure could drift beyond intended limits
+- false offset recognition could hide correlated risk
+- concentration could build across related markets or themes without clear visibility
+- de-allocation pressure could arrive too late because no rule owned it
+- operator review would weaken because capital decisions would appear discretionary rather than rule-based
+
 ## Recommended Order Of Future Work
 
 1. finish the execution-boundary definition
@@ -888,9 +1059,10 @@ The frozen baseline must not be widened to become the observability system for a
 3. define reconciliation and failure-recovery ownership and limits
 4. define promotion gates and pre-live validation evidence for stricter non-live testing
 5. define the data, audit, and observability boundary for the future system
-6. define the separate future execution-capable system surface
-7. define detailed portfolio-control integration for that future system
-8. define stricter forward-testing boundaries before any implementation phase is proposed
+6. define the portfolio and capital-allocation boundary for the future system
+7. define the separate future execution-capable system surface
+8. define detailed portfolio-governance integration for that future system
+9. define stricter forward-testing boundaries before any implementation phase is proposed
 
 ## Candidate Future Design Areas
 
@@ -970,6 +1142,20 @@ Likely scope:
 - correlation and retention expectations
 - minimum observability gates before implementation
 
+### Portfolio And Capital Allocation
+
+Design goal:
+
+- define how a future system would allocate scarce capital, budget exposure, recognize offsets conservatively, and resolve conflicts between competing strategy intents
+
+Likely scope:
+
+- portfolio and strategy allocation boundaries
+- gross and net exposure budgeting
+- concentration limits
+- conflict-resolution rules
+- rebalance and de-allocation triggers
+
 ## Risks Of Prematurely Going Live
 
 The main risks are structural, not cosmetic:
@@ -980,7 +1166,7 @@ The main risks are structural, not cosmetic:
 - replay and review are useful audit tools, but they are not execution reconciliation
 - adding live behavior too early would collapse boundaries that are currently clear and defensible
 
-## Explicit Non-Goals For Phase 13G
+## Explicit Non-Goals For Phase 13H
 
 This design track does not add:
 
