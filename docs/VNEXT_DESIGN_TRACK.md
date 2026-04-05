@@ -516,6 +516,45 @@ Decision gate to unlock the next phase:
 
 - explicit approval that the implementation-readiness review packet definition is concrete enough to govern the opening of any future implementation branch without weakening the design-only trust boundary
 
+### Phase 13O
+
+Objective:
+
+- define, at design level only, the exact conditions and workflow required to open a separate implementation branch for the first acceptable candidate, without beginning implementation
+
+Why it exists:
+
+- Phase 13N defines when a review packet may issue a pass disposition; Phase 13O defines the exact workflow that must be followed when that pass disposition exists so that the act of opening an implementation branch is itself a governed, traceable, bounded step rather than an informal next action
+
+What it would change:
+
+- design documents only
+- explicit pre-conditions that must be satisfied before a branch may be opened
+- explicit branch lineage, fork-point, and scope constraints
+- explicit touch and no-touch rules for the implementation branch
+- explicit stop, deferral, and branch-closure triggers
+- explicit supervisor and reviewer gating requirements before any implementation begins
+
+What it must not change:
+
+- the frozen baseline repo
+- Python behavior
+- routes
+- CLI commands
+- scoring logic
+- policy behavior in the frozen baseline
+- live trading behavior
+
+Validation required before moving on:
+
+- branch-open conditions are concrete enough to reject informal or self-authorized branch creation
+- touch and no-touch rules are specific enough to keep the implementation branch outside the frozen baseline
+- stop and closure triggers are defined tightly enough to contain scope drift before it compounds
+
+Decision gate to unlock the next phase:
+
+- explicit approval that the branch-opening criteria and review workflow are complete enough to govern any future implementation branch without weakening the design-only trust boundary
+
 ### Phase 14
 
 Objective:
@@ -629,9 +668,10 @@ The phases above are intentionally serial:
 10. first-implementation candidate definition
 11. first-candidate validation-package definition
 12. implementation-readiness review packet definition
-13. separate live-capable system surface design
-14. detailed portfolio-control integration design
-15. stricter pre-live testing design
+13. implementation-branch opening criteria and review workflow
+14. separate live-capable system surface design
+15. detailed portfolio-control integration design
+16. stricter pre-live testing design
 
 No later phase should start until the prior phase has an explicit approval decision. No phase in this document authorizes implementation by default.
 
@@ -1959,6 +1999,140 @@ In each of these cases, the correct action is to record the deferral fully in a 
 - the design-only trust boundary could erode through a sequence of individually small informal exceptions
 - a later incident could reveal that a signoff was conditional in ways that were never resolved
 
+## Implementation-Branch Opening Criteria And Review Workflow
+
+### Purpose Of This Section
+
+This section defines the exact conditions, workflow, and constraints that govern the opening of a separate implementation branch for the Phase 13L first acceptable candidate. It does not authorize implementation. It defines the governance acts and checks that must precede and bound any future implementation branch.
+
+### Why A Governed Branch-Open Workflow Is Required
+
+A pass disposition from the Phase 13N review packet is a necessary condition for opening an implementation branch. It is not sufficient by itself. The act of opening the branch is itself a governance decision that must be traceable, bounded, and reviewable. Without an explicit workflow, a pass disposition could be used to justify an unscoped or self-authorized branch creation that drifts beyond the first candidate's defined boundaries.
+
+### Pre-Conditions Before A Branch May Be Opened
+
+All of the following must be simultaneously true before a separate implementation branch may be opened:
+
+- the Phase 13N review packet carries a pass disposition, recorded in an auditable artifact
+- all four signoffs from the Phase 13N packet are present, unconditional, and attributable to the Phase 13I-defined authorities
+- the Phase 13L candidate definition is unchanged from its approved form; any modification requires a new approval cycle before the branch may be opened
+- no Phase 13K red-line condition is triggered
+- broader deferred candidates from Phase 13L remain deferred and are not entangled with the proposed branch
+- the branch-open act itself has been reviewed and explicitly approved as a governance step by the Phase 13I governance authority
+- the Phase 13N review packet and its pass disposition are referenced explicitly in the branch-open governance record
+
+No implementation branch may be opened based on anticipated readiness, informal confirmation, or progress toward these conditions rather than their full satisfaction.
+
+### Which Approvals And Review Packet Outcomes Must Already Exist
+
+Before the branch may be opened:
+
+- the Phase 13N review packet must exist as a complete, versioned artifact with a recorded pass disposition
+- governance signoff from the Phase 13I authority must confirm the branch-open act is within approved scope
+- risk/control signoff must confirm no pre-implementation risk expansion is created by opening the branch
+- the branch-open governance record must reference: the Phase 13N packet, its pass disposition, all four signoffs, and the specific candidate it corresponds to
+
+No earlier phase approval record may substitute for these specific branch-open approvals.
+
+### Which Branch The Implementation Branch Must Fork From
+
+The implementation branch must fork from the design-track branch at the exact commit that corresponds to the approved state of the Phase 13N review packet. It must not fork from:
+
+- the frozen baseline branch or any branch derived from the frozen baseline
+- main, master, or any production-adjacent branch
+- a branch carrying uncommitted or unapproved design modifications
+- any branch that includes implementation work not covered by the Phase 13L candidate definition
+
+The fork commit must be explicitly named in the branch-open governance record.
+
+### What The Implementation Branch May Touch
+
+The implementation branch is bounded to the Phase 13L candidate scope: a non-live observability and audit foundation. It may touch only:
+
+- new files outside the frozen baseline repo's existing module tree, scoped to future observability and audit record structures
+- design documents that describe what was built, what checks it passed, and how it satisfies the Phase 13M validation package requirements
+- test fixtures and check specifications that verify the candidate's non-live boundaries, correlation contracts, and attribution surfaces
+- configuration or schema definitions strictly necessary for the observability and audit record contracts approved in Phase 13G and Phase 13M
+
+Everything it touches must remain non-live, outside the frozen baseline repo's behavioral surface, and reviewable against the Phase 13L no-touch boundaries.
+
+### What The Implementation Branch Must Not Touch
+
+The implementation branch must not touch:
+
+- any file in the frozen baseline repo's existing Python module tree
+- any existing CLI command, route, service, client, model, or scoring logic
+- auth, credentials, signing, private key handling, or venue adapters
+- order-intent creation, order submission, cancelation, replace, or venue-routing logic
+- live position state, live exposure state, or live capital controls
+- governance enforcement logic, risk/control enforcement logic, or reconciliation automation
+- strategy logic, portfolio allocation logic, or scoring logic
+- UI surfaces, background worker infrastructure, or broad persistence expansion
+- the frozen baseline documentation files unless a one-line cross-reference is explicitly approved as part of the branch-open governance record
+
+If a proposed change requires touching any of these surfaces, it is evidence that the candidate has widened beyond its approved scope. The branch must be stopped until that finding is resolved.
+
+### What Would Force Immediate Stop, Deferral, Or Branch Closure
+
+The implementation branch must be stopped immediately if any of the following is detected:
+
+- the branch touches any file in the frozen baseline's existing module tree
+- the branch introduces any surface that could emit, trigger, or enable venue-facing actions
+- the branch introduces auth, signing, credential handling, or order-intent logic
+- the branch introduces governance enforcement, risk/control enforcement, or reconciliation automation before those layers are designed and approved
+- the branch has silently widened the Phase 13L candidate scope without a new approval cycle
+- a Phase 13K red-line condition is triggered by the proposed implementation content
+- a broader deferred candidate becomes implicitly present in the branch's change set
+
+Deferral is required if:
+
+- an unexpected dependency is discovered that cannot be resolved without touching a no-touch surface
+- a signoff becomes disputed or is retroactively withdrawn
+- the Phase 13N review packet is found to have been incomplete at the time of its pass disposition
+
+Branch closure is required if:
+
+- a stop condition is confirmed after investigation and no narrow fix exists within the Phase 13L scope
+- the branch's change set cannot be reconciled with the approved candidate definition
+- a governance or control review determines the branch has exceeded its authority
+
+A stopped branch may not resume without explicit supervisor and reviewer reauthorization following the same gating sequence used to open it.
+
+### How The First Implementation Branch Remains Narrower Than The Broader vNext Roadmap
+
+The implementation branch covers only the Phase 13L candidate. To remain narrower than the broader vNext roadmap:
+
+- it must carry only the Phase 13L candidate's approved scope in its governance record
+- it must not carry forward any Phase 14 or later roadmap content as implementation work
+- it must not implement governance enforcement, risk/control enforcement, reconciliation, portfolio allocation, or any live execution behavior, even partially or as scaffolding
+- it must not use "foundation" framing to justify scope beyond the non-live observability and audit structures explicitly approved in Phase 13L and Phase 13G
+- any pull request, merge, or review artifact must reference only the Phase 13L candidate and the Phase 13N review packet, not the broader design track roadmap
+
+If a reviewer cannot verify that the branch is bounded to the Phase 13L candidate, the branch must be stopped until that verification is possible.
+
+### How Supervisor And Reviewer Gating Should Work Before Any Implementation Begins
+
+The supervisor and reviewer gating sequence before implementation may begin is:
+
+1. the implementer presents the complete Phase 13N review packet with its pass disposition to the supervisor and reviewer
+2. the supervisor and reviewer confirm the pass disposition is complete, unconditional, and attributable to all four required authorities
+3. the supervisor and reviewer review the proposed branch lineage and confirm the fork point is correct and corresponds to the approved Phase 13N state
+4. the supervisor and reviewer confirm the proposed touch scope matches the Phase 13L no-touch boundaries
+5. the supervisor and reviewer issue explicit written authorization to open the branch, naming the packet, the fork point, the candidate, and the scope limit
+6. that authorization is recorded in the branch-open governance record before the branch is created
+
+No step may be skipped. Steps may not be combined informally. The supervisor and reviewer may not be the same party as the implementer.
+
+If the supervisor or reviewer finds any condition unmet, they must issue a written finding identifying what must be resolved. That finding must be resolved through the Phase 13N packet process, not through informal discussion.
+
+### Risks Of A Weak Branch-Open Workflow
+
+- implementation could begin before all evidence exists, under the assumption that remaining evidence will arrive
+- a pass disposition could be used to justify a broader branch than the Phase 13L candidate
+- informal supervisor agreement could substitute for the explicit governance record
+- branch scope could drift before the first review because no explicit stop trigger was known in advance
+- a later incident could find that the branch was opened without traceable authority
+
 ## Recommended Order Of Future Work
 
 1. finish the execution-boundary definition
@@ -1973,9 +2147,10 @@ In each of these cases, the correct action is to record the deferral fully in a 
 10. define the narrowest acceptable first implementation candidate
 11. define the candidate-validation package for that first implementation candidate
 12. define the implementation-readiness review packet for the first candidate
-13. define the separate future execution-capable system surface
-14. define detailed portfolio-governance integration for that future system
-15. define stricter forward-testing boundaries before any implementation phase is proposed
+13. define the implementation-branch opening criteria and review workflow
+14. define the separate future execution-capable system surface
+15. define detailed portfolio-governance integration for that future system
+16. define stricter forward-testing boundaries before any implementation phase is proposed
 
 ## Candidate Future Design Areas
 
@@ -2149,6 +2324,20 @@ Likely scope:
 - branch-open conditions and deferral conditions
 - incomplete-packet, disputed-evidence, and not-approved-yet handling rules
 
+### Implementation-Branch Opening Criteria And Review Workflow
+
+Design goal:
+
+- define the exact pre-conditions, workflow, branch constraints, touch and no-touch rules, stop triggers, and supervisor/reviewer gating required to open a separate implementation branch for the first candidate without beginning implementation informally
+
+Likely scope:
+
+- branch-open pre-conditions and approval chain
+- branch lineage and fork-point constraints
+- touch and no-touch rules for the implementation branch
+- stop, deferral, and branch-closure triggers
+- supervisor and reviewer gating sequence before implementation begins
+
 ## Risks Of Prematurely Going Live
 
 The main risks are structural, not cosmetic:
@@ -2159,7 +2348,7 @@ The main risks are structural, not cosmetic:
 - replay and review are useful audit tools, but they are not execution reconciliation
 - adding live behavior too early would collapse boundaries that are currently clear and defensible
 
-## Explicit Non-Goals For Phase 13N
+## Explicit Non-Goals For Phase 13O
 
 This design track does not add:
 
