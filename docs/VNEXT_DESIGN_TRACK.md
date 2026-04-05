@@ -112,6 +112,42 @@ Decision gate to unlock the next phase:
 
 - approval that the boundary is explicit enough that later risk/control design can assume a separate execution-capable system rather than a baseline repo extension
 
+### Phase 13D
+
+Objective:
+
+- define the future risk/control layer that would govern any later execution-capable system outside the frozen baseline
+
+Why it exists:
+
+- a future execution-capable system cannot be considered safe unless a separate control layer defines hard limits, escalation rules, and permission boundaries before any autonomous or operator-assisted action is allowed
+
+What it would change:
+
+- design documents only
+- explicit ownership for a future risk/control layer
+- explicit control responsibilities, input contracts, permitted decisions, and prerequisites for any later implementation
+
+What it must not change:
+
+- the frozen baseline repo
+- Python behavior
+- routes
+- CLI commands
+- scoring logic
+- policy behavior in the frozen baseline
+- live trading behavior
+
+Validation required before moving on:
+
+- control ownership and non-goals are explicit
+- the design distinguishes containment and permissioning from strategy selection
+- the design does not assign live control responsibilities back into the frozen baseline repo
+
+Decision gate to unlock the next phase:
+
+- approval that the risk/control layer is complete enough to support later reconciliation and stricter testing design without inventing live behavior
+
 ### Phase 14
 
 Objective:
@@ -175,23 +211,23 @@ Validation required before moving on:
 
 Decision gate to unlock the next phase:
 
-- approval that the execution boundary is clear enough to support risk/control design without collapsing trust boundaries
+- approval that the separate future system surface is clear enough to support later detailed control integration and reconciliation design without collapsing trust boundaries
 
 ### Phase 16
 
 Objective:
 
-- design the risk and portfolio control layer for any future live-capable system
+- refine portfolio control integration and capital-governance detail for any future live-capable system
 
 Why it exists:
 
-- no live-capable design should proceed without controls that are broader than per-trade simulation logic
+- once high-level control ownership is defined, the future system still needs a narrower design for how portfolio-level controls, capital governance, and escalation sequencing fit around that owned control layer
 
 What it would change:
 
-- design for exposure controls
-- control hierarchy for kill switches and circuit breakers
-- operator approval and escalation boundaries
+- design for portfolio allocation controls
+- limit evaluation order across scopes
+- escalation sequencing between automated holds, kill switches, and operator approval boundaries
 
 What it must not change:
 
@@ -201,13 +237,13 @@ What it must not change:
 
 Validation required before moving on:
 
-- portfolio-level controls are documented
-- failure containment rules are documented
-- operator override and approval semantics are documented as design only
+- portfolio-level control interactions are documented
+- capital-governance escalation rules are documented
+- operator override and approval semantics remain documented as design only
 
 Decision gate to unlock the next phase:
 
-- approval that the risk/control layer is complete enough to support reconciliation and recovery design
+- approval that the control layer is detailed enough to support reconciliation and recovery design
 
 ### Phase 17
 
@@ -248,9 +284,9 @@ Decision gate to unlock any later implementation phase:
 The phases above are intentionally serial:
 
 1. execution-boundary design
-2. promotion gate design
-3. separate live-capable system surface design
-4. risk and portfolio control design
+2. risk/control-layer design
+3. promotion gate design
+4. separate live-capable system surface design
 5. reconciliation and stricter pre-live testing design
 
 No later phase should start until the prior phase has an explicit approval decision. No phase in this document authorizes implementation by default.
@@ -334,12 +370,110 @@ Before any execution-capable implementation is allowed, all of the following mus
 - review, replay, and checkpoint artifacts could be mistaken for live reconciliation controls even though they were never designed for that role
 - future incident response would be harder because ownership would be split across a mixed research/execution codebase
 
+## Risk And Control Layer
+
+### Purpose Of This Layer
+
+This layer exists to decide whether a future execution-capable system is permitted to act, at what size, under what limits, and under what escalation conditions. It is a control and containment layer, not a strategy engine and not a venue-execution engine.
+
+### Why It Must Be Separate From The Frozen Baseline
+
+The frozen baseline is intentionally limited to read-only analytics, paper-trade simulation, policy decisions on simulated rows, review, and operator inspection. A future risk/control layer would govern real external consequences. Collapsing those responsibilities into the baseline would weaken the current trust boundary and create pressure to reinterpret simulation-time artifacts as live controls.
+
+### Responsibilities A Future Risk/Control Layer Would Own
+
+The future layer would own:
+
+- position sizing authority
+- exposure caps across market, strategy, venue, and portfolio scopes
+- concentration limits
+- market disable switches
+- strategy disable switches
+- circuit-breaker hierarchy
+- kill-switch boundaries
+- operator escalation and approval boundaries
+- manual override approval paths
+- promotion gates from simulation to stricter testing or later execution-adjacent stages
+
+This layer would decide whether a future execution-capable system may proceed, must be held, must be reduced, or must be stopped.
+
+### Required Inputs To This Layer
+
+The future layer may consume only explicit, reviewable inputs such as:
+
+- baseline research outputs and paper-trade artifacts
+- operator-approved configuration and limit definitions
+- live position and exposure state from a separate future execution-capable system
+- venue health and reconciliation state
+- portfolio-level capital allocation state
+- operator approvals, denials, and emergency stop signals
+- promotion-stage status for non-live testing environments
+
+This layer should not depend on hidden heuristics or implicit operator memory.
+
+### Permitted Outputs And Decisions
+
+The future layer may emit only bounded control decisions such as:
+
+- allow or disallow a class of actions
+- maximum permitted size or notional
+- exposure reduction requirements
+- market disable or strategy disable decisions
+- circuit-breaker activation
+- kill-switch activation
+- escalation requirement for human review
+- promotion approval or promotion denial for stricter testing stages
+
+Every emitted decision must be bounded, logged, attributable, and reversible through an explicit control path where appropriate.
+
+### What It Must Not Be Allowed To Do Without Separate Controls
+
+The future risk/control layer must not be allowed to:
+
+- generate trading ideas or optimize strategy logic
+- bypass auth, signing, or execution approval boundaries
+- submit orders directly unless a separate future design explicitly authorizes that architecture
+- rewrite venue reconciliation truth
+- suppress or erase failure records
+- apply manual overrides without operator attribution and explicit scope limits
+- expand limits automatically without a separate approved rule and audit path
+
+### Guardrails And Non-Goals
+
+- this is not a strategy-optimization layer
+- this is not the live execution engine
+- this is not a replacement for venue reconciliation
+- this is not a reason to widen the frozen baseline repo
+- every autonomous decision must have limits, logs, and override paths
+- every override path must be attributable and bounded
+
+### Prerequisites Before Any Risk/Control Implementation
+
+Before implementation of any future risk/control layer is allowed, all of the following must be true:
+
+- the execution boundary is approved
+- the future execution-capable system boundary is approved
+- limit scopes and control hierarchy are documented
+- manual override and kill-switch authority are documented
+- promotion gates for stricter non-live testing are documented
+- reconciliation and failure-recovery expectations are documented enough that controls can react to them
+- separate approval is granted to move from design-only work into implementation work
+
+### Risks Of Under-Designing This Layer
+
+- sizing and exposure decisions could become inconsistent across components
+- kill switches and circuit breakers could conflict or fail open
+- manual overrides could become informal and unauditable
+- simulated policy behavior could be misused as if it were a portfolio control plane
+- a future execution-capable system could take actions without clear authority, limits, or escalation paths
+- operator confidence would degrade because no single layer would clearly own containment
+
 ## Recommended Order Of Future Work
 
 1. finish the execution-boundary definition
-2. define promotion gates for stricter non-live testing and operator release discipline
-3. define the separate future execution-capable system surface
-4. define risk and portfolio control ownership for that separate system
+2. define the risk/control layer and its authority boundaries
+3. define promotion gates for stricter non-live testing and operator release discipline
+4. define the separate future execution-capable system surface
 5. define reconciliation, failure recovery, and stricter pre-live testing before any implementation phase is proposed
 
 ## Candidate Future Design Areas
@@ -417,7 +551,7 @@ The main risks are structural, not cosmetic:
 - replay and review are useful audit tools, but they are not execution reconciliation
 - adding live behavior too early would collapse boundaries that are currently clear and defensible
 
-## Explicit Non-Goals For Phase 13C
+## Explicit Non-Goals For Phase 13D
 
 This design track does not add:
 
