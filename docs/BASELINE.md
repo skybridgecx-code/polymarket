@@ -181,6 +181,39 @@ Default checkpoint file:
 
 - `state/runtime_orchestrator_checkpoint.json`
 
+Current health states derived from the checkpoint are:
+
+- `idle`
+- `ok`
+- `stale`
+
+Current health meanings:
+
+- `idle`: both `last_scan_refresh_at` and `last_relationship_refresh_at` are `null`
+- `ok`: refresh data exists and no stale reasons are active
+- `stale`: refresh data exists and stale reasons are active
+
+Current stale reasons:
+
+- `scan_never_refreshed`
+- `scan_refresh_overdue`
+- `relationships_never_refreshed`
+- `relationship_refresh_overdue`
+- `websocket_never_received_event`
+- `websocket_event_overdue`
+- `last_error_present`
+
+Current code behavior note:
+
+- `status` and `stale` are separate fields
+- a never-run system can still report `status = "idle"` while carrying never-refreshed stale reasons
+
+## Operator Runbook
+
+The canonical operator guide for checkpoint inspection, runtime/env expectations, and bounded review workflow is:
+
+- [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
+
 ## Repo Operating Rules
 
 - keep the system read-only
@@ -192,21 +225,33 @@ Default checkpoint file:
 - do not make fake precision claims in outputs or docs
 - do not describe policy as changing planner or simulator formulas when it only evaluates final paper-trade results
 
-## Phase 9A Note
+## Phase 9 Note
 
-Phase 9A added only the paper-trade policy layer. It did not add:
+Phase 9 added only the paper-trade policy layer. It did not add:
 
 - new routes
 - new CLI commands
 - live trading behavior
 - review/replay features
 
+## Phase 10A Note
+
+Phase 10A adds documentation and operator workflow hardening only. It does not add:
+
+- Python behavior changes
+- new routes
+- new CLI commands
+- scoring changes
+- policy changes
+- live trading behavior
+
 ## Recommended Next Phase
 
-After this paper-trade layer, the strongest next move is Phase 7C operator hardening:
+After the Phase 10A operator runbook work, the strongest next move is Phase 10B operator validation discipline:
 
-- deployment and runtime docs
-- packaging and release hygiene
-- observability and operational guidance
+- bounded operator smoke-test workflow
+- fixture-backed runbook verification
+- validation discipline around checkpoint and replay review
+- no new scoring or live behavior
 
-Do not move into trading or new scoring before that operator layer is cleaner and easier to run.
+Do not move into trading or new scoring before that operator layer is easier to inspect and validate.

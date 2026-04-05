@@ -14,6 +14,8 @@ The repo currently ships:
 - read-only FastAPI operator routes
 - bounded real-time refresh orchestration with lightweight checkpointing
 
+Phase 10A adds operator documentation only. It does not change Python behavior, routes, CLI commands, scoring, policy, or live-trading scope.
+
 The repo explicitly does not ship:
 
 - trading or order placement
@@ -89,6 +91,30 @@ The checkpoint tracks:
 - last error
 - stale reasons
 
+Health states are derived from that checkpoint:
+
+- `idle`: no scan or relationship refresh has been written yet
+- `ok`: refresh data exists and no stale reasons are active
+- `stale`: refresh data exists and one or more stale reasons are active
+
+Current stale reasons are:
+
+- `scan_never_refreshed`
+- `scan_refresh_overdue`
+- `relationships_never_refreshed`
+- `relationship_refresh_overdue`
+- `websocket_never_received_event`
+- `websocket_event_overdue`
+- `last_error_present`
+
+Important current behavior: `status` and `stale` are not identical. A never-run system can still report `status: idle` while carrying never-refreshed stale reasons.
+
+## Operator Runbook
+
+Use the operator runbook for exact checkpoint inspection flow, runtime/env expectations, and bounded packet review workflow:
+
+- [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
+
 ## Module Boundaries
 
 - `src/polymarket_arb/clients/`: public read-only external clients
@@ -105,7 +131,7 @@ Raw payload handling remains separate from normalization and scoring.
 
 In the paper-trade path, policy runs after simulation. It records `allow`, `hold`, or `deny` as `policy_decision` on each paper-trade row. Manual override fields are audit fields only and are not operationalized. Circuit-breaker state is recorded and can force `hold`.
 
-Phase 9A was intentionally narrow. It did not add routes, CLI commands, live trading behavior, or review/replay features.
+Phase 9 added the policy layer. Phase 10A adds only operator documentation and runbook hardening.
 
 ## Validation
 
@@ -131,6 +157,7 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 ## Read Next
 
 - [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
+- [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
 - [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
 - [ROADMAP.md](/Users/muhammadaatif/polymarket-arb/ROADMAP.md)
 - [CODEX_HANDOFF.md](/Users/muhammadaatif/polymarket-arb/CODEX_HANDOFF.md)

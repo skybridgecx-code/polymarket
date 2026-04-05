@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The repo now includes the shipped Phase 9 paper-trade policy layer on top of the existing paper-trade path, with docs aligned through Phase 9B.
+The repo now includes the shipped Phase 9 paper-trade policy layer and the Phase 10A operator runbook/checkpoint inspection docs.
 
 Shipped and in scope:
 
@@ -33,12 +33,22 @@ Phase 9 policy work did not add:
 - live trading behavior
 - new review/replay features
 
+Phase 10A docs work did not add:
+
+- Python behavior changes
+- new routes
+- new CLI commands
+- scoring changes
+- policy changes
+- live trading behavior
+
 ## Read First
 
 - [README.md](/Users/muhammadaatif/polymarket-arb/README.md)
 - [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
 - [ROADMAP.md](/Users/muhammadaatif/polymarket-arb/ROADMAP.md)
 - [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
+- [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
 
 ## Operator Commands
 
@@ -81,6 +91,26 @@ Default checkpoint path:
 
 The file is a lightweight JSON checkpoint used by `RefreshOrchestratorService`. It is the only restart-safety mechanism currently shipped. Treat it as operational state, not as a historical warehouse.
 
+Current health states derived from that checkpoint are:
+
+- `idle`
+- `ok`
+- `stale`
+
+Current stale reasons are:
+
+- `scan_never_refreshed`
+- `scan_refresh_overdue`
+- `relationships_never_refreshed`
+- `relationship_refresh_overdue`
+- `websocket_never_received_event`
+- `websocket_event_overdue`
+- `last_error_present`
+
+Use the runbook for exact checkpoint inspection and operator review flow:
+
+- [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
+
 ## Guardrails For Future Phases
 
 - stay read-only unless a future phase explicitly changes that boundary
@@ -111,14 +141,13 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 
 ## Recommended Next Bounded Prompt
 
-Phase 9B only:
+Phase 10B only:
 
-- document `policy_decision` on paper-trade rows
-- document post-simulation policy ordering and `allow` / `hold` / `deny`
-- document that manual override fields are recorded only
-- document that circuit-breaker state can force `hold`
-- add no new scoring logic
+- add bounded operator smoke-test discipline
+- verify the runbook commands against fixture-backed flows
+- verify checkpoint and `/health` inspection flow
 - add no new routes
+- add no new scoring logic
 - add no live execution logic
 
 If a future prompt asks for larger product changes, challenge scope first against this frozen baseline.

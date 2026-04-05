@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 9 with a deterministic paper-trade policy layer added on top of the existing paper-trade path.
+The repo is currently in Phase 10A with docs-first operator runbook and checkpoint inspection hardening layered on top of the shipped Phase 9 system.
 
 ## Completed
 
@@ -102,34 +102,45 @@ Delivered:
 - deterministic export format
 - explicit pass/fail and drift reporting
 
-## Current
-
 ### Phase 9
 
-Paper-trade policy and guardrail layer, followed by docs alignment.
+Paper-trade policy and guardrail layer.
 
-Deliverables:
+Delivered:
 
 - policy decision records with `allow` / `hold` / `deny`
 - post-simulation policy evaluation
 - recorded manual override fields
 - recorded circuit-breaker state
 - deterministic slippage-cap policy gate
-- docs aligned to shipped policy behavior
+
+## Current
+
+### Phase 10A
+
+Operator runbook and checkpoint inspection hardening.
+
+Deliverables:
+
+- operator runbook for `orchestrate-refresh`, `paper-trade`, `review-packet`, and `replay-evaluate`
+- checkpoint inspection workflow documentation
+- `idle` / `ok` / `stale` health interpretation grounded in current checkpoint fields
+- runtime and environment documentation grounded in current config
+- bounded review workflow guidance for packet generation and replay comparison
+- docs aligned to shipped Phase 10A operator guidance
 
 ## Recommended Next Phase
 
-### Phase 10
+### Phase 10B
 
-Operator hardening and review workflow discipline.
+Operator validation discipline.
 
 Recommended scope:
 
-- deployment and runtime documentation
-- review workflow for packets and replay comparisons
-- environment and observability hardening
-- safer operator workflows around refresh cadence and checkpoint inspection
-- packaging and release hygiene
+- bounded smoke-test checklist for operator flows
+- fixture-backed verification of the runbook commands
+- checkpoint and `/health` verification discipline
+- no new routes, scoring, or live behavior
 
 Do not add live trading, auth, UI, or new model/scoring work in that phase.
 

@@ -8,7 +8,7 @@ This repo is not an execution system.
 
 ## Current Shipped System
 
-The frozen baseline contains six bounded layers:
+The frozen baseline contains eight bounded layers:
 
 1. Public ingestion clients
 2. Normalization
@@ -217,6 +217,31 @@ Health states are deterministic from checkpoint content and current time:
 - `idle`
 - `ok`
 - `stale`
+
+Health interpretation is current-code specific:
+
+- `idle`: both `last_scan_refresh_at` and `last_relationship_refresh_at` are still missing
+- `ok`: at least one refresh exists and `_stale_reasons()` is empty
+- `stale`: at least one refresh exists and `_stale_reasons()` is non-empty
+
+Current stale reasons come directly from `RefreshOrchestratorService._stale_reasons()`:
+
+- `scan_never_refreshed`
+- `scan_refresh_overdue`
+- `relationships_never_refreshed`
+- `relationship_refresh_overdue`
+- `websocket_never_received_event`
+- `websocket_event_overdue`
+- `last_error_present`
+
+Operator note:
+
+- `status` is not the same field as `stale`
+- a clean never-run checkpoint can still report `status = "idle"` with never-refreshed stale reasons present
+
+Operator workflow details live in:
+
+- [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
 
 ## Explicit Non-Goals
 
