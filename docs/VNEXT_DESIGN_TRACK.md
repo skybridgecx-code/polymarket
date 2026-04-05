@@ -292,6 +292,42 @@ Decision gate to unlock the next phase:
 
 - approval that the portfolio and capital-allocation boundary is complete enough to support future-system surface design and later implementation gating without weakening the frozen baseline trust boundary
 
+### Phase 13I
+
+Objective:
+
+- define governance, approval, and manual-override rules for any future execution-capable system before any autonomy could be considered
+
+Why it exists:
+
+- a future execution-capable system cannot be allowed to approve its own expansion of authority; governance must define who can approve what, which duties must remain separated, and when manual override is permitted as an exception path rather than a normal mode
+
+What it would change:
+
+- design documents only
+- explicit governance roles, approval authority, escalation rules, and override constraints
+- explicit audit and review requirements for approvals, rejections, escalations, and overrides
+
+What it must not change:
+
+- the frozen baseline repo
+- Python behavior
+- routes
+- CLI commands
+- scoring logic
+- policy behavior in the frozen baseline
+- live trading behavior
+
+Validation required before moving on:
+
+- approval authority and separation of duties are concrete enough to reject self-authorizing designs
+- manual override limits and forbidden uses are explicit
+- governance remains outside the frozen baseline rather than reinterpreting current operator actions as future live approval controls
+
+Decision gate to unlock the next phase:
+
+- approval that governance and override boundaries are complete enough to support future-system surface design and later implementation gating without weakening the frozen baseline trust boundary
+
 ### Phase 14
 
 Objective:
@@ -399,9 +435,10 @@ The phases above are intentionally serial:
 4. promotion-gate and pre-live validation design
 5. data and observability boundary design
 6. portfolio and capital-allocation design
-7. separate live-capable system surface design
-8. detailed portfolio-control integration design
-9. stricter pre-live testing design
+7. governance, approval, and override design
+8. separate live-capable system surface design
+9. detailed portfolio-control integration design
+10. stricter pre-live testing design
 
 No later phase should start until the prior phase has an explicit approval decision. No phase in this document authorizes implementation by default.
 
@@ -1052,6 +1089,98 @@ Before implementation of any future portfolio and capital-allocation layer is al
 - de-allocation pressure could arrive too late because no rule owned it
 - operator review would weaken because capital decisions would appear discretionary rather than rule-based
 
+## Governance, Approval, And Manual Override
+
+### Purpose Of This Section
+
+This section defines the governance and approval layer required for any future execution-capable system. Its purpose is to ensure that progression across gates, autonomous permissions, and manual overrides are controlled by explicit authority boundaries rather than convenience or implicit operator trust.
+
+### Why Governance Must Be Explicit Before Any Future Autonomy
+
+Without explicit governance, a future system could drift into self-approval, weak review, and informal override practices. Approval is a control surface, not a convenience step. Manual override is an exception path, not a normal operating mode. Every future approval and override must be attributable, logged, reviewable, and reversible where possible.
+
+### Roles And Separation Of Duties
+
+At minimum, a future system would need explicit separation between:
+
+- research and strategy ownership
+- risk and control ownership
+- execution-system ownership
+- operations and incident-response ownership
+
+No single role or subsystem should silently authorize itself into broader autonomy. Strategy ownership should not unilaterally set exposure limits. Execution ownership should not unilaterally self-approve actions that increase risk. Operations should not be treated as a blanket override authority for every control boundary.
+
+### Approval Authority And Escalation Rules
+
+The future governance layer would need explicit rules for:
+
+- who may approve progression from one non-live stage to the next
+- who may approve temporary scope reductions, pauses, or freezes
+- when escalation from automated control to human review is mandatory
+- which approvals require multi-party signoff rather than single-party signoff
+- how unresolved disagreement blocks advancement rather than silently defaulting to action
+
+Approval authority must be scoped. A role that can approve one gate should not automatically inherit approval power for unrelated gates.
+
+### Manual Override Authority, Scope, And Limits
+
+The future governance layer would need explicit rules for:
+
+- who may issue a manual override
+- what systems or scopes a manual override can affect
+- maximum duration and expiry of an override
+- whether an override reduces scope, freezes scope, or temporarily permits a bounded exception
+- mandatory follow-up review after an override is used
+
+Manual override must stay exceptional. It must not be used to bypass missing design work, suppress unresolved ambiguity, or normalize operation outside documented controls.
+
+### Decisions That Must Never Be Auto-Approved
+
+At design level, a future system should explicitly prohibit automatic approval for decisions such as:
+
+- expanding risk or exposure limits beyond pre-approved bounds
+- enabling broader execution autonomy after prior restriction
+- re-enabling a disabled strategy or market after a material incident without review
+- treating unresolved reconciliation ambiguity as safe by default
+- converting a non-live validation stage into a live-capable stage
+- granting broader override authority to a subsystem or operator role
+
+These decisions require explicit human approval under documented authority, not silent system progression.
+
+### Audit And Review Requirements
+
+Any future governance implementation would need:
+
+- immutable records of approvals, denials, escalations, and overrides
+- explicit attribution for who approved or rejected what
+- timestamps, scope, rationale, and expiry for every override
+- reviewable linkage between approval decisions and the evidence used to justify them
+- post-override review requirements to confirm whether the action stayed within scope
+
+Override actions must be reviewable in enough detail that an operator can later reconstruct what changed, why it changed, who approved it, and whether it should have happened.
+
+### Prerequisites Before Any Governance Implementation
+
+Before implementation of any future governance, approval, or override layer is allowed, all of the following must be true:
+
+- the execution boundary is approved
+- the risk/control layer is approved
+- the reconciliation layer is approved
+- promotion and pre-live validation gates are approved
+- observability and audit requirements are approved
+- portfolio and capital-allocation authority is approved
+- role scopes and approval boundaries are documented
+- separate approval is granted to move from design-only work into implementation work
+
+### Risks Of Weak Governance And Weak Override Controls
+
+- a future subsystem could effectively authorize itself into broader autonomy
+- manual overrides could become a hidden normal operating mode
+- approval responsibility could become ambiguous during incidents
+- audit trails could record that an override happened without showing whether it was legitimate
+- operators could normalize escalation-free behavior because nobody clearly owns denial authority
+- future incidents would be harder to investigate because approval chains would be unclear
+
 ## Recommended Order Of Future Work
 
 1. finish the execution-boundary definition
@@ -1060,9 +1189,10 @@ Before implementation of any future portfolio and capital-allocation layer is al
 4. define promotion gates and pre-live validation evidence for stricter non-live testing
 5. define the data, audit, and observability boundary for the future system
 6. define the portfolio and capital-allocation boundary for the future system
-7. define the separate future execution-capable system surface
-8. define detailed portfolio-governance integration for that future system
-9. define stricter forward-testing boundaries before any implementation phase is proposed
+7. define governance, approval, and override authority boundaries
+8. define the separate future execution-capable system surface
+9. define detailed portfolio-governance integration for that future system
+10. define stricter forward-testing boundaries before any implementation phase is proposed
 
 ## Candidate Future Design Areas
 
@@ -1156,6 +1286,19 @@ Likely scope:
 - conflict-resolution rules
 - rebalance and de-allocation triggers
 
+### Governance, Approval, And Manual Override
+
+Design goal:
+
+- define who may approve progression, who may deny or escalate, and how manual override remains a bounded exception rather than a default operating mode
+
+Likely scope:
+
+- separation of duties
+- approval authority boundaries
+- override scope and expiry rules
+- audit and review requirements for governance actions
+
 ## Risks Of Prematurely Going Live
 
 The main risks are structural, not cosmetic:
@@ -1166,7 +1309,7 @@ The main risks are structural, not cosmetic:
 - replay and review are useful audit tools, but they are not execution reconciliation
 - adding live behavior too early would collapse boundaries that are currently clear and defensible
 
-## Explicit Non-Goals For Phase 13H
+## Explicit Non-Goals For Phase 13I
 
 This design track does not add:
 
