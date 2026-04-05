@@ -39,6 +39,185 @@ The vNext track exists to:
 - make promotion criteria explicit before any live-capable work is considered
 - reduce the risk of accidental scope drift from read-only research into unsafe execution behavior
 
+## Phased Roadmap
+
+The vNext track should stay short, gated, and operator/risk-aware. The phases below are design phases first. Implementation should not begin until a later phase explicitly permits it.
+
+### Phase 13B
+
+Objective:
+
+- define the bounded vNext roadmap and decision gates
+
+Why it exists:
+
+- future work needs explicit gates before design can turn into implementation
+
+What it would change:
+
+- design documents only
+
+What it must not change:
+
+- the frozen baseline
+- Python behavior
+- routes
+- CLI commands
+- scoring logic
+- policy behavior
+- live trading behavior
+
+Validation required before moving on:
+
+- docs review confirms the phased path is bounded and explicit
+- the frozen baseline docs remain untouched unless a later phase explicitly authorizes cross-references
+
+Decision gate to unlock the next phase:
+
+- the future-phase sequence is specific enough that each later phase can be approved or rejected independently
+
+### Phase 14
+
+Objective:
+
+- design the promotion gate from the frozen baseline to stricter operator release discipline
+
+Why it exists:
+
+- the current baseline is validated, but promotion criteria for any tighter execution-adjacent environment are not yet formalized
+
+What it would change:
+
+- operator release criteria
+- promotion thresholds
+- documented go/no-go rules for advancing beyond the frozen baseline
+
+What it must not change:
+
+- execution behavior
+- auth boundaries
+- order placement boundaries
+- live-capable system behavior
+
+Validation required before moving on:
+
+- explicit promotion criteria are documented
+- rejection criteria for unsafe promotion are documented
+- operator validation execution requirements are concrete and reviewable
+
+Decision gate to unlock the next phase:
+
+- approval that promotion criteria are complete enough to support execution-boundary design without weakening the frozen baseline
+
+### Phase 15
+
+Objective:
+
+- design the live-capable execution boundary as a separate system surface
+
+Why it exists:
+
+- the current paper-trade path must not be allowed to drift directly into live execution
+
+What it would change:
+
+- architecture-level boundary definitions between simulation and any future order-intent or execution system
+- explicit module and responsibility separation for a future live-capable track
+
+What it must not change:
+
+- paper-trade formulas
+- policy formulas
+- read-only baseline services
+- any live behavior in the current repo
+
+Validation required before moving on:
+
+- explicit non-reuse rules are documented for paper-trade code paths
+- live-capable boundary diagrams and control points are documented
+- auth, signing, and order submission remain out of scope in this phase
+
+Decision gate to unlock the next phase:
+
+- approval that the execution boundary is clear enough to support risk/control design without collapsing trust boundaries
+
+### Phase 16
+
+Objective:
+
+- design the risk and portfolio control layer for any future live-capable system
+
+Why it exists:
+
+- no live-capable design should proceed without controls that are broader than per-trade simulation logic
+
+What it would change:
+
+- design for exposure controls
+- control hierarchy for kill switches and circuit breakers
+- operator approval and escalation boundaries
+
+What it must not change:
+
+- current baseline policy behavior
+- current checkpoint model
+- current paper-trade outputs
+
+Validation required before moving on:
+
+- portfolio-level controls are documented
+- failure containment rules are documented
+- operator override and approval semantics are documented as design only
+
+Decision gate to unlock the next phase:
+
+- approval that the risk/control layer is complete enough to support reconciliation and recovery design
+
+### Phase 17
+
+Objective:
+
+- design reconciliation, failure recovery, and stricter pre-live testing stages
+
+Why it exists:
+
+- any future live-capable system would need explicit state recovery, reconciliation, and forward-testing stages before real order submission is even considered
+
+What it would change:
+
+- design for reconciliation checkpoints
+- failure classification
+- recovery workflows
+- staged progression from stricter testing to any later approval request
+
+What it must not change:
+
+- current baseline behavior
+- current read-only operator surface
+- live trading boundaries
+
+Validation required before moving on:
+
+- reconciliation flows are documented
+- failure recovery responsibilities are documented
+- stricter testing stages are documented with explicit stop conditions
+
+Decision gate to unlock any later implementation phase:
+
+- separate approval that the design track is complete enough to justify discussing implementation
+- separate approval that live-capable work is allowed at all
+
+## Decision Gates
+
+The phases above are intentionally serial:
+
+1. promotion gate design
+2. live-capable execution boundary design
+3. risk and portfolio control design
+4. reconciliation and stricter pre-live testing design
+
+No later phase should start until the prior phase has an explicit approval decision. No phase in this document authorizes implementation by default.
+
 ## Candidate Future Design Areas
 
 ### Operator Validation Promotion Gate
@@ -116,16 +295,15 @@ The main risks are structural, not cosmetic:
 
 ## Recommended Order Of Future Work
 
-1. strengthen operator validation execution against the frozen baseline
-2. define the promotion gate from read-only validation to stricter testing
-3. define the live-capable execution boundary as a separate design surface
-4. define risk and portfolio controls before any auth or signing discussion
-5. define reconciliation and failure recovery before any real order submission path
-6. only then consider whether a later phase should permit live-capable implementation work
+1. complete design-only promotion gating
+2. complete design-only live-capable execution boundary work
+3. complete design-only risk and portfolio control work
+4. complete design-only reconciliation and stricter testing work
+5. require separate approval before any implementation phase is even proposed
 
-## Explicit Non-Goals For Phase 13A
+## Explicit Non-Goals For Phase 13B
 
-This phase does not add:
+This design track does not add:
 
 - Python changes
 - route changes
@@ -141,3 +319,5 @@ This phase does not add:
 ## Phase Boundary
 
 This branch adds a design track only. The current baseline remains the trusted shipped system until a later phase explicitly changes that status.
+
+Promotion to anything live-capable requires separate approval, tighter controls, and stricter validation than anything described in the frozen baseline.
