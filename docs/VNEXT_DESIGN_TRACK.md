@@ -148,6 +148,42 @@ Decision gate to unlock the next phase:
 
 - approval that the risk/control layer is complete enough to support later reconciliation and stricter testing design without inventing live behavior
 
+### Phase 13E
+
+Objective:
+
+- define the future reconciliation and failure-recovery layer that would be required for any later execution-capable system outside the frozen baseline
+
+Why it exists:
+
+- no execution-capable system is trustworthy unless it can detect divergence, classify failures, recover in bounded ways, and preserve an audit trail under degraded conditions
+
+What it would change:
+
+- design documents only
+- explicit ownership for a future reconciliation and failure-recovery layer
+- explicit failure classes, recovery properties, input contracts, permitted recovery actions, and prerequisites for any later implementation
+
+What it must not change:
+
+- the frozen baseline repo
+- Python behavior
+- routes
+- CLI commands
+- scoring logic
+- policy behavior in the frozen baseline
+- live trading behavior
+
+Validation required before moving on:
+
+- failure classes and recovery responsibilities are explicit
+- idempotency, replayability, audit logging, retry boundaries, and manual intervention triggers are documented
+- the design does not treat checkpointing, replay, or paper-trade review artifacts in the frozen baseline as if they were already a live reconciliation system
+
+Decision gate to unlock the next phase:
+
+- approval that reconciliation and failure-recovery design is complete enough to support later promotion-gate and stricter testing design without inventing live behavior
+
 ### Phase 14
 
 Objective:
@@ -179,7 +215,7 @@ Validation required before moving on:
 
 Decision gate to unlock the next phase:
 
-- approval that promotion criteria are complete enough to support later risk/control design without weakening the frozen baseline
+- approval that promotion criteria are complete enough to support later future-system and stricter-testing design without weakening the frozen baseline
 
 ### Phase 15
 
@@ -211,7 +247,7 @@ Validation required before moving on:
 
 Decision gate to unlock the next phase:
 
-- approval that the separate future system surface is clear enough to support later detailed control integration and reconciliation design without collapsing trust boundaries
+- approval that the separate future system surface is clear enough to support later forward-testing design and eventual implementation gating without collapsing trust boundaries
 
 ### Phase 16
 
@@ -243,24 +279,23 @@ Validation required before moving on:
 
 Decision gate to unlock the next phase:
 
-- approval that the control layer is detailed enough to support reconciliation and recovery design
+- approval that the control layer is detailed enough to support stricter forward-testing design and eventual implementation gating
 
 ### Phase 17
 
 Objective:
 
-- design reconciliation, failure recovery, and stricter pre-live testing stages
+- design stricter pre-live testing and forward-testing stages after the control and recovery layers are already defined
 
 Why it exists:
 
-- any future live-capable system would need explicit state recovery, reconciliation, and forward-testing stages before real order submission is even considered
+- any future live-capable system would still require explicit staged testing after the control and reconciliation layers are defined, because implementation should not move directly from design approval to unrestricted execution-adjacent behavior
 
 What it would change:
 
-- design for reconciliation checkpoints
-- failure classification
-- recovery workflows
-- staged progression from stricter testing to any later approval request
+- staged progression from stricter integration-style testing to later approval requests
+- stop conditions for forward-testing stages
+- promotion boundaries between progressively stricter non-live or tightly controlled test environments
 
 What it must not change:
 
@@ -270,9 +305,9 @@ What it must not change:
 
 Validation required before moving on:
 
-- reconciliation flows are documented
-- failure recovery responsibilities are documented
 - stricter testing stages are documented with explicit stop conditions
+- stage-exit requirements are documented
+- forward-testing boundaries remain explicitly separate from live order submission approval
 
 Decision gate to unlock any later implementation phase:
 
@@ -285,9 +320,10 @@ The phases above are intentionally serial:
 
 1. execution-boundary design
 2. risk/control-layer design
-3. promotion gate design
-4. separate live-capable system surface design
-5. reconciliation and stricter pre-live testing design
+3. reconciliation and failure-recovery design
+4. promotion gate design
+5. separate live-capable system surface design
+6. stricter pre-live testing design
 
 No later phase should start until the prior phase has an explicit approval decision. No phase in this document authorizes implementation by default.
 
@@ -468,13 +504,139 @@ Before implementation of any future risk/control layer is allowed, all of the fo
 - a future execution-capable system could take actions without clear authority, limits, or escalation paths
 - operator confidence would degrade because no single layer would clearly own containment
 
+## Reconciliation And Failure Recovery
+
+### Purpose Of This Layer
+
+This layer exists to preserve correctness under failure. It would detect whether internal state and external venue state diverge, classify what kind of failure occurred, and choose bounded recovery paths that preserve auditability. This is not a convenience feature. It is a correctness and containment layer for a future execution-capable system.
+
+### Why It Must Be Separate From The Frozen Baseline
+
+The frozen baseline has bounded checkpointing, replay, and review artifacts for a read-only and paper-trade system. Those features are useful for operator inspection, but they are not a live reconciliation control plane. A future reconciliation layer would govern recovery after real external side effects, so it must remain outside the frozen baseline repo and outside the current paper-trade path.
+
+### Failure Classes The Future System Must Handle
+
+At minimum, the future layer would need explicit handling for:
+
+- partial fills
+- duplicate submits
+- missing acknowledgements
+- stale internal state
+- disconnect and reconnect gaps
+- state divergence between internal records and venue state
+- delayed external data
+- missing external data
+- conflicting execution events received out of order
+- retries that risk creating duplicate external effects
+
+### Responsibilities The Reconciliation Layer Would Own
+
+The future layer would own:
+
+- detection of state divergence
+- classification of failure modes
+- reconciliation checkpoints
+- idempotency enforcement for recovery paths
+- bounded replay and replay verification
+- retry eligibility decisions and retry suppression rules
+- manual intervention triggers when automated recovery is no longer trustworthy
+- audit logging for every recovery-relevant state transition
+
+This layer would answer questions such as: what happened, what is known, what is uncertain, what can be retried safely, and when must automation stop and escalate.
+
+### Required Inputs, Records, And Checkpoints
+
+The future layer may consume only explicit, reviewable records such as:
+
+- internal order-intent and execution-attempt records from a separate future execution-capable system
+- venue acknowledgements, rejects, cancels, and fill events
+- live position and exposure state
+- reconnect and session-gap records
+- reconciliation checkpoints and checkpoint timestamps
+- operator intervention records
+- retry-attempt history
+- immutable audit logs for externally visible actions
+
+It should require durable identifiers, stable correlation keys, and explicit checkpoint boundaries before any automated recovery path is allowed.
+
+### Required Recovery Properties
+
+Any future implementation would need to preserve all of the following:
+
+- idempotency expectations for retried or resumed actions
+- replayability of recovery analysis from recorded facts
+- audit logging for every automated and manual recovery decision
+- reconciliation checkpoints that make known-vs-unknown state explicit
+- retry boundaries that prevent unbounded loops or duplicate external effects
+- manual intervention triggers when confidence drops below a defined threshold
+
+Every retry path must be bounded. Every recovery path must preserve auditability. Every automated recovery action must have limits and a manual fallback.
+
+### Permitted Outputs, Decisions, And Actions
+
+The future layer may emit only bounded recovery outputs such as:
+
+- reconciled or unreconciled status
+- known-safe retry eligibility
+- automation stop decisions
+- escalation requirements for human review
+- state divergence classifications
+- checkpoint advancement or checkpoint freeze decisions
+- recovery notes and audit records
+
+It may direct a separate future execution-capable system to pause, retry within bounds, or require manual review. It must not silently rewrite history or claim certainty it does not have.
+
+### What It Must Not Be Allowed To Do Without Separate Controls
+
+The future reconciliation layer must not be allowed to:
+
+- create new strategy logic
+- expand exposure limits
+- bypass risk/control decisions
+- bypass auth, signing, or execution approval boundaries
+- retry indefinitely
+- erase or rewrite audit history
+- self-clear material divergence without explicit bounded rules
+- continue automated recovery after a manual-intervention threshold is crossed
+
+### Guardrails And Non-Goals
+
+- this is not a venue adapter
+- this is not a trading strategy layer
+- this is not a replacement for risk/control
+- this is not a reason to widen the frozen baseline repo
+- every recovery action must be attributable
+- every ambiguous state must remain explicit until resolved
+
+### Prerequisites Before Any Reconciliation Implementation
+
+Before implementation of any future reconciliation or failure-recovery layer is allowed, all of the following must be true:
+
+- the execution boundary is approved
+- the risk/control layer is approved
+- the future execution-capable system surface is documented
+- durable identifiers and correlation requirements are documented
+- retry ceilings and manual intervention thresholds are documented
+- audit-log and checkpoint requirements are documented
+- separate approval is granted to move from design-only work into implementation work
+
+### Risks Of Under-Designing Reconciliation And Recovery
+
+- duplicate external actions could be triggered during retries
+- internal state could drift from venue truth without detection
+- partial failures could be misclassified as success or harmless delay
+- operators could lose the ability to reconstruct what actually happened
+- manual intervention could happen too late because automated recovery remained active too long
+- incident response would be slowed by ambiguous ownership and missing checkpoints
+
 ## Recommended Order Of Future Work
 
 1. finish the execution-boundary definition
 2. define the risk/control layer and its authority boundaries
-3. define promotion gates for stricter non-live testing and operator release discipline
-4. define the separate future execution-capable system surface
-5. define reconciliation, failure recovery, and stricter pre-live testing before any implementation phase is proposed
+3. define reconciliation and failure-recovery ownership and limits
+4. define promotion gates for stricter non-live testing and operator release discipline
+5. define the separate future execution-capable system surface
+6. define stricter pre-live testing before any implementation phase is proposed
 
 ## Candidate Future Design Areas
 
@@ -551,7 +713,7 @@ The main risks are structural, not cosmetic:
 - replay and review are useful audit tools, but they are not execution reconciliation
 - adding live behavior too early would collapse boundaries that are currently clear and defensible
 
-## Explicit Non-Goals For Phase 13D
+## Explicit Non-Goals For Phase 13E
 
 This design track does not add:
 
