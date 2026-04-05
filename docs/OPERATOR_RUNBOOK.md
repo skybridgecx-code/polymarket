@@ -76,6 +76,16 @@ source .venv/bin/activate
 make validate
 ```
 
+## When To Use Which Command
+
+Use `orchestrate-refresh` when you need a bounded live-data refresh, a fresh checkpoint write, or current health/staleness inspection.
+
+Use `paper-trade` when you need current simulated execution research rows with `policy_decision` attached to each final row.
+
+Use `review-packet` when you need a deterministic audit packet for one subject type: `opportunities`, `relationships`, or `paper_trade`.
+
+Use `replay-evaluate` only after you already have two packet files to compare. It is a packet-to-packet comparison step, not a packet generation step.
+
 ## Command Runbook
 
 ### `orchestrate-refresh`
@@ -142,6 +152,7 @@ What to inspect on each row:
 Purpose:
 
 - export deterministic packet JSON for `opportunities`, `relationships`, or `paper_trade`
+- freeze a bounded review subject for later comparison
 
 Commands:
 
@@ -190,6 +201,78 @@ What to inspect:
 - `drift_reasons`
 - `status`
 - `explanation`
+
+## Example Flows
+
+### Refresh, Checkpoint, And Health
+
+Use this when the operator needs one bounded refresh and an explicit health read.
+
+```bash
+python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1 > /tmp/orchestrate-refresh.json
+python -m json.tool /tmp/orchestrate-refresh.json
+python -m json.tool state/runtime_orchestrator_checkpoint.json
+```
+
+Inspect in order:
+
+1. `health.status`
+2. `health.stale`
+3. `health.stale_reasons`
+4. `checkpoint.last_error`
+5. `checkpoint.last_websocket_event_at`
+6. `checkpoint.subscribed_asset_ids`
+
+If the local API is already running, the equivalent health view is:
+
+```bash
+curl -s http://127.0.0.1:8000/health | python -m json.tool
+```
+
+### Paper-Trade Then Freeze A Review Packet
+
+Use this when the operator wants to inspect current paper-trade rows and then freeze the same subject type for review.
+
+```bash
+python -m polymarket_arb.cli paper-trade --limit 5 > /tmp/paper-trade-rows.json
+python -m json.tool /tmp/paper-trade-rows.json
+python -m polymarket_arb.cli review-packet --packet-type paper_trade --limit 5 > /tmp/paper-trade-packet.json
+python -m json.tool /tmp/paper-trade-packet.json
+```
+
+Important current behavior:
+
+- `paper-trade` and `review-packet --packet-type paper_trade` are two separate reads against the shipped paper-trade surface
+- `review-packet` does not accept a prior `paper-trade` output file as input
+
+Inspect in order:
+
+1. paper-trade row `status`
+2. paper-trade row `rejection_reason`
+3. paper-trade row `policy_decision`
+4. packet `packet_type`
+5. packet `source_references`
+6. packet `summarized_findings`
+
+### Baseline Vs Candidate Replay Evaluation
+
+Use this when the operator needs explicit drift reporting between two packet files.
+
+```bash
+python -m polymarket_arb.cli review-packet --packet-type paper_trade --limit 10 --fixture-path tests/fixtures/scenarios/phase8_review_records_baseline.json > /tmp/review-baseline.json
+python -m polymarket_arb.cli review-packet --packet-type paper_trade --limit 10 --fixture-path tests/fixtures/scenarios/phase8_review_records_candidate.json > /tmp/review-candidate.json
+python -m polymarket_arb.cli replay-evaluate --baseline-path /tmp/review-baseline.json --candidate-path /tmp/review-candidate.json > /tmp/replay-evaluation.json
+python -m json.tool /tmp/replay-evaluation.json
+```
+
+Inspect in order:
+
+1. `status`
+2. `subject_type`
+3. `compared_records_count`
+4. `mismatches_count`
+5. `drift_reasons`
+6. `explanation`
 
 ## Checkpoint Inspection Workflow
 
@@ -295,9 +378,17 @@ Operator expectations:
 - treat `mismatches_count`, `drift_reasons`, and `status` as audit inputs for manual review
 - preserve rejected or weak rows in packets instead of filtering them away during review
 
+Review discipline:
+
+- choose the packet subject type first, then generate both baseline and candidate with that same subject type
+- prefer fixture-backed packet generation when you need deterministic comparison inputs
+- inspect packet contents before running replay so mismatches are not the first time you see a malformed packet
+- read `drift_reasons` before writing any summary about what changed
+- do not describe replay output as strategy quality; it is a record-comparison tool
+
 ## Phase Boundary
 
-This runbook documents the system as shipped through Phase 10A operator hardening.
+This runbook documents the system as shipped through Phase 10B operator workflow examples and review packet discipline.
 
 It does not introduce:
 

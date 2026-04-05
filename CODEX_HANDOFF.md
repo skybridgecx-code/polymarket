@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The repo now includes the shipped Phase 9 paper-trade policy layer and the Phase 10A operator runbook/checkpoint inspection docs.
+The repo now includes the shipped Phase 9 paper-trade policy layer, the Phase 10A operator runbook/checkpoint inspection docs, and the Phase 10B operator workflow examples/review discipline docs.
 
 Shipped and in scope:
 
@@ -34,6 +34,15 @@ Phase 9 policy work did not add:
 - new review/replay features
 
 Phase 10A docs work did not add:
+
+- Python behavior changes
+- new routes
+- new CLI commands
+- scoring changes
+- policy changes
+- live trading behavior
+
+Phase 10B docs work did not add:
 
 - Python behavior changes
 - new routes
@@ -111,6 +120,13 @@ Use the runbook for exact checkpoint inspection and operator review flow:
 
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
 
+Current command-selection guidance is:
+
+- `orchestrate-refresh` for bounded refresh plus checkpoint/health inspection
+- `paper-trade` for current simulated execution rows
+- `review-packet` for deterministic subject-type packet export
+- `replay-evaluate` for packet-to-packet comparison only
+
 ## Guardrails For Future Phases
 
 - stay read-only unless a future phase explicitly changes that boundary
@@ -141,7 +157,7 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 
 ## Recommended Next Bounded Prompt
 
-Phase 10B only:
+Phase 10C only:
 
 - add bounded operator smoke-test discipline
 - verify the runbook commands against fixture-backed flows

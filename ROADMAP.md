@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 10A with docs-first operator runbook and checkpoint inspection hardening layered on top of the shipped Phase 9 system.
+The repo is currently in Phase 10B with docs-first operator workflow examples and review packet discipline layered on top of the shipped Phase 9 system.
 
 ## Completed
 
@@ -114,24 +114,35 @@ Delivered:
 - recorded circuit-breaker state
 - deterministic slippage-cap policy gate
 
-## Current
-
 ### Phase 10A
 
 Operator runbook and checkpoint inspection hardening.
 
-Deliverables:
+Delivered:
 
 - operator runbook for `orchestrate-refresh`, `paper-trade`, `review-packet`, and `replay-evaluate`
 - checkpoint inspection workflow documentation
 - `idle` / `ok` / `stale` health interpretation grounded in current checkpoint fields
 - runtime and environment documentation grounded in current config
-- bounded review workflow guidance for packet generation and replay comparison
-- docs aligned to shipped Phase 10A operator guidance
+
+## Current
+
+### Phase 10B
+
+Operator workflow examples and review packet discipline.
+
+Deliverables:
+
+- concrete example flows for bounded refresh/checkpoint/health inspection
+- concrete example flow for `paper-trade` plus `review-packet`
+- concrete example flow for `replay-evaluate`
+- command-selection guidance for the shipped operator commands
+- tighter review and replay discipline guidance
+- docs aligned to shipped Phase 10B operator guidance
 
 ## Recommended Next Phase
 
-### Phase 10B
+### Phase 10C
 
 Operator validation discipline.
 

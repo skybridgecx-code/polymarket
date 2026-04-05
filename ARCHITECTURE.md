@@ -243,6 +243,8 @@ Operator workflow details live in:
 
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
 
+That runbook is intentionally documentation-only. It adds command-selection guidance and bounded example workflows on top of the existing operator surface; it does not alter orchestration, scoring, review, or policy behavior.
+
 ## Explicit Non-Goals
 
 - trading

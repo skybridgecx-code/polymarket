@@ -214,6 +214,13 @@ The canonical operator guide for checkpoint inspection, runtime/env expectations
 
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
 
+Current command-selection guidance:
+
+- `orchestrate-refresh`: bounded live-data refresh plus checkpoint and health inspection
+- `paper-trade`: current paper-trade rows with post-simulation `policy_decision`
+- `review-packet`: deterministic packet export for one subject type
+- `replay-evaluate`: explicit comparison between two existing packet files
+
 ## Repo Operating Rules
 
 - keep the system read-only
@@ -245,9 +252,20 @@ Phase 10A adds documentation and operator workflow hardening only. It does not a
 - policy changes
 - live trading behavior
 
+## Phase 10B Note
+
+Phase 10B adds operator workflow examples and review packet discipline only. It does not add:
+
+- Python behavior changes
+- new routes
+- new CLI commands
+- scoring changes
+- policy changes
+- live trading behavior
+
 ## Recommended Next Phase
 
-After the Phase 10A operator runbook work, the strongest next move is Phase 10B operator validation discipline:
+After the Phase 10B workflow-example docs, the strongest next move is Phase 10C operator validation discipline:
 
 - bounded operator smoke-test workflow
 - fixture-backed runbook verification

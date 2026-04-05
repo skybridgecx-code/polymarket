@@ -14,7 +14,7 @@ The repo currently ships:
 - read-only FastAPI operator routes
 - bounded real-time refresh orchestration with lightweight checkpointing
 
-Phase 10A adds operator documentation only. It does not change Python behavior, routes, CLI commands, scoring, policy, or live-trading scope.
+Phase 10 adds operator documentation only through 10A and 10B. It does not change Python behavior, routes, CLI commands, scoring, policy, or live-trading scope.
 
 The repo explicitly does not ship:
 
@@ -115,6 +115,13 @@ Use the operator runbook for exact checkpoint inspection flow, runtime/env expec
 
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
 
+Quick command-selection guidance:
+
+- use `orchestrate-refresh` when you need a bounded refresh plus checkpoint and health inspection
+- use `paper-trade` when you need current simulated execution rows with `policy_decision`
+- use `review-packet` when you need a deterministic packet for audit or comparison
+- use `replay-evaluate` only after you have both baseline and candidate packet files
+
 ## Module Boundaries
 
 - `src/polymarket_arb/clients/`: public read-only external clients
@@ -131,7 +138,7 @@ Raw payload handling remains separate from normalization and scoring.
 
 In the paper-trade path, policy runs after simulation. It records `allow`, `hold`, or `deny` as `policy_decision` on each paper-trade row. Manual override fields are audit fields only and are not operationalized. Circuit-breaker state is recorded and can force `hold`.
 
-Phase 9 added the policy layer. Phase 10A adds only operator documentation and runbook hardening.
+Phase 9 added the policy layer. Phase 10A and 10B add only operator documentation, examples, and review discipline.
 
 ## Validation
 
