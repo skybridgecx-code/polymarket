@@ -6,6 +6,12 @@ The system is a Python-first, read-only analytics stack. It exists to turn publi
 
 This repo is not an execution system.
 
+Operator entrypoint:
+
+- [README.md](/Users/muhammadaatif/polymarket-arb/README.md) for the shipped-system summary
+- [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md) for command use and triage
+- [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md) for the frozen contract
+
 ## Current Shipped System
 
 The frozen baseline contains eight bounded layers:
@@ -243,9 +249,7 @@ Operator workflow details live in:
 
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
 
-That runbook is intentionally documentation-only. It adds command-selection guidance and bounded example workflows on top of the existing operator surface; it does not alter orchestration, scoring, review, or policy behavior.
-
-Phase 10C extends that same docs-only layer with pre-run and post-run checklists plus failure-mode triage guidance grounded in the current checkpoint and `last_error` fields.
+That runbook is documentation-only. It describes how to operate the shipped system; it does not alter orchestration, scoring, review, or policy behavior.
 
 ## Explicit Non-Goals
 

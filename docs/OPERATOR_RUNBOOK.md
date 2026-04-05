@@ -1,10 +1,18 @@
 # Operator Runbook
 
-## Scope
+## What This Is
 
-This runbook documents the already-shipped read-only operator surface.
+This is the operator entrypoint for the shipped read-only system.
 
-It covers:
+Read order:
+
+1. [README.md](/Users/muhammadaatif/polymarket-arb/README.md)
+2. [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
+3. [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
+4. [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
+5. [CODEX_HANDOFF.md](/Users/muhammadaatif/polymarket-arb/CODEX_HANDOFF.md)
+
+This runbook covers the shipped operator surface only:
 
 - `orchestrate-refresh`
 - `paper-trade`
@@ -21,17 +29,18 @@ It does not add or imply:
 - new routes
 - new CLI commands
 - scoring changes
+- policy changes
 
-## Runtime And Environment Expectations
+## Runtime Expectations
 
-Current runtime behavior is grounded in `src/polymarket_arb/config.py`.
+Current runtime behavior is grounded in [`src/polymarket_arb/config.py`](/Users/muhammadaatif/polymarket-arb/src/polymarket_arb/config.py).
 
-The CLI and API load settings from:
+Settings load from:
 
 - `.env` when present
 - process environment variables
 
-Current relevant environment variables and defaults:
+Relevant environment variables and defaults:
 
 - `POLY_GAMMA_BASE_URL`: `https://gamma-api.polymarket.com`
 - `POLY_CLOB_BASE_URL`: `https://clob.polymarket.com`
@@ -41,6 +50,10 @@ Current relevant environment variables and defaults:
 - `STATE_DIR`: `./state`
 - `LOG_LEVEL`: `INFO`
 
+Current checkpoint file:
+
+- `state/runtime_orchestrator_checkpoint.json`
+
 Current orchestration timing defaults:
 
 - `scan_stale_after_seconds = 300`
@@ -48,10 +61,6 @@ Current orchestration timing defaults:
 - `websocket_stale_after_seconds = 120`
 - `websocket_receive_timeout_seconds = 2.0`
 - `websocket_reconnect_attempts = 2`
-
-Current checkpoint filename:
-
-- `runtime_orchestrator_checkpoint.json`
 
 Current paper-trade operator-relevant defaults:
 
@@ -76,165 +85,130 @@ source .venv/bin/activate
 make validate
 ```
 
-## Pre-Run Checklists
+## Command Selection
 
-### Before `orchestrate-refresh`
+Use `orchestrate-refresh` when you need one bounded live-data refresh, a fresh checkpoint write, or current health/staleness inspection.
 
-- confirm the repo is in the expected branch and working tree state
-- confirm `.venv` is active
-- confirm `STATE_DIR` resolves to the checkpoint location you expect
-- confirm you are running a bounded command with explicit `--scan-limit`, `--relationship-limit`, and `--max-websocket-messages`
-- if you are inspecting staleness, decide whether you want to preserve the current checkpoint or overwrite it with a fresh bounded run
-
-### Before `paper-trade`
-
-- confirm you want live-derived rows or a deterministic fixture run
-- if using fixture mode, confirm the fixture path exists before running
-- remember that `policy_decision` is post-simulation and does not replace planner or simulator rejection logic
-
-### Before `review-packet`
-
-- choose the packet subject type first: `opportunities`, `relationships`, or `paper_trade`
-- confirm the packet subject type matches the review question you are trying to answer
-- if you need deterministic comparison, prefer fixture-backed packet generation
-
-### Before `replay-evaluate`
-
-- confirm both packet files already exist
-- confirm both packet files were generated for the same subject type
-- inspect the packet JSONs before replay if there is any doubt about their provenance
-
-## When To Use Which Command
-
-Use `orchestrate-refresh` when you need a bounded live-data refresh, a fresh checkpoint write, or current health/staleness inspection.
-
-Use `paper-trade` when you need current simulated execution research rows with `policy_decision` attached to each final row.
+Use `paper-trade` when you need current simulated execution rows with final `policy_decision` attached.
 
 Use `review-packet` when you need a deterministic audit packet for one subject type: `opportunities`, `relationships`, or `paper_trade`.
 
-Use `replay-evaluate` only after you already have two packet files to compare. It is a packet-to-packet comparison step, not a packet generation step.
+Use `replay-evaluate` only after you already have two packet files to compare. It is packet-to-packet comparison only.
 
-## Command Runbook
+## Core Commands
 
-### `orchestrate-refresh`
+Validation:
 
-Purpose:
+```bash
+make validate
+```
 
-- run one bounded refresh cycle
-- rebuild opportunities
-- rebuild relationship reports
-- derive websocket subscriptions from current opportunity legs
-- consume only the requested number of websocket messages
-- write the current checkpoint
-
-Command:
+Bounded refresh:
 
 ```bash
 python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
 ```
 
-What to inspect:
-
-- `scan_limit`
-- `relationship_limit`
-- `max_websocket_messages`
-- `consumed_asset_ids`
-- `checkpoint`
-- `health`
-- `opportunities_count`
-- `relationships_count`
-
-### `paper-trade`
-
-Purpose:
-
-- transform opportunity rows into execution plans
-- simulate fills using the existing simulator
-- attach post-simulation `policy_decision`
-
-Command:
+Paper trade:
 
 ```bash
 python -m polymarket_arb.cli paper-trade --limit 5
-```
-
-Deterministic fixture mode:
-
-```bash
 python -m polymarket_arb.cli paper-trade --limit 5 --fixture-path tests/fixtures/scenarios/phase7b_paper_trade.json
 ```
 
-What to inspect on each row:
-
-- `status`
-- `rejection_reason`
-- `explanation`
-- `risk_flags`
-- `simulated_result`
-- `policy_decision`
-
-`policy_decision` is applied after simulation. It does not replace planner rejection or simulator rejection behavior.
-
-### `review-packet`
-
-Purpose:
-
-- export deterministic packet JSON for `opportunities`, `relationships`, or `paper_trade`
-- freeze a bounded review subject for later comparison
-
-Commands:
+Review packets:
 
 ```bash
 python -m polymarket_arb.cli review-packet --packet-type opportunities --limit 5
 python -m polymarket_arb.cli review-packet --packet-type relationships --limit 10
 python -m polymarket_arb.cli review-packet --packet-type paper_trade --limit 10
-```
-
-Deterministic fixture mode:
-
-```bash
 python -m polymarket_arb.cli review-packet --packet-type paper_trade --limit 10 --fixture-path tests/fixtures/scenarios/phase8_review_records_baseline.json
 ```
 
-What to inspect:
-
-- `packet_id`
-- `packet_type`
-- `created_at`
-- `source_references`
-- `summarized_findings`
-- `status`
-- `notes`
-
-### `replay-evaluate`
-
-Purpose:
-
-- compare two review packet files
-- report explicit drift and match counts
-
-Command:
+Replay evaluation:
 
 ```bash
 python -m polymarket_arb.cli replay-evaluate --baseline-path /tmp/baseline.json --candidate-path /tmp/candidate.json
 ```
 
-What to inspect:
+Optional local API check:
 
-- `evaluation_id`
-- `subject_type`
-- `compared_records_count`
-- `matches_count`
-- `mismatches_count`
-- `drift_reasons`
-- `status`
-- `explanation`
+```bash
+python -m uvicorn polymarket_arb.api.main:app --reload
+curl -s http://127.0.0.1:8000/health | python -m json.tool
+```
 
-## Example Flows
+## Pre-Run Checklist
+
+Before `orchestrate-refresh`:
+
+- confirm the repo is in the expected branch and working tree state
+- confirm `.venv` is active
+- confirm `STATE_DIR` resolves to the checkpoint location you expect
+- confirm you are running explicit bounded limits
+- decide whether you want to preserve the current checkpoint or overwrite it with a fresh bounded run
+
+Before `paper-trade`:
+
+- decide whether you want live-derived rows or a deterministic fixture run
+- if using fixture mode, confirm the fixture path exists
+- remember that `policy_decision` is post-simulation and does not replace planner or simulator rejection logic
+
+Before `review-packet`:
+
+- choose the packet subject type first
+- confirm the packet subject type matches the review question
+- if deterministic comparison matters, prefer fixture-backed packet generation
+
+Before `replay-evaluate`:
+
+- confirm both packet files already exist
+- confirm both packet files were generated for the same subject type
+- inspect the packet JSONs before replay if their provenance is unclear
+
+## Post-Run Checklist
+
+After `orchestrate-refresh`:
+
+- inspect `health.status`
+- inspect `health.stale`
+- inspect `health.stale_reasons`
+- inspect `checkpoint.last_error`
+- inspect `checkpoint.last_websocket_event_at`
+- inspect `checkpoint.subscribed_asset_ids`
+
+After checkpoint inspection:
+
+- confirm `checkpoint_written_at` changed as expected
+- confirm `last_scan_refresh_at` and `last_relationship_refresh_at` are present for a completed bounded refresh
+- confirm websocket timestamps only if `subscribed_asset_ids` is non-empty
+- if `last_error` is present, treat that as the first triage branch
+
+After `paper-trade`:
+
+- inspect row `status` before summary fields
+- inspect `rejection_reason` on rejected rows
+- inspect `policy_decision` on every final row
+- keep rejected rows visible during review
+
+After `review-packet`:
+
+- confirm `packet_type`
+- confirm `status`
+- inspect `source_references`
+- inspect `summarized_findings`
+
+After `replay-evaluate`:
+
+- inspect `status` first
+- inspect `subject_type`
+- inspect `mismatches_count`
+- inspect `drift_reasons`
+- read `explanation` after the structural mismatch fields
+
+## Example Operator Flows
 
 ### Refresh, Checkpoint, And Health
-
-Use this when the operator needs one bounded refresh and an explicit health read.
 
 ```bash
 python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1 > /tmp/orchestrate-refresh.json
@@ -245,21 +219,12 @@ python -m json.tool state/runtime_orchestrator_checkpoint.json
 Inspect in order:
 
 1. `health.status`
-2. `health.stale`
-3. `health.stale_reasons`
-4. `checkpoint.last_error`
-5. `checkpoint.last_websocket_event_at`
-6. `checkpoint.subscribed_asset_ids`
+2. `health.stale_reasons`
+3. `checkpoint.last_error`
+4. `checkpoint.last_websocket_event_at`
+5. `checkpoint.subscribed_asset_ids`
 
-If the local API is already running, the equivalent health view is:
-
-```bash
-curl -s http://127.0.0.1:8000/health | python -m json.tool
-```
-
-### Paper-Trade Then Freeze A Review Packet
-
-Use this when the operator wants to inspect current paper-trade rows and then freeze the same subject type for review.
+### Paper Trade Then Freeze A Packet
 
 ```bash
 python -m polymarket_arb.cli paper-trade --limit 5 > /tmp/paper-trade-rows.json
@@ -268,23 +233,12 @@ python -m polymarket_arb.cli review-packet --packet-type paper_trade --limit 5 >
 python -m json.tool /tmp/paper-trade-packet.json
 ```
 
-Important current behavior:
+Current behavior note:
 
 - `paper-trade` and `review-packet --packet-type paper_trade` are two separate reads against the shipped paper-trade surface
 - `review-packet` does not accept a prior `paper-trade` output file as input
 
-Inspect in order:
-
-1. paper-trade row `status`
-2. paper-trade row `rejection_reason`
-3. paper-trade row `policy_decision`
-4. packet `packet_type`
-5. packet `source_references`
-6. packet `summarized_findings`
-
-### Baseline Vs Candidate Replay Evaluation
-
-Use this when the operator needs explicit drift reporting between two packet files.
+### Baseline Vs Candidate Replay
 
 ```bash
 python -m polymarket_arb.cli review-packet --packet-type paper_trade --limit 10 --fixture-path tests/fixtures/scenarios/phase8_review_records_baseline.json > /tmp/review-baseline.json
@@ -293,77 +247,13 @@ python -m polymarket_arb.cli replay-evaluate --baseline-path /tmp/review-baselin
 python -m json.tool /tmp/replay-evaluation.json
 ```
 
-Inspect in order:
+## Checkpoint And Health
 
-1. `status`
-2. `subject_type`
-3. `compared_records_count`
-4. `mismatches_count`
-5. `drift_reasons`
-6. `explanation`
-
-## Post-Run Checklists
-
-### After `orchestrate-refresh`
-
-- inspect `health.status`
-- inspect `health.stale`
-- inspect `health.stale_reasons`
-- inspect `checkpoint.last_error`
-- inspect `checkpoint.last_websocket_event_at`
-- inspect `checkpoint.subscribed_asset_ids`
-
-### After Checkpoint Inspection
-
-- confirm `checkpoint_written_at` changed as expected
-- confirm `last_scan_refresh_at` and `last_relationship_refresh_at` are present for a completed bounded refresh
-- confirm websocket timestamps only if `subscribed_asset_ids` is non-empty
-- if `last_error` is present, treat that as the first triage branch
-
-### After `paper-trade`
-
-- inspect row `status` before reading any summary fields
-- inspect `rejection_reason` on rejected rows
-- inspect `policy_decision` on every final row
-- keep rejected rows visible instead of filtering them away during review
-
-### After `review-packet`
-
-- confirm `packet_type`
-- confirm `status`
-- inspect `source_references`
-- inspect `summarized_findings`
-
-### After `replay-evaluate`
-
-- inspect `status` first
-- inspect `subject_type`
-- inspect `mismatches_count`
-- inspect `drift_reasons`
-- read `explanation` only after the structural mismatch fields
-
-## Checkpoint Inspection Workflow
-
-Default checkpoint path:
+Checkpoint path:
 
 - `state/runtime_orchestrator_checkpoint.json`
 
-Recommended bounded inspection flow:
-
-1. Run one bounded refresh.
-2. Inspect the checkpoint JSON directly.
-3. Interpret `/health` or the embedded `health` payload from the refresh output.
-4. If `stale_reasons` or `last_error` are present, inspect those before rerunning.
-
-Exact commands:
-
-```bash
-python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1 > /tmp/orchestrate-refresh.json
-python -m json.tool state/runtime_orchestrator_checkpoint.json
-python -m json.tool /tmp/orchestrate-refresh.json
-```
-
-Checkpoint fields to inspect first:
+Current checkpoint fields to inspect first:
 
 - `checkpoint_written_at`
 - `last_scan_refresh_at`
@@ -378,18 +268,7 @@ Checkpoint fields to inspect first:
 - `last_error`
 - `stale_reasons`
 
-Interpretation guidance:
-
-- if `subscribed_asset_ids` is empty, websocket freshness is not evaluated
-- if `subscribed_asset_ids` is populated, websocket freshness depends on `last_websocket_event_at`
-- if `last_error` is non-null, health will include `last_error_present`
-- the checkpoint is operational state only, not historical storage
-
-## Health Interpretation
-
-The health model is derived from checkpoint content in `OrchestrationHealthStatus.from_checkpoint()` and `RefreshOrchestratorService._stale_reasons()`.
-
-Current health statuses:
+Current health states:
 
 - `idle`
 - `ok`
@@ -403,191 +282,74 @@ Current meanings:
 
 Important current behavior:
 
-- `status` and `stale` are not identical fields
+- `status` and `stale` are separate fields
 - an untouched system can report `status = "idle"` and still return `stale = true` with never-refreshed reasons
 
-Current stale reasons and meanings:
+Current stale reasons:
 
-- `scan_never_refreshed`: no scan refresh has been written yet
-- `scan_refresh_overdue`: `last_scan_refresh_at` is older than `scan_stale_after_seconds`
-- `relationships_never_refreshed`: no relationship refresh has been written yet
-- `relationship_refresh_overdue`: `last_relationship_refresh_at` is older than `relationship_stale_after_seconds`
-- `websocket_never_received_event`: asset subscriptions exist but no websocket event has been recorded yet
-- `websocket_event_overdue`: `last_websocket_event_at` is older than `websocket_stale_after_seconds`
-- `last_error_present`: `last_error` is non-null in the checkpoint
+- `scan_never_refreshed`
+- `scan_refresh_overdue`
+- `relationships_never_refreshed`
+- `relationship_refresh_overdue`
+- `websocket_never_received_event`
+- `websocket_event_overdue`
+- `last_error_present`
 
 ## Failure-Mode Quick Reference
 
-### Triage Flow
+Triage order:
 
-1. Inspect `health.status`.
-2. Inspect `health.stale_reasons`.
-3. Inspect `checkpoint.last_error`.
-4. Inspect refresh timestamps.
-5. Inspect websocket timestamps and subscribed asset count only if subscriptions exist.
+1. inspect `health.status`
+2. inspect `health.stale_reasons`
+3. inspect `checkpoint.last_error`
+4. inspect refresh timestamps
+5. inspect websocket timestamps and subscribed asset count only if subscriptions exist
 
-### `scan_never_refreshed`
+`scan_never_refreshed`
+: inspect whether `orchestrate-refresh` has been run at all, then inspect `checkpoint.last_scan_refresh_at` and `health.status`
 
-What it means:
+`scan_refresh_overdue`
+: inspect `checkpoint.last_scan_refresh_at`, the expected refresh cadence, and whether you are looking at the intended checkpoint file
 
-- `last_scan_refresh_at` is still `null`
+`relationships_never_refreshed`
+: inspect whether `orchestrate-refresh` has been run at all, then inspect `checkpoint.last_relationship_refresh_at`
 
-Inspect first:
+`relationship_refresh_overdue`
+: inspect `checkpoint.last_relationship_refresh_at`, the expected refresh cadence, and the checkpoint path
 
-- whether `orchestrate-refresh` has been run at all
-- `checkpoint.last_scan_refresh_at`
-- `health.status`
+`websocket_never_received_event`
+: inspect `checkpoint.subscribed_asset_ids`, `checkpoint.last_websocket_connect_at`, `checkpoint.last_error`, and the `--max-websocket-messages` value used
 
-### `scan_refresh_overdue`
+`websocket_event_overdue`
+: inspect `checkpoint.last_websocket_event_at`, `checkpoint.subscribed_asset_ids`, `checkpoint.websocket_reconnect_count`, and `checkpoint.last_error`
 
-What it means:
+`last_error_present`
+: inspect `checkpoint.last_error` first, then inspect websocket disconnect and reconnect counters
 
-- `last_scan_refresh_at` exists but is older than `scan_stale_after_seconds`
+`websocket_consumer_exited_without_messages`
+: inspect `checkpoint.last_error`, `checkpoint.subscribed_asset_ids`, `checkpoint.last_websocket_connect_at`, `checkpoint.last_websocket_event_at`, and the `--max-websocket-messages` value used
 
-Inspect first:
+Reporting note:
 
-- `checkpoint.last_scan_refresh_at`
-- current bounded refresh cadence
-- whether the checkpoint being inspected is the one you intended
+- `websocket_consumer_exited_without_messages` is stored in `checkpoint.last_error`
+- health reports it through `last_error_present`, not as its own stale reason
 
-### `relationships_never_refreshed`
+## Review Discipline
 
-What it means:
-
-- `last_relationship_refresh_at` is still `null`
-
-Inspect first:
-
-- whether `orchestrate-refresh` has been run
-- `checkpoint.last_relationship_refresh_at`
-- `health.status`
-
-### `relationship_refresh_overdue`
-
-What it means:
-
-- `last_relationship_refresh_at` exists but is older than `relationship_stale_after_seconds`
-
-Inspect first:
-
-- `checkpoint.last_relationship_refresh_at`
-- current bounded refresh cadence
-- whether the checkpoint path matches the state directory you intended
-
-### `websocket_never_received_event`
-
-What it means:
-
-- `subscribed_asset_ids` is non-empty
-- `last_websocket_event_at` is still `null`
-
-Inspect first:
-
-- `checkpoint.subscribed_asset_ids`
-- `checkpoint.last_websocket_connect_at`
-- `checkpoint.last_error`
-- the `--max-websocket-messages` value used for the bounded run
-
-### `websocket_event_overdue`
-
-What it means:
-
-- websocket subscriptions exist
-- `last_websocket_event_at` exists but is older than `websocket_stale_after_seconds`
-
-Inspect first:
-
-- `checkpoint.last_websocket_event_at`
-- `checkpoint.subscribed_asset_ids`
-- `checkpoint.websocket_reconnect_count`
-- `checkpoint.last_error`
-
-### `last_error_present`
-
-What it means:
-
-- `checkpoint.last_error` is non-null
-
-Inspect first:
-
-- `checkpoint.last_error`
-- `checkpoint.websocket_disconnect_count`
-- `checkpoint.websocket_reconnect_count`
-- whether the error came from a bounded websocket run or a prior checkpoint state
-
-### `websocket_consumer_exited_without_messages`
-
-What it means:
-
-- the bounded websocket consume step ran with subscribed assets and `max_websocket_messages > 0`
-- zero messages were consumed
-- this value is stored in `checkpoint.last_error`, not as its own stale reason
-
-Inspect first:
-
-- `checkpoint.last_error`
-- `checkpoint.subscribed_asset_ids`
-- `checkpoint.last_websocket_connect_at`
-- `checkpoint.last_websocket_event_at`
-- the `--max-websocket-messages` value used for the run
-
-Current reporting note:
-
-- when this condition occurs, health will show `last_error_present`
-- operators should inspect `last_error` for the specific string
-- `scan_refresh_overdue`: `last_scan_refresh_at` is older than `scan_stale_after_seconds`
-- `relationships_never_refreshed`: no relationship refresh has been written yet
-- `relationship_refresh_overdue`: `last_relationship_refresh_at` is older than `relationship_stale_after_seconds`
-- `websocket_never_received_event`: there are subscribed asset ids but no websocket event has been recorded yet
-- `websocket_event_overdue`: `last_websocket_event_at` is older than `websocket_stale_after_seconds`
-- `last_error_present`: `last_error` is non-null in the checkpoint
-
-Optional local API check:
-
-```bash
-python -m uvicorn polymarket_arb.api.main:app --reload
-curl -s http://127.0.0.1:8000/health | python -m json.tool
-```
-
-## Bounded Review Workflow
-
-The shipped review workflow is intentionally small:
-
-1. generate a baseline packet
-2. generate a candidate packet
-3. run replay evaluation
-4. inspect explicit drift reasons before making any judgment
-
-Exact bounded example:
-
-```bash
-python -m polymarket_arb.cli review-packet --packet-type paper_trade --limit 10 --fixture-path tests/fixtures/scenarios/phase8_review_records_baseline.json > /tmp/review-baseline.json
-python -m polymarket_arb.cli review-packet --packet-type paper_trade --limit 10 --fixture-path tests/fixtures/scenarios/phase8_review_records_candidate.json > /tmp/review-candidate.json
-python -m polymarket_arb.cli replay-evaluate --baseline-path /tmp/review-baseline.json --candidate-path /tmp/review-candidate.json
-```
-
-Operator expectations:
-
-- do not treat replay as an automated execution gate
-- treat `mismatches_count`, `drift_reasons`, and `status` as audit inputs for manual review
-- preserve rejected or weak rows in packets instead of filtering them away during review
-
-Review discipline:
-
-- choose the packet subject type first, then generate both baseline and candidate with that same subject type
-- prefer fixture-backed packet generation when you need deterministic comparison inputs
-- inspect packet contents before running replay so mismatches are not the first time you see a malformed packet
-- read `drift_reasons` before writing any summary about what changed
+- choose the packet subject type first, then generate baseline and candidate with that same subject type
+- prefer fixture-backed packet generation when deterministic comparison matters
+- inspect packet contents before running replay
+- read `drift_reasons` before writing any summary of what changed
 - do not describe replay output as strategy quality; it is a record-comparison tool
 
-## Phase Boundary
+## Scope Boundary
 
-This runbook documents the system as shipped through Phase 10C operator checklist and failure-mode quick reference.
+This runbook documents the shipped baseline through Phase 10D freeze polish.
 
 It does not introduce:
 
+- Python behavior changes
 - new routes
 - new CLI commands
-- Python behavior changes
 - policy changes
 - live trading behavior

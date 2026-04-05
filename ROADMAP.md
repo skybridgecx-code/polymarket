@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 10C with docs-first operator checklists and failure-mode quick reference layered on top of the shipped Phase 9 system.
+The repo is currently in Phase 10D with a final docs-only baseline freeze and handoff polish layered on top of the shipped Phase 9 system.
 
 ## Completed
 
@@ -137,34 +137,40 @@ Delivered:
 - command-selection guidance for the shipped operator commands
 - tighter review and replay discipline guidance
 
-## Current
-
 ### Phase 10C
 
 Operator checklist and failure-mode quick reference.
 
-Deliverables:
+Delivered:
 
 - pre-run checklist for the shipped operator commands
 - post-run checklist for checkpoint, health, packet, and replay inspection
 - failure-mode quick reference for current stale reasons and websocket no-message exit behavior
 - concise operator triage flow
-- docs aligned to shipped Phase 10C operator guidance
 
-## Recommended Next Phase
+## Current
 
 ### Phase 10D
 
-Operator validation discipline.
+Final baseline freeze and release/handoff polish.
 
-Recommended scope:
+Deliverables:
+
+- final docs consistency sweep across the shipped baseline docs
+- one clear current shipped-system summary
+- one clear operator entrypoint and read order
+- one clear in-scope vs not-in-scope statement
+- one concise recommended next step after the frozen baseline
+- removal of stale wording and duplicate phase-thread guidance
+
+## Recommended Next Step
+
+Bounded operator validation discipline:
 
 - bounded smoke-test checklist for operator flows
 - fixture-backed verification of the runbook commands
 - checkpoint and `/health` verification discipline
 - no new routes, scoring, or live behavior
-
-Do not add live trading, auth, UI, or new model/scoring work in that phase.
 
 ## Later
 

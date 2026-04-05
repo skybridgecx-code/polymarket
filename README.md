@@ -1,6 +1,6 @@
 # Polymarket Arbitrage Research
 
-Controlled read-only Polymarket analytics repo with review-packet and replay evaluation support.
+Controlled, auditable, read-only Polymarket analytics and paper-trade research system.
 
 The repo currently ships:
 
@@ -14,9 +14,20 @@ The repo currently ships:
 - read-only FastAPI operator routes
 - bounded real-time refresh orchestration with lightweight checkpointing
 
-Phase 10 adds operator documentation only through 10A, 10B, and 10C. It does not change Python behavior, routes, CLI commands, scoring, policy, or live-trading scope.
+This baseline includes operator runbook, workflow examples, checklists, and failure-mode guidance. It does not change Python behavior, routes, CLI commands, scoring, policy, or live-trading scope.
 
-The repo explicitly does not ship:
+In scope:
+
+- read-only ingestion
+- opportunity scanning
+- wallet ingestion
+- relationship detection
+- paper-trade simulation
+- replay and review
+- checkpoint-safe refresh orchestration
+- thin operator API and CLI
+
+Not in scope:
 
 - trading or order placement
 - auth or private key handling
@@ -26,6 +37,16 @@ The repo explicitly does not ship:
 - live order submission
 - clustering beyond pairwise relationship scoring
 - database or broad persistence layers
+
+## Operator Entry Point
+
+Operator read order:
+
+1. [README.md](/Users/muhammadaatif/polymarket-arb/README.md)
+2. [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
+3. [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
+4. [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
+5. [CODEX_HANDOFF.md](/Users/muhammadaatif/polymarket-arb/CODEX_HANDOFF.md)
 
 ## Quick Start
 
@@ -111,18 +132,9 @@ Important current behavior: `status` and `stale` are not identical. A never-run 
 
 ## Operator Runbook
 
-Use the operator runbook for exact checkpoint inspection flow, runtime/env expectations, and bounded packet review workflow:
+Use the operator runbook for the exact operator workflow:
 
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
-
-Quick command-selection guidance:
-
-- use `orchestrate-refresh` when you need a bounded refresh plus checkpoint and health inspection
-- use `paper-trade` when you need current simulated execution rows with `policy_decision`
-- use `review-packet` when you need a deterministic packet for audit or comparison
-- use `replay-evaluate` only after you have both baseline and candidate packet files
-
-Phase 10C adds operator checklists and a failure-mode quick reference for checkpoint and health triage.
 
 ## Module Boundaries
 
@@ -139,8 +151,6 @@ Phase 10C adds operator checklists and a failure-mode quick reference for checkp
 Raw payload handling remains separate from normalization and scoring.
 
 In the paper-trade path, policy runs after simulation. It records `allow`, `hold`, or `deny` as `policy_decision` on each paper-trade row. Manual override fields are audit fields only and are not operationalized. Circuit-breaker state is recorded and can force `hold`.
-
-Phase 9 added the policy layer. Phase 10A, 10B, and 10C add only operator documentation, examples, checklists, and review discipline.
 
 ## Validation
 
@@ -165,8 +175,8 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 
 ## Read Next
 
-- [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
+- [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
 - [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
 - [ROADMAP.md](/Users/muhammadaatif/polymarket-arb/ROADMAP.md)
 - [CODEX_HANDOFF.md](/Users/muhammadaatif/polymarket-arb/CODEX_HANDOFF.md)

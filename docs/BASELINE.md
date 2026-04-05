@@ -1,8 +1,8 @@
 # Baseline
 
-## Frozen Baseline Summary
+## Current Shipped System
 
-This document freezes the current shipped system as the official read-only baseline.
+This document is the official frozen baseline for the shipped read-only system.
 
 The system currently does:
 
@@ -18,6 +18,14 @@ The system currently does:
 - expose the results through CLI commands and a thin FastAPI API
 - run bounded refresh cycles with checkpoint-safe websocket consumption
 
+Operator entrypoint and read order:
+
+1. [README.md](/Users/muhammadaatif/polymarket-arb/README.md)
+2. [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
+3. [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
+4. [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
+5. [CODEX_HANDOFF.md](/Users/muhammadaatif/polymarket-arb/CODEX_HANDOFF.md)
+
 The system explicitly does not do:
 
 - place orders
@@ -28,6 +36,24 @@ The system explicitly does not do:
 - run a UI
 - run an always-on worker system
 - maintain a broad database or analytical warehouse
+
+In scope:
+
+- read-only ingestion
+- deterministic analytics and simulation outputs
+- thin operator CLI and API surfaces
+- bounded checkpoint-safe refresh orchestration
+- operator documentation and review discipline
+
+Not in scope:
+
+- live trading
+- auth
+- private keys
+- real order submission
+- UI
+- background workers
+- broad persistence expansion
 
 ## Official Commands
 
@@ -210,18 +236,7 @@ Current code behavior note:
 
 ## Operator Runbook
 
-The canonical operator guide for checkpoint inspection, runtime/env expectations, and bounded review workflow is:
-
-- [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
-
-Current command-selection guidance:
-
-- `orchestrate-refresh`: bounded live-data refresh plus checkpoint and health inspection
-- `paper-trade`: current paper-trade rows with post-simulation `policy_decision`
-- `review-packet`: deterministic packet export for one subject type
-- `replay-evaluate`: explicit comparison between two existing packet files
-
-Current operator checklist and failure-mode guidance lives in:
+The canonical operator guide for runtime expectations, command selection, checkpoint inspection, health interpretation, checklists, examples, and failure-mode triage is:
 
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
 
@@ -236,51 +251,9 @@ Current operator checklist and failure-mode guidance lives in:
 - do not make fake precision claims in outputs or docs
 - do not describe policy as changing planner or simulator formulas when it only evaluates final paper-trade results
 
-## Phase 9 Note
+## Recommended Next Step
 
-Phase 9 added only the paper-trade policy layer. It did not add:
-
-- new routes
-- new CLI commands
-- live trading behavior
-- review/replay features
-
-## Phase 10A Note
-
-Phase 10A adds documentation and operator workflow hardening only. It does not add:
-
-- Python behavior changes
-- new routes
-- new CLI commands
-- scoring changes
-- policy changes
-- live trading behavior
-
-## Phase 10B Note
-
-Phase 10B adds operator workflow examples and review packet discipline only. It does not add:
-
-- Python behavior changes
-- new routes
-- new CLI commands
-- scoring changes
-- policy changes
-- live trading behavior
-
-## Phase 10C Note
-
-Phase 10C adds operator checklists and failure-mode quick reference only. It does not add:
-
-- Python behavior changes
-- new routes
-- new CLI commands
-- scoring changes
-- policy changes
-- live trading behavior
-
-## Recommended Next Phase
-
-After the Phase 10C operator checklist docs, the strongest next move is Phase 10D bounded operator validation discipline:
+After this frozen baseline, the strongest next move is bounded operator validation discipline:
 
 - bounded operator smoke-test workflow
 - fixture-backed runbook verification

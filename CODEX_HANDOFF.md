@@ -2,19 +2,18 @@
 
 ## Current Status
 
-The repo now includes the shipped Phase 9 paper-trade policy layer, the Phase 10A operator runbook/checkpoint inspection docs, the Phase 10B operator workflow examples/review discipline docs, and the Phase 10C operator checklist/failure-mode docs.
-
-Shipped and in scope:
+The repo is a shipped read-only Polymarket analytics and paper-trade research baseline with:
 
 - read-only market and event ingestion
 - fee-aware opportunity scanning
 - wallet seed discovery and activity ingestion
 - explainable lead/lag copier detection
 - paper-trade execution plan generation and simulated fills
-- policy decisions attached to final paper-trade rows
+- post-simulation policy decisions on final paper-trade rows
 - deterministic review packet generation and replay comparison
 - read-only FastAPI operator API
 - bounded real-time refresh orchestration with checkpointing
+- operator runbook, examples, checklists, and failure-mode guidance
 
 Not shipped:
 
@@ -26,14 +25,7 @@ Not shipped:
 - execution automation
 - live order submission
 
-Phase 9 policy work did not add:
-
-- new routes
-- new CLI commands
-- live trading behavior
-- new review/replay features
-
-Phase 10A docs work did not add:
+This frozen baseline does not add:
 
 - Python behavior changes
 - new routes
@@ -42,31 +34,14 @@ Phase 10A docs work did not add:
 - policy changes
 - live trading behavior
 
-Phase 10B docs work did not add:
-
-- Python behavior changes
-- new routes
-- new CLI commands
-- scoring changes
-- policy changes
-- live trading behavior
-
-Phase 10C docs work did not add:
-
-- Python behavior changes
-- new routes
-- new CLI commands
-- scoring changes
-- policy changes
-- live trading behavior
-
-## Read First
+## Operator Read Order
 
 - [README.md](/Users/muhammadaatif/polymarket-arb/README.md)
-- [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
-- [ROADMAP.md](/Users/muhammadaatif/polymarket-arb/ROADMAP.md)
-- [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
+- [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
+- [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
+- [ROADMAP.md](/Users/muhammadaatif/polymarket-arb/ROADMAP.md)
+- [CODEX_HANDOFF.md](/Users/muhammadaatif/polymarket-arb/CODEX_HANDOFF.md)
 
 ## Operator Commands
 
@@ -125,27 +100,9 @@ Current stale reasons are:
 - `websocket_event_overdue`
 - `last_error_present`
 
-Use the runbook for exact checkpoint inspection and operator review flow:
+Use the runbook for exact checkpoint inspection, operator checklists, and failure-mode triage:
 
 - [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
-
-Current command-selection guidance is:
-
-- `orchestrate-refresh` for bounded refresh plus checkpoint/health inspection
-- `paper-trade` for current simulated execution rows
-- `review-packet` for deterministic subject-type packet export
-- `replay-evaluate` for packet-to-packet comparison only
-
-Current failure-mode quick reference covers:
-
-- `scan_never_refreshed`
-- `scan_refresh_overdue`
-- `relationships_never_refreshed`
-- `relationship_refresh_overdue`
-- `websocket_never_received_event`
-- `websocket_event_overdue`
-- `last_error_present`
-- `websocket_consumer_exited_without_messages` via `last_error`
 
 ## Guardrails For Future Phases
 
@@ -175,11 +132,10 @@ python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-l
 python -m uvicorn polymarket_arb.api.main:app --reload
 ```
 
-## Recommended Next Bounded Prompt
+## Recommended Next Step
 
-Phase 10D only:
+Bounded operator validation discipline:
 
-- add bounded operator smoke-test discipline
 - verify the runbook commands against fixture-backed flows
 - verify checkpoint and `/health` inspection flow
 - add no new routes
