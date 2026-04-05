@@ -127,3 +127,30 @@ def test_paper_trade_service_rejects_thin_edge_and_low_capacity_plans(tmp_path: 
     assert isinstance(low_capacity_policy, dict)
     assert low_capacity_policy["decision"] == "deny"
     assert low_capacity_policy["decision_reason"] == "upstream_result_rejected"
+
+
+def test_paper_trade_service_outputs_operator_validation_fields_for_every_row(
+    tmp_path: Path,
+) -> None:
+    reports = _load_reports(tmp_path)
+
+    assert len(reports) == 4
+    for report in reports:
+        assert set(report) >= {
+            "status",
+            "rejection_reason",
+            "explanation",
+            "risk_flags",
+            "simulated_result",
+            "policy_decision",
+        }
+        assert "status" in report
+        assert "rejection_reason" in report
+        assert "explanation" in report
+        assert "risk_flags" in report
+        assert "simulated_result" in report
+        assert "policy_decision" in report
+
+        policy_decision = report["policy_decision"]
+        assert isinstance(policy_decision, dict)
+        assert policy_decision["decision"] in {"allow", "hold", "deny"}

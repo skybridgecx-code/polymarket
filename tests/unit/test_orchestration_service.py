@@ -206,3 +206,129 @@ def test_orchestration_service_resumes_subscription_from_checkpoint(tmp_path: Pa
     )
 
     assert ws_client.calls[0] == ["resume-token"]
+
+
+def test_orchestration_service_refresh_output_matches_operator_validation_shape(
+    tmp_path: Path,
+) -> None:
+    settings = _settings(tmp_path)
+    service = RefreshOrchestratorService(
+        settings,
+        scan_service=_FakeScanService(
+            [
+                {
+                    "event_slug": "event-a",
+                    "opportunity_type": "binary_complement",
+                    "legs": [{"token_id": "token-a"}],
+                    "gross_edge_cents": "0",
+                    "estimated_fee_cents": "0",
+                    "net_edge_cents": "0",
+                    "capacity_shares_or_notional": "0",
+                    "status": "rejected",
+                    "rejection_reason": "no_gross_edge",
+                    "explanation": "sample",
+                }
+            ]
+        ),
+        copier_detection_service=_FakeCopierDetectionService(
+            [
+                {
+                    "leader_wallet": "leader",
+                    "follower_wallet": "follower",
+                    "relationship_type": "same_leg_same_side_lag",
+                    "matched_events_count": 0,
+                    "matched_legs_count": 0,
+                    "lag_summary_seconds": {"min": None, "median": None, "max": None},
+                    "confidence_score": "0",
+                    "status": "rejected",
+                    "rejection_reason": "no_same_leg_matches",
+                    "explanation": "sample",
+                    "evidence": [],
+                }
+            ]
+        ),
+        ws_client=_FakeWsClient([[_event("token-a")]]),  # type: ignore[arg-type]
+    )
+
+    result = asyncio.run(
+        service.run_refresh_cycle(
+            scan_limit=5,
+            relationship_limit=10,
+            max_websocket_messages=1,
+        )
+    )
+
+    assert set(result) >= {
+        "scan_limit",
+        "relationship_limit",
+        "max_websocket_messages",
+        "checkpoint",
+        "health",
+        "opportunities_count",
+        "relationships_count",
+    }
+    assert result["scan_limit"] == 5
+    assert result["relationship_limit"] == 10
+    assert result["max_websocket_messages"] == 1
+    checkpoint = result["checkpoint"]
+    assert isinstance(checkpoint, dict)
+    assert checkpoint["checkpoint_written_at"] is not None
+    assert checkpoint["last_scan_refresh_at"] is not None
+    assert checkpoint["last_relationship_refresh_at"] is not None
+    assert checkpoint["last_refresh_limit"] == 5
+    assert checkpoint["last_relationship_limit"] == 10
+    assert isinstance(checkpoint["stale_reasons"], list)
+
+    health = result["health"]
+    assert isinstance(health, dict)
+    assert health["status"] in {"idle", "ok", "stale"}
+    assert isinstance(health["stale_reasons"], list)
+    assert "checkpoint_path" in health
+    assert "last_error" in health
+    assert "websocket_reconnect_count" in health
+    assert "websocket_disconnect_count" in health
+    assert "subscribed_asset_ids_count" in health
+
+
+def test_orchestration_service_reports_documented_last_error_semantics(tmp_path: Path) -> None:
+    settings = _settings(tmp_path)
+    service = RefreshOrchestratorService(
+        settings,
+        scan_service=_FakeScanService(
+            [
+                {
+                    "event_slug": "event-a",
+                    "opportunity_type": "binary_complement",
+                    "legs": [{"token_id": "token-a"}],
+                    "gross_edge_cents": "0",
+                    "estimated_fee_cents": "0",
+                    "net_edge_cents": "0",
+                    "capacity_shares_or_notional": "0",
+                    "status": "rejected",
+                    "rejection_reason": "no_gross_edge",
+                    "explanation": "sample",
+                }
+            ]
+        ),
+        copier_detection_service=_FakeCopierDetectionService([]),
+        ws_client=_FakeWsClient([[]]),  # type: ignore[arg-type]
+    )
+
+    result = asyncio.run(
+        service.run_refresh_cycle(
+            scan_limit=5,
+            relationship_limit=10,
+            max_websocket_messages=1,
+        )
+    )
+
+    checkpoint = result["checkpoint"]
+    assert isinstance(checkpoint, dict)
+    assert checkpoint["last_error"] == "websocket_consumer_exited_without_messages"
+    assert "websocket_never_received_event" in checkpoint["stale_reasons"]
+    assert "last_error_present" in checkpoint["stale_reasons"]
+
+    health = result["health"]
+    assert isinstance(health, dict)
+    assert health["last_error"] == "websocket_consumer_exited_without_messages"
+    assert "last_error_present" in health["stale_reasons"]

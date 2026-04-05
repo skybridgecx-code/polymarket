@@ -120,3 +120,67 @@ def test_replay_evaluation_service_reports_explicit_drift(tmp_path: Path) -> Non
     assert pass_payload["matches_count"] == 2
     assert pass_payload["mismatches_count"] == 0
     assert pass_payload["drift_reasons"] == []
+
+
+def test_review_services_match_operator_validation_output_shapes(tmp_path: Path) -> None:
+    settings = _settings(tmp_path)
+    service = ReviewPacketService(settings)
+    evaluator = ReplayEvaluationService()
+
+    packet_output = asyncio.run(
+        service.build_packet_output(
+            packet_type="paper_trade",
+            limit=10,
+            fixture_path="tests/fixtures/scenarios/phase8_review_records_baseline.json",
+        )
+    )
+
+    assert set(packet_output) >= {
+        "packet_id",
+        "packet_type",
+        "created_at",
+        "source_references",
+        "summarized_findings",
+        "status",
+        "notes",
+    }
+    assert packet_output["packet_type"] == "paper_trade"
+    assert isinstance(packet_output["source_references"], list)
+    assert isinstance(packet_output["summarized_findings"], dict)
+    assert packet_output["status"] == "ready"
+    assert isinstance(packet_output["notes"], list)
+
+    baseline_packet = asyncio.run(
+        service.build_packet(
+            packet_type="paper_trade",
+            limit=10,
+            fixture_path="tests/fixtures/scenarios/phase8_review_records_baseline.json",
+        )
+    )
+    candidate_packet = asyncio.run(
+        service.build_packet(
+            packet_type="paper_trade",
+            limit=10,
+            fixture_path="tests/fixtures/scenarios/phase8_review_records_candidate.json",
+        )
+    )
+
+    replay_output = evaluator.evaluate_packets(
+        baseline_packet=baseline_packet,
+        candidate_packet=candidate_packet,
+    ).to_output()
+
+    assert set(replay_output) == {
+        "evaluation_id",
+        "subject_type",
+        "compared_records_count",
+        "matches_count",
+        "mismatches_count",
+        "drift_reasons",
+        "status",
+        "explanation",
+    }
+    assert replay_output["subject_type"] == "paper_trade"
+    assert replay_output["status"] == "fail"
+    assert isinstance(replay_output["drift_reasons"], list)
+    assert replay_output["compared_records_count"] == 3
