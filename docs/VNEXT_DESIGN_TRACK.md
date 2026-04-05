@@ -76,6 +76,42 @@ Decision gate to unlock the next phase:
 
 - the future-phase sequence is specific enough that each later phase can be approved or rejected independently
 
+### Phase 13C
+
+Objective:
+
+- define the execution boundary between the frozen baseline repo and any future execution-capable system
+
+Why it exists:
+
+- the current repo already contains execution research and paper-trade simulation, which creates a real risk of accidental scope drift if future live-capable work is not kept separate
+
+What it would change:
+
+- design documents only
+- explicit ownership split between the frozen baseline and any later execution-capable system
+- explicit prerequisites that must be satisfied before implementation of any execution-capable system is even discussable
+
+What it must not change:
+
+- the frozen baseline repo
+- Python behavior
+- routes
+- CLI commands
+- scoring logic
+- policy behavior
+- live trading behavior
+
+Validation required before moving on:
+
+- the execution boundary is documented in a way that makes ownership, non-reuse rules, and trust boundaries explicit
+- the baseline repo is still described as read-only plus simulation/review only
+- no document in the frozen baseline is rewritten to imply that execution-capable behavior is already planned into the shipped system
+
+Decision gate to unlock the next phase:
+
+- approval that the boundary is explicit enough that later risk/control design can assume a separate execution-capable system rather than a baseline repo extension
+
 ### Phase 14
 
 Objective:
@@ -90,7 +126,7 @@ What it would change:
 
 - operator release criteria
 - promotion thresholds
-- documented go/no-go rules for advancing beyond the frozen baseline
+- documented go/no-go rules for advancing the frozen baseline into stricter testing and review discipline, not into live execution
 
 What it must not change:
 
@@ -107,22 +143,22 @@ Validation required before moving on:
 
 Decision gate to unlock the next phase:
 
-- approval that promotion criteria are complete enough to support execution-boundary design without weakening the frozen baseline
+- approval that promotion criteria are complete enough to support later risk/control design without weakening the frozen baseline
 
 ### Phase 15
 
 Objective:
 
-- design the live-capable execution boundary as a separate system surface
+- design the live-capable system surface that would exist outside the frozen baseline boundary
 
 Why it exists:
 
-- the current paper-trade path must not be allowed to drift directly into live execution
+- once the boundary is defined, the future execution-capable system still needs its own owned surface and responsibilities
 
 What it would change:
 
-- architecture-level boundary definitions between simulation and any future order-intent or execution system
-- explicit module and responsibility separation for a future live-capable track
+- system-level responsibilities for any future order-intent, auth, signing, routing, and execution state handling
+- explicit handoff points from baseline research outputs into a separate future system
 
 What it must not change:
 
@@ -133,9 +169,9 @@ What it must not change:
 
 Validation required before moving on:
 
-- explicit non-reuse rules are documented for paper-trade code paths
-- live-capable boundary diagrams and control points are documented
+- explicit ownership for future execution responsibilities is documented
 - auth, signing, and order submission remain out of scope in this phase
+- no future system responsibility is assigned back into the frozen baseline repo
 
 Decision gate to unlock the next phase:
 
@@ -211,12 +247,100 @@ Decision gate to unlock any later implementation phase:
 
 The phases above are intentionally serial:
 
-1. promotion gate design
-2. live-capable execution boundary design
-3. risk and portfolio control design
-4. reconciliation and stricter pre-live testing design
+1. execution-boundary design
+2. promotion gate design
+3. separate live-capable system surface design
+4. risk and portfolio control design
+5. reconciliation and stricter pre-live testing design
 
 No later phase should start until the prior phase has an explicit approval decision. No phase in this document authorizes implementation by default.
+
+## Execution Boundary
+
+### Purpose Of This Boundary
+
+The boundary exists to prevent a dangerous category error: treating a trusted read-only research repo as the natural place to add live-capable execution. That would collapse inspection, simulation, and execution into one surface and weaken every control boundary the frozen baseline currently relies on.
+
+### What Must Remain Inside The Frozen Baseline Repo
+
+The baseline repo keeps ownership of:
+
+- read-only public data ingestion
+- deterministic normalization
+- opportunity scanning
+- wallet ingestion and relationship scoring
+- paper-trade planning and simulation
+- post-simulation policy decisions on simulated rows
+- review packets and replay evaluation
+- operator documentation, checkpoint inspection, and operator validation
+
+The baseline repo remains a research and operator-inspection system. It may continue to produce candidate opportunities, simulated plans, simulated outcomes, and audit artifacts. It must not become an execution runtime.
+
+### What Must Remain Outside The Frozen Baseline Repo
+
+The baseline repo must not take ownership of:
+
+- exchange or venue authentication
+- private key custody or signing
+- order-intent creation for live venues
+- order submission, cancelation, or replace behavior
+- execution-state reconciliation against external fills or balances
+- portfolio state mutation
+- live exposure management
+- autonomous live control loops
+
+These responsibilities belong outside the frozen baseline because they cross the line from read-only research into systems that can create irreversible external effects.
+
+### What A Future Execution-Capable System Would Own
+
+If a future system is ever approved, that separate system would own:
+
+- auth and credential handling
+- key management and signing boundaries
+- order-intent lifecycle
+- order submission and execution acknowledgements
+- venue reconciliation
+- live position and exposure state
+- portfolio and capital controls
+- failure recovery for live external actions
+
+The baseline repo could at most provide upstream research artifacts or operator-reviewed signals to that future system. It would not own the live control plane.
+
+### Boundary Rules Between The Two
+
+- the baseline repo may publish read-only analytics outputs and simulated research outputs only
+- no live-capable code path may be added by extending `paper-trade` directly
+- no auth, signing, or order-routing logic may be placed into current clients, services, routes, or CLI commands
+- no policy or checkpoint model in the baseline should be rebranded as a live risk or reconciliation system
+- any future execution-capable system must consume clearly defined outputs from the baseline rather than reaching into internal baseline modules opportunistically
+- rejected and weak baseline outputs must remain explicit and must not be reinterpreted as executable orders
+
+### Prerequisites Before Any Execution-Capable Implementation
+
+Before any execution-capable implementation is allowed, all of the following must be true:
+
+- the execution boundary is explicitly approved
+- a separate future system surface is explicitly approved
+- risk and portfolio controls are designed and reviewed
+- reconciliation and failure-recovery design is complete
+- stricter pre-live validation and forward-testing stages are defined
+- separate approval is granted to move from design-only work into implementation work
+
+### Risks Of Violating The Boundary
+
+- operator trust in the frozen baseline would be weakened
+- simulated success could be confused with execution readiness
+- live side effects could be introduced into code paths that were validated only as read-only or paper-trade research
+- review, replay, and checkpoint artifacts could be mistaken for live reconciliation controls even though they were never designed for that role
+- future incident response would be harder because ownership would be split across a mixed research/execution codebase
+
+## Recommended Order Of Future Work
+
+1. finish the execution-boundary definition
+2. define promotion gates for stricter non-live testing and operator release discipline
+3. define the separate future execution-capable system surface
+4. define risk and portfolio control ownership for that separate system
+5. define reconciliation, failure recovery, and stricter pre-live testing before any implementation phase is proposed
 
 ## Candidate Future Design Areas
 
@@ -293,15 +417,7 @@ The main risks are structural, not cosmetic:
 - replay and review are useful audit tools, but they are not execution reconciliation
 - adding live behavior too early would collapse boundaries that are currently clear and defensible
 
-## Recommended Order Of Future Work
-
-1. complete design-only promotion gating
-2. complete design-only live-capable execution boundary work
-3. complete design-only risk and portfolio control work
-4. complete design-only reconciliation and stricter testing work
-5. require separate approval before any implementation phase is even proposed
-
-## Explicit Non-Goals For Phase 13B
+## Explicit Non-Goals For Phase 13C
 
 This design track does not add:
 
