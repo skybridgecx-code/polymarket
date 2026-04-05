@@ -73,6 +73,13 @@ def test_paper_trade_service_accepts_plan_with_explicit_slippage_and_simulation(
     assert isinstance(slippage, dict)
     assert slippage["total_bps"] == 22
 
+    policy_decision = report["policy_decision"]
+    assert isinstance(policy_decision, dict)
+    assert policy_decision["decision"] == "allow"
+    assert policy_decision["decision_reason"] == "passes_policy"
+    assert policy_decision["observed_slippage_bps"] == 22
+    assert policy_decision["manual_override_status"] == "not_requested"
+
     simulated_result = report["simulated_result"]
     assert isinstance(simulated_result, dict)
     assert simulated_result["simulated_net_edge_cents"] == "93.07"
@@ -86,6 +93,10 @@ def test_paper_trade_service_preserves_rejected_source_opportunity(tmp_path: Pat
     assert report["rejection_reason"] == "source_opportunity_rejected"
     assert report["risk_flags"] == ["source_candidate_rejected"]
     assert report["simulated_result"] is None
+    policy_decision = report["policy_decision"]
+    assert isinstance(policy_decision, dict)
+    assert policy_decision["decision"] == "deny"
+    assert policy_decision["decision_reason"] == "upstream_result_rejected"
 
 
 def test_paper_trade_service_rejects_thin_edge_and_low_capacity_plans(tmp_path: Path) -> None:
@@ -102,9 +113,17 @@ def test_paper_trade_service_rejects_thin_edge_and_low_capacity_plans(tmp_path: 
         "thin_simulated_edge",
     ]
     assert thin_edge["simulated_result"] is not None
+    thin_edge_policy = thin_edge["policy_decision"]
+    assert isinstance(thin_edge_policy, dict)
+    assert thin_edge_policy["decision"] == "deny"
+    assert thin_edge_policy["decision_reason"] == "upstream_result_rejected"
 
     low_capacity = _report_by_event_slug(reports, event_slug="phase7b-low-capacity")
     assert low_capacity["status"] == "rejected"
     assert low_capacity["rejection_reason"] == "proposed_size_below_minimum"
     assert low_capacity["risk_flags"] == ["capacity_below_policy_floor"]
     assert low_capacity["simulated_result"] is None
+    low_capacity_policy = low_capacity["policy_decision"]
+    assert isinstance(low_capacity_policy, dict)
+    assert low_capacity_policy["decision"] == "deny"
+    assert low_capacity_policy["decision_reason"] == "upstream_result_rejected"

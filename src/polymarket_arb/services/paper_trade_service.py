@@ -8,6 +8,7 @@ from polymarket_arb.config import Settings
 from polymarket_arb.execution import ExecutionPlanBuilder, PaperTradeSimulator
 from polymarket_arb.models.execution import PaperTradeResult
 from polymarket_arb.models.opportunity import OpportunityCandidate
+from polymarket_arb.services.policy_guardrail_service import PolicyGuardrailService
 from polymarket_arb.services.scan_service import ScanService
 
 
@@ -22,6 +23,7 @@ class PaperTradeService:
         self._scan_service = scan_service or ScanService(settings)
         self._plan_builder = ExecutionPlanBuilder(settings)
         self._simulator = PaperTradeSimulator(settings)
+        self._policy_guardrail_service = PolicyGuardrailService(settings)
 
     async def build_paper_trade_rows(
         self,
@@ -41,7 +43,11 @@ class PaperTradeService:
         reports: list[PaperTradeResult] = []
         for opportunity in opportunities:
             plan = self._plan_builder.build_plan(opportunity=opportunity)
-            reports.append(self._simulator.simulate(plan=plan))
+            simulated_result = self._simulator.simulate(plan=plan)
+            policy_decision = self._policy_guardrail_service.evaluate(result=simulated_result)
+            reports.append(
+                simulated_result.model_copy(update={"policy_decision": policy_decision})
+            )
         return reports
 
     async def _load_opportunities(

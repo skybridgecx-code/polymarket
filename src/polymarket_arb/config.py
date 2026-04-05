@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     paper_trade_base_slippage_bps: int = 10
     paper_trade_additional_leg_slippage_bps: int = 5
     paper_trade_utilization_slippage_bps: int = 20
+    paper_trade_policy_max_slippage_bps: int = 24
+    paper_trade_circuit_breaker_active: bool = False
+    paper_trade_circuit_breaker_reason: str | None = None
 
     def ensure_directories(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)

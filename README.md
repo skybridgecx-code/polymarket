@@ -9,6 +9,7 @@ The repo currently ships:
 - wallet seed discovery and wallet activity ingestion
 - explainable lead/lag copier relationship detection
 - paper-trade execution plan research and simulated fills
+- paper-trade policy decisions attached to final simulated results
 - review packet generation and replay evaluation
 - read-only FastAPI operator routes
 - bounded real-time refresh orchestration with lightweight checkpointing
@@ -101,6 +102,10 @@ The checkpoint tracks:
 - `src/polymarket_arb/models/`: raw, normalized, opportunity, relationship, and orchestration models
 
 Raw payload handling remains separate from normalization and scoring.
+
+In the paper-trade path, policy runs after simulation. It records `allow`, `hold`, or `deny` as `policy_decision` on each paper-trade row. Manual override fields are audit fields only and are not operationalized. Circuit-breaker state is recorded and can force `hold`.
+
+Phase 9A was intentionally narrow. It did not add routes, CLI commands, live trading behavior, or review/replay features.
 
 ## Validation
 

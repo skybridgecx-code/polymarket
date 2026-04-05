@@ -5,6 +5,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
+from polymarket_arb.models.policy import PolicyDecision
+
 
 def _decimal_to_string(value: Decimal | None) -> str | None:
     if value is None:
@@ -135,6 +137,7 @@ class PaperTradeResult(BaseModel):
     explanation: str
     risk_flags: list[str]
     simulated_result: SimulatedExecutionResult | None
+    policy_decision: PolicyDecision | None = None
 
     def to_output(self) -> dict[str, Any]:
         return {
@@ -160,6 +163,11 @@ class PaperTradeResult(BaseModel):
             "simulated_result": (
                 self.simulated_result.to_output()
                 if self.simulated_result is not None
+                else None
+            ),
+            "policy_decision": (
+                self.policy_decision.to_output()
+                if self.policy_decision is not None
                 else None
             ),
         }

@@ -73,7 +73,8 @@ Paper-trade research boundary:
 - execution plan generation from originating opportunities
 - explicit slippage assumptions
 - simulated fills
-- kill-switch and circuit-breaker rejection rules
+- existing planner and simulator rejection behavior
+- post-simulation policy evaluation and decision records
 
 Rules:
 
@@ -82,6 +83,8 @@ Rules:
 - no private keys
 - no order placement
 - keep plan generation separate from simulation
+- keep policy evaluation separate from planner and simulator formulas
+- manual override fields are recorded only and not operationalized
 
 ### `src/polymarket_arb/review/`
 
@@ -169,7 +172,17 @@ Type boundary:
 
 ### Paper-Trade Path
 
-`ScanService` or fixture input -> `ExecutionPlanBuilder` -> `PaperTradeSimulator` -> `PaperTradeService` -> CLI
+`ScanService` or fixture input -> `ExecutionPlanBuilder` -> `PaperTradeSimulator` -> `PolicyGuardrailService` -> `PaperTradeService` -> CLI
+
+The execution layer still preserves existing planner and simulator outcomes. `ExecutionPlanBuilder` can reject plans, and `PaperTradeSimulator` can still reject simulated results based on the existing formulas. `PolicyGuardrailService` is an added step after simulation; it does not replace or bypass planner/simulator rejection logic.
+
+Policy intent on final paper-trade rows:
+
+- `allow`: accepted simulated result that passes policy
+- `hold`: policy-only block such as active circuit breaker or slippage above configured cap
+- `deny`: upstream rejected simulated result
+
+Circuit-breaker state is recorded in the decision record and can force `hold`. Manual override fields are also recorded in the decision record but are not operationalized.
 
 ### Review Path
 

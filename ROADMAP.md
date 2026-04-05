@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 8 with review-packet and replay evaluation added on top of the read-only baseline.
+The repo is currently in Phase 9 with a deterministic paper-trade policy layer added on top of the existing paper-trade path.
 
 ## Completed
 
@@ -78,13 +78,23 @@ Delivered:
 - lightweight checkpoint file
 - reconnect and resume handling
 
-## Current
+### Phase 7
+
+Paper-trade execution research.
+
+Delivered:
+
+- execution plan model
+- paper-trade simulation service
+- explicit slippage model
+- explicit kill-switch rules
+- deterministic scenario fixtures and tests
 
 ### Phase 8
 
 Review packets and replay evaluation.
 
-Deliverables:
+Delivered:
 
 - review packet models
 - packet builder service
@@ -92,9 +102,24 @@ Deliverables:
 - deterministic export format
 - explicit pass/fail and drift reporting
 
-## Recommended Next Phase
+## Current
 
 ### Phase 9
+
+Paper-trade policy and guardrail layer, followed by docs alignment.
+
+Deliverables:
+
+- policy decision records with `allow` / `hold` / `deny`
+- post-simulation policy evaluation
+- recorded manual override fields
+- recorded circuit-breaker state
+- deterministic slippage-cap policy gate
+- docs aligned to shipped policy behavior
+
+## Recommended Next Phase
+
+### Phase 10
 
 Operator hardening and review workflow discipline.
 
@@ -106,7 +131,7 @@ Recommended scope:
 - safer operator workflows around refresh cadence and checkpoint inspection
 - packaging and release hygiene
 
-Do not start live trading, auth, UI, or new model/scoring work in that phase.
+Do not add live trading, auth, UI, or new model/scoring work in that phase.
 
 ## Later
 

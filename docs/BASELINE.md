@@ -13,6 +13,7 @@ The system currently does:
 - ingest normalized wallet activity
 - score explainable leader/follower relationships from normalized activity
 - generate paper-trade execution plans and simulated fill outcomes
+- apply a deterministic policy decision layer to final paper-trade results
 - build deterministic review packets and replay evaluations
 - expose the results through CLI commands and a thin FastAPI API
 - run bounded refresh cycles with checkpoint-safe websocket consumption
@@ -123,6 +124,20 @@ Each paper-trade result includes:
 - `explanation`
 - `risk_flags`
 - `simulated_result`
+- `policy_decision`
+
+`policy_decision` is applied after simulation, not before planning or simulation. It records one of:
+
+- `allow`: upstream paper-trade result was accepted and passed policy
+- `hold`: policy-only block such as active circuit breaker or slippage above configured cap
+- `deny`: upstream paper-trade result was already rejected
+
+The policy decision also records:
+
+- manual override fields for audit purposes only
+- circuit-breaker state fields
+
+Manual override fields are recorded only and are not operationalized. Circuit-breaker state can force `hold`.
 
 ### Review Packets
 
@@ -175,6 +190,16 @@ Default checkpoint file:
 - keep route layer thin over services
 - preserve weak or rejected outputs unless a future contract explicitly changes visibility
 - do not make fake precision claims in outputs or docs
+- do not describe policy as changing planner or simulator formulas when it only evaluates final paper-trade results
+
+## Phase 9A Note
+
+Phase 9A added only the paper-trade policy layer. It did not add:
+
+- new routes
+- new CLI commands
+- live trading behavior
+- review/replay features
 
 ## Recommended Next Phase
 

@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The repo now includes a Phase 8 review-packet and replay evaluation layer on top of the read-only baseline.
+The repo now includes the shipped Phase 9 paper-trade policy layer on top of the existing paper-trade path, with docs aligned through Phase 9B.
 
 Shipped and in scope:
 
@@ -11,6 +11,7 @@ Shipped and in scope:
 - wallet seed discovery and activity ingestion
 - explainable lead/lag copier detection
 - paper-trade execution plan generation and simulated fills
+- policy decisions attached to final paper-trade rows
 - deterministic review packet generation and replay comparison
 - read-only FastAPI operator API
 - bounded real-time refresh orchestration with checkpointing
@@ -24,6 +25,13 @@ Not shipped:
 - background workers
 - execution automation
 - live order submission
+
+Phase 9 policy work did not add:
+
+- new routes
+- new CLI commands
+- live trading behavior
+- new review/replay features
 
 ## Read First
 
@@ -77,6 +85,7 @@ The file is a lightweight JSON checkpoint used by `RefreshOrchestratorService`. 
 
 - stay read-only unless a future phase explicitly changes that boundary
 - keep paper-trade simulation separate from any future live-capable code path
+- keep policy evaluation separate from planner and simulator formulas
 - keep review packet building separate from replay evaluation logic
 - keep clients, normalization, scoring, services, and routes separated
 - do not add route behavior by reimplementing engine logic in FastAPI
@@ -102,11 +111,12 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 
 ## Recommended Next Bounded Prompt
 
-Phase 9 only:
+Phase 9B only:
 
-- improve operator hardening and release discipline
-- document review workflow for packets and replay comparisons
-- document deployment, runtime env, and checkpoint inspection flows
+- document `policy_decision` on paper-trade rows
+- document post-simulation policy ordering and `allow` / `hold` / `deny`
+- document that manual override fields are recorded only
+- document that circuit-breaker state can force `hold`
 - add no new scoring logic
 - add no new routes
 - add no live execution logic
