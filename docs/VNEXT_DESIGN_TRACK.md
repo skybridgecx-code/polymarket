@@ -1181,118 +1181,123 @@ Before implementation of any future governance, approval, or override layer is a
 - operators could normalize escalation-free behavior because nobody clearly owns denial authority
 - future incidents would be harder to investigate because approval chains would be unclear
 
-### Phase 13J
+## Recommended Order Of Future Work
 
-Objective:
+1. finish the execution-boundary definition
+2. define the risk/control layer and its authority boundaries
+3. define reconciliation and failure-recovery ownership and limits
+4. define promotion gates and pre-live validation evidence for stricter non-live testing
+5. define the data, audit, and observability boundary for the future system
+6. define the portfolio and capital-allocation boundary for the future system
+7. define governance, approval, and override authority boundaries
+8. define the separate future execution-capable system surface
+9. define detailed portfolio-governance integration for that future system
+10. define stricter forward-testing boundaries before any implementation phase is proposed
 
-- define the minimal safe implementation order for future layers and the gates that must be proven before any layer moves from design into implementation
+## Candidate Future Design Areas
 
-Why it exists:
+### Operator Validation Promotion Gate
 
-- sequencing is a risk-control decision, not a project-management convenience
-- later layers must not be built on unproven boundary, control, recovery, observability, or approval surfaces
-- the future system must not outrun the trust boundary that keeps the frozen baseline safe
+Design goal:
 
-What it would change:
+- define what must pass before the baseline can be promoted from documented operator validation to stricter execution-adjacent testing
 
-- design documents only
-- explicit sequencing rules for future layers
-- explicit dependency rules between future layers
-- explicit gate criteria before any layer can move from design into implementation
-- explicit unsafe implementation orders and why they are unsafe
+Likely scope:
 
-What it must not change:
+- stricter acceptance gates
+- promotion criteria for fixtures, replay, and checkpoint verification
+- explicit failure thresholds for operator release confidence
 
-- the frozen baseline repo
-- Python behavior
-- routes
-- CLI commands
-- scoring logic
-- policy behavior in the frozen baseline
-- live trading behavior
-- auth or private key handling
-- UI work
-- any implementation detail that implies the future system is being built now
+### Live-Capable Execution Design Boundary
 
-Purpose Of The Integration-Sequencing Section
+Design goal:
 
-- make future implementation order explicit before any build work starts
-- prevent control layers from being treated as optional or interchangeable
-- force reviewers to reject designs that try to skip trust-boundary steps
-- keep the frozen baseline separate from any future execution-capable system
+- define a hard separation between the current paper-trade path and any future live-capable execution path
 
-Why Implementation Order Matters
+Likely scope:
 
-- execution capability without a prior boundary definition creates ownership ambiguity
-- risk and control logic without reconciliation can hide failure states instead of constraining them
-- promotion gates without observability cannot be proven with evidence
-- portfolio allocation without governance can create self-authorizing capital decisions
-- governance without the earlier control surfaces becomes approval theater instead of a real control point
+- explicit module boundary between simulation and any future order-intent layer
+- non-goals around direct reuse of paper-trade services for live execution
+- review points before auth, signing, or order placement are even discussed
 
-Required Dependencies Between Future Layers
+### Risk And Portfolio Control Layer
 
-- execution boundary is the root dependency for all later future layers
-- risk/control depends on the execution boundary because authority limits only make sense once the system boundary is fixed
-- reconciliation/recovery depends on risk/control because failure handling must know what is allowed, denied, or retried
-- observability depends on reconciliation because recovery states, failure classes, and control outcomes must be observable before they can be promoted
-- promotion-gate validation depends on observability because a gate cannot be proven without evidence
-- portfolio/capital-allocation depends on risk/control, reconciliation, and observability because capital constraints must be bounded, observable, and recoverable
-- governance/approval depends on all prior layers because approvals, denials, and overrides need explicit control, evidence, and recovery context
+Design goal:
 
-Minimal Safe Implementation Order
+- define the control plane that would have to exist before any live-capable behavior could be considered
 
-1. define and approve the execution boundary
-2. define and approve the risk/control layer and its authority limits
-3. define and approve reconciliation and failure-recovery ownership and limits
-4. define and approve observability requirements that can prove the control and recovery layers are working
-5. define and approve promotion-gate validation requirements that depend on the observable control surface
-6. define and approve portfolio and capital-allocation boundaries that sit on top of the control and recovery layers
-7. define and approve governance, approval, and manual-override boundaries that govern progression through the prior layers
-8. only after the above are proven may a separate future execution-capable system surface be discussed for implementation planning
+Likely scope:
 
-Gate Criteria Before A Layer May Move From Design To Implementation
+- exposure limits
+- circuit-breaker hierarchy
+- portfolio-level guardrails
+- operator approval boundaries
 
-- before execution boundary implementation: the boundary is explicit, the frozen baseline trust boundary is preserved, and no implementation work depends on shared assumptions with a future execution-capable system
-- before risk/control implementation: authority scopes, denied actions, and bounded exceptions are documented well enough to reject self-authorizing designs
-- before reconciliation/recovery implementation: failure states, recovery ownership, replay boundaries, and ambiguity handling are documented well enough to prevent hidden or default-safe drift
-- before observability implementation: the events, audit fields, and traceability needed to prove control and recovery behavior are specified
-- before promotion-gate implementation: the observability evidence required for go/no-go decisions is concrete enough to fail an under-specified design
-- before portfolio/capital-allocation implementation: exposure budgets, limit boundaries, and conflict-resolution rules are explicit and reject designs that let allocation outrun controls
-- before governance/approval implementation: approval authority, separation of duties, override scope, expiry, and audit requirements are concrete enough to prevent self-approval or invisible override paths
+### Reconciliation And Failure Recovery
 
-Unsafe Implementation Orders And Why They Are Unsafe
+Design goal:
 
-- governance before observability is unsafe because approvals would not be backed by evidence
-- promotion gates before reconciliation are unsafe because gates could pass while failure states remain unresolved
-- portfolio allocation before risk/control is unsafe because capital decisions would have no bounded authority surface
-- execution-capable implementation before the execution boundary is unsafe because the future system would inherit unproven assumptions from the frozen baseline
-- observability after promotion gates is unsafe because the gate would be asked to prove behavior it cannot yet observe
-- reconciliation after governance is unsafe because approval would be granted before recovery behavior is bounded
-- any order that collapses control, recovery, observability, and approval into one step is unsafe because it removes the gates that are supposed to stop overreach
+- define how a future live-capable system would detect and reconcile drift, partial failures, or inconsistent external state
 
-Risks Of Skipping Sequence Discipline
+Likely scope:
 
-- a future subsystem could outrun the control surfaces meant to constrain it
-- approvals could be granted without evidence that failure handling works
-- recovery logic could be designed too late to explain the states it is supposed to recover
-- capital allocation could be layered on top of ambiguous authority
-- operators could mistake a partially defined future system for a safe one
-- later implementation phases would become harder to reject because the trust boundary was never made explicit
+- reconciliation checkpoints
+- failure classification
+- replay and recovery boundaries
+- operator-visible recovery states
 
-Explicit Non-Goals For Phase 13J
+### Promotion Path From Simulation To Stricter Testing
 
-This phase does not add:
+Design goal:
 
-- Python changes
-- route changes
-- new CLI commands
-- scoring changes
-- policy changes
-- live trading behavior
-- auth or private key handling
-- UI work
-- implementation details for the future system
-- broad roadmap expansion beyond this sequencing rule set
+- define the staged path from read-only simulation to more demanding verification environments without jumping directly to live behavior
+
+Likely scope:
+
+- simulation hardening
+- deterministic acceptance promotion
+- stricter integration-style testing
+- explicit go/no-go gates between stages
+
+### Data And Observability Boundary
+
+Design goal:
+
+- define the event, metric, audit, and traceability surfaces required so a future execution-capable system can be reviewed, controlled, and reconciled under failure
+
+Likely scope:
+
+- structured event taxonomy
+- audit trail requirements
+- correlation and retention expectations
+- minimum observability gates before implementation
+
+### Portfolio And Capital Allocation
+
+Design goal:
+
+- define how a future system would allocate scarce capital, budget exposure, recognize offsets conservatively, and resolve conflicts between competing strategy intents
+
+Likely scope:
+
+- portfolio and strategy allocation boundaries
+- gross and net exposure budgeting
+- concentration limits
+- conflict-resolution rules
+- rebalance and de-allocation triggers
+
+### Governance, Approval, And Manual Override
+
+Design goal:
+
+- define who may approve progression, who may deny or escalate, and how manual override remains a bounded exception rather than a default operating mode
+
+Likely scope:
+
+- separation of duties
+- approval authority boundaries
+- override scope and expiry rules
+- audit and review requirements for governance actions
 
 ## Risks Of Prematurely Going Live
 
