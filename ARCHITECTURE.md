@@ -6,11 +6,13 @@ The system is a Python-first, read-only analytics stack. It exists to turn publi
 
 This repo is not an execution system.
 
-Operator entrypoint:
+Operator read order:
 
-- [README.md](/Users/muhammadaatif/polymarket-arb/README.md) for the shipped-system summary
-- [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md) for command use and triage
-- [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md) for the frozen contract
+1. [README.md](/Users/muhammadaatif/polymarket-arb/README.md)
+2. [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
+3. [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
+4. [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
+5. [CODEX_HANDOFF.md](/Users/muhammadaatif/polymarket-arb/CODEX_HANDOFF.md)
 
 ## Current Shipped System
 

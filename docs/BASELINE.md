@@ -18,7 +18,7 @@ The system currently does:
 - expose the results through CLI commands and a thin FastAPI API
 - run bounded refresh cycles with checkpoint-safe websocket consumption
 
-Operator entrypoint and read order:
+Operator read order:
 
 1. [README.md](/Users/muhammadaatif/polymarket-arb/README.md)
 2. [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)

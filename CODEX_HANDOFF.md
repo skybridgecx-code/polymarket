@@ -36,12 +36,11 @@ This frozen baseline does not add:
 
 ## Operator Read Order
 
-- [README.md](/Users/muhammadaatif/polymarket-arb/README.md)
-- [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
-- [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
-- [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
-- [ROADMAP.md](/Users/muhammadaatif/polymarket-arb/ROADMAP.md)
-- [CODEX_HANDOFF.md](/Users/muhammadaatif/polymarket-arb/CODEX_HANDOFF.md)
+1. [README.md](/Users/muhammadaatif/polymarket-arb/README.md)
+2. [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
+3. [docs/BASELINE.md](/Users/muhammadaatif/polymarket-arb/docs/BASELINE.md)
+4. [ARCHITECTURE.md](/Users/muhammadaatif/polymarket-arb/ARCHITECTURE.md)
+5. [CODEX_HANDOFF.md](/Users/muhammadaatif/polymarket-arb/CODEX_HANDOFF.md)
 
 ## Operator Commands
 

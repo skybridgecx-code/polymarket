@@ -4,7 +4,7 @@
 
 This is the operator entrypoint for the shipped read-only system.
 
-Read order:
+Operator read order:
 
 1. [README.md](/Users/muhammadaatif/polymarket-arb/README.md)
 2. [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
