@@ -365,6 +365,43 @@ Decision gate to unlock the next phase:
 
 - approval that the sequencing model is concrete enough to govern future implementation planning without weakening the frozen baseline trust boundary
 
+### Phase 13K
+
+Objective:
+
+- define explicit stop/go criteria, blocking conditions, minimum evidence thresholds, and red-line "not yet safe" conditions that determine whether the vNext track must remain design-only
+
+Why it exists:
+
+- design completeness alone is not permission to start implementation; explicit evidence thresholds are needed so the future track cannot drift into implementation based on momentum, optimism, or incomplete control design
+
+What it would change:
+
+- design documents only
+- explicit blocking conditions that prevent any first implementation candidate from starting
+- explicit evidence thresholds for boundary clarity, control sufficiency, reconciliation sufficiency, observability sufficiency, governance sufficiency, promotion-gate sufficiency, portfolio sufficiency, and sequencing sufficiency
+- explicit red-line conditions that force the track to remain design-only
+
+What it must not change:
+
+- the frozen baseline repo
+- Python behavior
+- routes
+- CLI commands
+- scoring logic
+- policy behavior in the frozen baseline
+- live trading behavior
+
+Validation required before moving on:
+
+- "not yet safe" conditions are specific enough to block implementation when evidence is missing
+- minimum evidence standards are concrete enough to reject hand-wavy claims of readiness
+- the section defines only criteria for a first implementation candidate and does not blur into implementation planning
+
+Decision gate to unlock the next phase:
+
+- explicit approval that the vNext track has objective stop/go criteria strong enough to keep the branch design-only until evidence, not momentum, supports a later implementation discussion
+
 ### Phase 14
 
 Objective:
@@ -474,9 +511,10 @@ The phases above are intentionally serial:
 6. portfolio and capital-allocation design
 7. governance, approval, and override design
 8. integration sequencing and minimal implementation-order design
-9. separate live-capable system surface design
-10. detailed portfolio-control integration design
-11. stricter pre-live testing design
+9. explicit stop/go criteria and "not yet safe" conditions
+10. separate live-capable system surface design
+11. detailed portfolio-control integration design
+12. stricter pre-live testing design
 
 No later phase should start until the prior phase has an explicit approval decision. No phase in this document authorizes implementation by default.
 
@@ -1331,6 +1369,99 @@ Each step requires an explicit gate review before the next step starts.
 - operators could be asked to trust a system they cannot review or contain
 - rollback paths would be weaker because sequencing assumptions were never made explicit
 
+## Stop/Go Criteria And Not-Yet-Safe Conditions
+
+### Purpose Of This Section
+
+This section defines the exact conditions under which the vNext track must remain design-only and the minimum evidence required before a narrow first implementation candidate could even be considered. Its purpose is not to justify implementation. Its purpose is to make "not yet safe" explicit and enforceable.
+
+### Why Explicit Stop/Go Criteria Are Required
+
+Without explicit stop/go criteria, implementation pressure can hide behind partial design progress, optimistic interpretation, or unclear ownership. In this domain, unresolved ambiguity is itself a risk signal. Implementation permission must be earned by evidence, not momentum.
+
+### Blocking Conditions That Prevent Implementation From Starting
+
+Implementation must not start if any of the following remain true:
+
+- the execution boundary is still ambiguous enough that live-capable ownership could leak back into the frozen baseline
+- the risk/control layer lacks explicit authority boundaries, limit scopes, or kill-switch hierarchy
+- reconciliation and failure-recovery design does not make idempotency, retry ceilings, checkpoint boundaries, and manual intervention triggers explicit
+- observability requirements do not make critical future decision paths attributable, correlated, and reconstructible
+- governance and approval rules do not make separation of duties, escalation authority, and override limits explicit
+- promotion-gate design does not define stage-entry evidence, stop conditions, and rollback triggers
+- portfolio and capital-allocation design does not define gross and net exposure treatment, concentration rules, offset recognition, and allocation conflict resolution
+- integration sequencing still permits a future execution surface to outrun governance, observability, reconciliation, or control layers
+
+Any one of these conditions is enough to block implementation.
+
+### Minimum Evidence Required Before A First Implementation Candidate
+
+Before any first implementation candidate is discussable, the minimum evidence set must include all of the following:
+
+- execution-boundary sufficiency:
+  - explicit approval that the frozen baseline remains read-only and that any future execution-capable surface is separately owned
+  - no unresolved ambiguity about what stays inside the baseline and what stays outside it
+- risk/control sufficiency:
+  - approved authority model for limits, holds, disables, circuit breakers, and kill switches
+  - explicit proof that control decisions are bounded, attributable, and reviewable on paper
+- reconciliation/recovery sufficiency:
+  - approved failure classes, idempotency expectations, retry boundaries, checkpoint rules, and manual intervention triggers
+  - explicit proof that unresolved external-state ambiguity would stop automation rather than silently continue
+- observability sufficiency:
+  - approved event, metric, audit, and correlation surfaces for all critical future decision paths
+  - explicit proof that operators could reconstruct materially important actions and failures from retained records
+- governance/approval sufficiency:
+  - approved separation of duties, progression authority, override scope, forbidden auto-approvals, and review requirements
+  - explicit proof that no single future subsystem can silently authorize itself into broader autonomy
+- promotion-gate sufficiency:
+  - approved non-live validation stages, evidence thresholds, stop conditions, and rollback triggers
+  - explicit proof that shadow-mode or dry-run stages remain non-live unless separately re-approved
+- portfolio/capital-allocation sufficiency:
+  - approved capital budgeting, gross and net exposure treatment, concentration rules, and conflict-resolution rules
+  - explicit proof that competing strategy intents would not silently over-allocate scarce capital
+- sequencing sufficiency:
+  - approved minimal safe implementation order and unsafe-order examples
+  - explicit proof that any first implementation candidate sits behind the earlier control and review layers rather than ahead of them
+
+If any evidence item is missing, disputed, or still expressed as an aspiration instead of an enforceable rule, the track remains design-only.
+
+### Red-Line Conditions That Force The Track To Stay Design-Only
+
+The track must stay design-only if any red-line condition is present:
+
+- any proposal assumes the frozen baseline repo will absorb auth, signing, order submission, or live control responsibilities
+- any proposal treats paper-trade success, replay quality, or operator familiarity as a substitute for control sufficiency
+- any proposal leaves manual override as a broad escape hatch rather than a tightly scoped exception path
+- any proposal depends on observability or auditability being filled in later
+- any proposal treats unresolved reconciliation ambiguity as acceptable for early implementation
+- any proposal assumes portfolio netting or exposure offsets without conservative approved rules
+- any proposal asks to implement a future execution surface before governance, observability, control, and reconciliation layers are implementation-ready
+- any proposal cannot explain how a future first implementation candidate would stay non-live, bounded, and reviewable
+
+These are "do not proceed" signals, not items to accept temporarily.
+
+### Narrow Definition Of An Acceptable First Implementation Candidate
+
+At criteria level only, an acceptable first implementation candidate would be:
+
+- non-live
+- bounded to one control-supporting layer rather than a future execution surface
+- incapable of producing external market effects
+- fully attributable and reviewable through approved observability and governance rules
+- gated by explicit rollback triggers and stop conditions
+- isolated enough that failure would not weaken the frozen baseline trust boundary
+
+If a proposed first candidate does not satisfy all of those criteria, it is not acceptable yet.
+
+### Risks Of Starting Implementation Too Early
+
+- implementation would institutionalize ambiguity instead of reducing it
+- control surfaces would be retrofitted around behavior that already exists
+- governance would become procedural theater rather than real authority
+- observability gaps would only appear after incidents or drift
+- reconciliation would be forced to rationalize unsafe behavior instead of containing it
+- the frozen baseline trust boundary would erode because future-system pressure would leak back into the research repo
+
 ## Recommended Order Of Future Work
 
 1. finish the execution-boundary definition
@@ -1341,9 +1472,10 @@ Each step requires an explicit gate review before the next step starts.
 6. define the portfolio and capital-allocation boundary for the future system
 7. define governance, approval, and override authority boundaries
 8. define the minimal safe implementation order and dependency gates
-9. define the separate future execution-capable system surface
-10. define detailed portfolio-governance integration for that future system
-11. define stricter forward-testing boundaries before any implementation phase is proposed
+9. define explicit stop/go criteria and "not yet safe" conditions
+10. define the separate future execution-capable system surface
+11. define detailed portfolio-governance integration for that future system
+12. define stricter forward-testing boundaries before any implementation phase is proposed
 
 ## Candidate Future Design Areas
 
@@ -1463,6 +1595,19 @@ Likely scope:
 - gate criteria before design becomes implementation
 - narrow stepwise sequence for future implementation candidates
 
+### Stop/Go Criteria And Not-Yet-Safe Conditions
+
+Design goal:
+
+- define exact blocking conditions, minimum evidence thresholds, and red-line signals that determine whether the track must remain design-only
+
+Likely scope:
+
+- implementation blocking criteria
+- sufficiency tests for each prior design layer
+- "do not proceed" signals for unresolved ambiguity
+- criteria-only definition of an acceptable first implementation candidate
+
 ## Risks Of Prematurely Going Live
 
 The main risks are structural, not cosmetic:
@@ -1473,7 +1618,7 @@ The main risks are structural, not cosmetic:
 - replay and review are useful audit tools, but they are not execution reconciliation
 - adding live behavior too early would collapse boundaries that are currently clear and defensible
 
-## Explicit Non-Goals For Phase 13J
+## Explicit Non-Goals For Phase 13K
 
 This design track does not add:
 
