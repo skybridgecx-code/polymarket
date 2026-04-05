@@ -221,6 +221,10 @@ Current command-selection guidance:
 - `review-packet`: deterministic packet export for one subject type
 - `replay-evaluate`: explicit comparison between two existing packet files
 
+Current operator checklist and failure-mode guidance lives in:
+
+- [docs/OPERATOR_RUNBOOK.md](/Users/muhammadaatif/polymarket-arb/docs/OPERATOR_RUNBOOK.md)
+
 ## Repo Operating Rules
 
 - keep the system read-only
@@ -263,9 +267,20 @@ Phase 10B adds operator workflow examples and review packet discipline only. It 
 - policy changes
 - live trading behavior
 
+## Phase 10C Note
+
+Phase 10C adds operator checklists and failure-mode quick reference only. It does not add:
+
+- Python behavior changes
+- new routes
+- new CLI commands
+- scoring changes
+- policy changes
+- live trading behavior
+
 ## Recommended Next Phase
 
-After the Phase 10B workflow-example docs, the strongest next move is Phase 10C operator validation discipline:
+After the Phase 10C operator checklist docs, the strongest next move is Phase 10D bounded operator validation discipline:
 
 - bounded operator smoke-test workflow
 - fixture-backed runbook verification

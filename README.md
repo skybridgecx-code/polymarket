@@ -14,7 +14,7 @@ The repo currently ships:
 - read-only FastAPI operator routes
 - bounded real-time refresh orchestration with lightweight checkpointing
 
-Phase 10 adds operator documentation only through 10A and 10B. It does not change Python behavior, routes, CLI commands, scoring, policy, or live-trading scope.
+Phase 10 adds operator documentation only through 10A, 10B, and 10C. It does not change Python behavior, routes, CLI commands, scoring, policy, or live-trading scope.
 
 The repo explicitly does not ship:
 
@@ -122,6 +122,8 @@ Quick command-selection guidance:
 - use `review-packet` when you need a deterministic packet for audit or comparison
 - use `replay-evaluate` only after you have both baseline and candidate packet files
 
+Phase 10C adds operator checklists and a failure-mode quick reference for checkpoint and health triage.
+
 ## Module Boundaries
 
 - `src/polymarket_arb/clients/`: public read-only external clients
@@ -138,7 +140,7 @@ Raw payload handling remains separate from normalization and scoring.
 
 In the paper-trade path, policy runs after simulation. It records `allow`, `hold`, or `deny` as `policy_decision` on each paper-trade row. Manual override fields are audit fields only and are not operationalized. Circuit-breaker state is recorded and can force `hold`.
 
-Phase 9 added the policy layer. Phase 10A and 10B add only operator documentation, examples, and review discipline.
+Phase 9 added the policy layer. Phase 10A, 10B, and 10C add only operator documentation, examples, checklists, and review discipline.
 
 ## Validation
 

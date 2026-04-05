@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 10B with docs-first operator workflow examples and review packet discipline layered on top of the shipped Phase 9 system.
+The repo is currently in Phase 10C with docs-first operator checklists and failure-mode quick reference layered on top of the shipped Phase 9 system.
 
 ## Completed
 
@@ -125,24 +125,35 @@ Delivered:
 - `idle` / `ok` / `stale` health interpretation grounded in current checkpoint fields
 - runtime and environment documentation grounded in current config
 
-## Current
-
 ### Phase 10B
 
 Operator workflow examples and review packet discipline.
 
-Deliverables:
+Delivered:
 
 - concrete example flows for bounded refresh/checkpoint/health inspection
 - concrete example flow for `paper-trade` plus `review-packet`
 - concrete example flow for `replay-evaluate`
 - command-selection guidance for the shipped operator commands
 - tighter review and replay discipline guidance
-- docs aligned to shipped Phase 10B operator guidance
+
+## Current
+
+### Phase 10C
+
+Operator checklist and failure-mode quick reference.
+
+Deliverables:
+
+- pre-run checklist for the shipped operator commands
+- post-run checklist for checkpoint, health, packet, and replay inspection
+- failure-mode quick reference for current stale reasons and websocket no-message exit behavior
+- concise operator triage flow
+- docs aligned to shipped Phase 10C operator guidance
 
 ## Recommended Next Phase
 
-### Phase 10C
+### Phase 10D
 
 Operator validation discipline.
 

@@ -245,6 +245,8 @@ Operator workflow details live in:
 
 That runbook is intentionally documentation-only. It adds command-selection guidance and bounded example workflows on top of the existing operator surface; it does not alter orchestration, scoring, review, or policy behavior.
 
+Phase 10C extends that same docs-only layer with pre-run and post-run checklists plus failure-mode triage guidance grounded in the current checkpoint and `last_error` fields.
+
 ## Explicit Non-Goals
 
 - trading

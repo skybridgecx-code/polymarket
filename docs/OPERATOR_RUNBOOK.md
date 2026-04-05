@@ -76,6 +76,34 @@ source .venv/bin/activate
 make validate
 ```
 
+## Pre-Run Checklists
+
+### Before `orchestrate-refresh`
+
+- confirm the repo is in the expected branch and working tree state
+- confirm `.venv` is active
+- confirm `STATE_DIR` resolves to the checkpoint location you expect
+- confirm you are running a bounded command with explicit `--scan-limit`, `--relationship-limit`, and `--max-websocket-messages`
+- if you are inspecting staleness, decide whether you want to preserve the current checkpoint or overwrite it with a fresh bounded run
+
+### Before `paper-trade`
+
+- confirm you want live-derived rows or a deterministic fixture run
+- if using fixture mode, confirm the fixture path exists before running
+- remember that `policy_decision` is post-simulation and does not replace planner or simulator rejection logic
+
+### Before `review-packet`
+
+- choose the packet subject type first: `opportunities`, `relationships`, or `paper_trade`
+- confirm the packet subject type matches the review question you are trying to answer
+- if you need deterministic comparison, prefer fixture-backed packet generation
+
+### Before `replay-evaluate`
+
+- confirm both packet files already exist
+- confirm both packet files were generated for the same subject type
+- inspect the packet JSONs before replay if there is any doubt about their provenance
+
 ## When To Use Which Command
 
 Use `orchestrate-refresh` when you need a bounded live-data refresh, a fresh checkpoint write, or current health/staleness inspection.
@@ -274,6 +302,46 @@ Inspect in order:
 5. `drift_reasons`
 6. `explanation`
 
+## Post-Run Checklists
+
+### After `orchestrate-refresh`
+
+- inspect `health.status`
+- inspect `health.stale`
+- inspect `health.stale_reasons`
+- inspect `checkpoint.last_error`
+- inspect `checkpoint.last_websocket_event_at`
+- inspect `checkpoint.subscribed_asset_ids`
+
+### After Checkpoint Inspection
+
+- confirm `checkpoint_written_at` changed as expected
+- confirm `last_scan_refresh_at` and `last_relationship_refresh_at` are present for a completed bounded refresh
+- confirm websocket timestamps only if `subscribed_asset_ids` is non-empty
+- if `last_error` is present, treat that as the first triage branch
+
+### After `paper-trade`
+
+- inspect row `status` before reading any summary fields
+- inspect `rejection_reason` on rejected rows
+- inspect `policy_decision` on every final row
+- keep rejected rows visible instead of filtering them away during review
+
+### After `review-packet`
+
+- confirm `packet_type`
+- confirm `status`
+- inspect `source_references`
+- inspect `summarized_findings`
+
+### After `replay-evaluate`
+
+- inspect `status` first
+- inspect `subject_type`
+- inspect `mismatches_count`
+- inspect `drift_reasons`
+- read `explanation` only after the structural mismatch fields
+
 ## Checkpoint Inspection Workflow
 
 Default checkpoint path:
@@ -344,6 +412,132 @@ Current stale reasons and meanings:
 - `scan_refresh_overdue`: `last_scan_refresh_at` is older than `scan_stale_after_seconds`
 - `relationships_never_refreshed`: no relationship refresh has been written yet
 - `relationship_refresh_overdue`: `last_relationship_refresh_at` is older than `relationship_stale_after_seconds`
+- `websocket_never_received_event`: asset subscriptions exist but no websocket event has been recorded yet
+- `websocket_event_overdue`: `last_websocket_event_at` is older than `websocket_stale_after_seconds`
+- `last_error_present`: `last_error` is non-null in the checkpoint
+
+## Failure-Mode Quick Reference
+
+### Triage Flow
+
+1. Inspect `health.status`.
+2. Inspect `health.stale_reasons`.
+3. Inspect `checkpoint.last_error`.
+4. Inspect refresh timestamps.
+5. Inspect websocket timestamps and subscribed asset count only if subscriptions exist.
+
+### `scan_never_refreshed`
+
+What it means:
+
+- `last_scan_refresh_at` is still `null`
+
+Inspect first:
+
+- whether `orchestrate-refresh` has been run at all
+- `checkpoint.last_scan_refresh_at`
+- `health.status`
+
+### `scan_refresh_overdue`
+
+What it means:
+
+- `last_scan_refresh_at` exists but is older than `scan_stale_after_seconds`
+
+Inspect first:
+
+- `checkpoint.last_scan_refresh_at`
+- current bounded refresh cadence
+- whether the checkpoint being inspected is the one you intended
+
+### `relationships_never_refreshed`
+
+What it means:
+
+- `last_relationship_refresh_at` is still `null`
+
+Inspect first:
+
+- whether `orchestrate-refresh` has been run
+- `checkpoint.last_relationship_refresh_at`
+- `health.status`
+
+### `relationship_refresh_overdue`
+
+What it means:
+
+- `last_relationship_refresh_at` exists but is older than `relationship_stale_after_seconds`
+
+Inspect first:
+
+- `checkpoint.last_relationship_refresh_at`
+- current bounded refresh cadence
+- whether the checkpoint path matches the state directory you intended
+
+### `websocket_never_received_event`
+
+What it means:
+
+- `subscribed_asset_ids` is non-empty
+- `last_websocket_event_at` is still `null`
+
+Inspect first:
+
+- `checkpoint.subscribed_asset_ids`
+- `checkpoint.last_websocket_connect_at`
+- `checkpoint.last_error`
+- the `--max-websocket-messages` value used for the bounded run
+
+### `websocket_event_overdue`
+
+What it means:
+
+- websocket subscriptions exist
+- `last_websocket_event_at` exists but is older than `websocket_stale_after_seconds`
+
+Inspect first:
+
+- `checkpoint.last_websocket_event_at`
+- `checkpoint.subscribed_asset_ids`
+- `checkpoint.websocket_reconnect_count`
+- `checkpoint.last_error`
+
+### `last_error_present`
+
+What it means:
+
+- `checkpoint.last_error` is non-null
+
+Inspect first:
+
+- `checkpoint.last_error`
+- `checkpoint.websocket_disconnect_count`
+- `checkpoint.websocket_reconnect_count`
+- whether the error came from a bounded websocket run or a prior checkpoint state
+
+### `websocket_consumer_exited_without_messages`
+
+What it means:
+
+- the bounded websocket consume step ran with subscribed assets and `max_websocket_messages > 0`
+- zero messages were consumed
+- this value is stored in `checkpoint.last_error`, not as its own stale reason
+
+Inspect first:
+
+- `checkpoint.last_error`
+- `checkpoint.subscribed_asset_ids`
+- `checkpoint.last_websocket_connect_at`
+- `checkpoint.last_websocket_event_at`
+- the `--max-websocket-messages` value used for the run
+
+Current reporting note:
+
+- when this condition occurs, health will show `last_error_present`
+- operators should inspect `last_error` for the specific string
+- `scan_refresh_overdue`: `last_scan_refresh_at` is older than `scan_stale_after_seconds`
+- `relationships_never_refreshed`: no relationship refresh has been written yet
+- `relationship_refresh_overdue`: `last_relationship_refresh_at` is older than `relationship_stale_after_seconds`
 - `websocket_never_received_event`: there are subscribed asset ids but no websocket event has been recorded yet
 - `websocket_event_overdue`: `last_websocket_event_at` is older than `websocket_stale_after_seconds`
 - `last_error_present`: `last_error` is non-null in the checkpoint
@@ -388,7 +582,7 @@ Review discipline:
 
 ## Phase Boundary
 
-This runbook documents the system as shipped through Phase 10B operator workflow examples and review packet discipline.
+This runbook documents the system as shipped through Phase 10C operator checklist and failure-mode quick reference.
 
 It does not introduce:
 
