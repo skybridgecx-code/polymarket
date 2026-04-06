@@ -4,6 +4,11 @@ Builds deterministic in-memory packets from future-system event, audit,
 and trace records.
 """
 
+from future_system.review.deficiencies import (
+    DeficiencyCategory,
+    DeficiencySummary,
+    summarize_deficiencies,
+)
 from future_system.review.evidence import (
     EvidenceStatus,
     ReviewPacketEvidence,
@@ -18,6 +23,8 @@ from future_system.review.packets import (
 )
 
 __all__ = [
+    "DeficiencyCategory",
+    "DeficiencySummary",
     "EvidenceStatus",
     "FutureSystemReviewPacket",
     "PacketCompletenessStatus",
@@ -26,4 +33,5 @@ __all__ = [
     "ReviewPacketScope",
     "build_review_packets",
     "evaluate_review_packet",
+    "summarize_deficiencies",
 ]
