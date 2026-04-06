@@ -125,3 +125,44 @@ Scope lock check results:
 Phase 14B is complete.  The frozen baseline is untouched.  No live behavior,
 no I/O, no external dependencies, and no imports from `polymarket_arb` exist
 in the new modules.
+
+---
+
+## Addendum — Review Packet Layer
+
+This follow-on phase added a pure in-memory review-packet layer for the separate
+future-system records. It did not modify `src/polymarket_arb/` and it did not
+add runtime wiring.
+
+Files added:
+
+```
+src/future_system/review/__init__.py
+src/future_system/review/packets.py
+tests/future_system/test_review_packets.py
+```
+
+What was added:
+
+- `FutureSystemReviewPacket` with:
+  - `packet_id`
+  - `correlation_id`
+  - `record_scope`
+  - `events`
+  - `audit_records`
+  - `ordered_trace`
+  - `completeness_status`
+  - `missing_components`
+  - `summary_text`
+- deterministic `build_review_packets(...)` grouping by `correlation_id`
+- deterministic sorting for packets, events, audit records, and trace links
+- explicit completeness reporting when required packet components are absent
+
+Phase-specific checks passed:
+
+- same-correlation records are grouped into one packet
+- packet ordering is deterministic across reordered inputs
+- missing packet components are reported explicitly
+- review-packet modules remain pure in-memory
+- no imports from `polymarket_arb` were introduced
+- no runtime wiring, network logic, or persistence logic were added
