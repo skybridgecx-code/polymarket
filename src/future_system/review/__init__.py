@@ -26,6 +26,11 @@ from future_system.review.recommendations import (
     ReviewRecommendation,
     recommend_review_steps,
 )
+from future_system.review.replay import (
+    ReviewReplayResult,
+    ReviewReplayScenario,
+    run_review_replay,
+)
 from future_system.review.reports import ReviewReport, render_review_report
 
 __all__ = [
@@ -37,6 +42,8 @@ __all__ = [
     "PacketMissingComponent",
     "ReviewBundle",
     "ReviewRecommendation",
+    "ReviewReplayResult",
+    "ReviewReplayScenario",
     "ReviewReport",
     "ReviewPacketEvidence",
     "ReviewPacketScope",
@@ -44,6 +51,7 @@ __all__ = [
     "evaluate_review_packet",
     "format_review_bundle",
     "recommend_review_steps",
+    "run_review_replay",
     "render_review_report",
     "summarize_deficiencies",
 ]
