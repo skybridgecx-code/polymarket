@@ -26,6 +26,7 @@ from future_system.review.recommendations import (
     ReviewRecommendation,
     recommend_review_steps,
 )
+from future_system.review.reports import ReviewReport, render_review_report
 
 __all__ = [
     "DeficiencyCategory",
@@ -36,11 +37,13 @@ __all__ = [
     "PacketMissingComponent",
     "ReviewBundle",
     "ReviewRecommendation",
+    "ReviewReport",
     "ReviewPacketEvidence",
     "ReviewPacketScope",
     "build_review_packets",
     "evaluate_review_packet",
     "format_review_bundle",
     "recommend_review_steps",
+    "render_review_report",
     "summarize_deficiencies",
 ]
