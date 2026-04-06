@@ -12,7 +12,6 @@ from future_system.observability.events import EventKind, FutureSystemEvent
 from future_system.review.deficiencies import DeficiencyCategory
 from future_system.review.evidence import EvidenceStatus
 from future_system.review.replay import (
-    ReplayPacketAdjustment,
     ReviewReplayResult,
     ReviewReplayScenario,
     run_review_replay,
@@ -188,12 +187,11 @@ def _traceability_scenario() -> ReviewReplayScenario:
     return ReviewReplayScenario(
         scenario_name="traceability-deficient",
         events=[_event("ev-a", CorrelationId(value="corr-4"), _T1)],
-        audit_records=[_audit("aud-a", "corr-4", 1, _T1)],
+        audit_records=[_audit("aud-a", "corr-4", 2, _T2)],
         trace_links=[_trace("corr-4", 1, _T1)],
         expected_review_ready=False,
         expected_evidence_status=EvidenceStatus.INSUFFICIENT,
         expected_deficiency_category=DeficiencyCategory.TRACEABILITY,
-        packet_adjustment=ReplayPacketAdjustment.DROP_TRACE_COVERAGE,
     )
 
 

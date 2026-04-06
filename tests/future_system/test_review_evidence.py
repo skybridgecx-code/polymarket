@@ -98,8 +98,8 @@ def test_missing_components_propagate_clearly() -> None:
 
     assert evaluation.missing_components == packet.missing_components
     assert "missing_component:events" in evaluation.reasons
-    assert "missing_component:ordered_trace" not in evaluation.reasons
-    assert evaluation.traceability_complete is True
+    assert "missing_component:ordered_trace" in evaluation.reasons
+    assert evaluation.traceability_complete is False
 
 
 def test_complete_packet_with_broken_attribution_is_insufficient() -> None:

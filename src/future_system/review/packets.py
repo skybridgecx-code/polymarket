@@ -109,7 +109,7 @@ def _build_packet(
             record.actor,
         ),
     )
-    sorted_trace = _sorted_trace(group.trace_links, sorted_audit_records)
+    sorted_trace = _sorted_trace(group.trace_links)
 
     missing_components = _missing_components(
         sorted_events,
@@ -143,17 +143,11 @@ def _build_packet(
     )
 
 
-def _sorted_trace(
-    trace_links: Sequence[TraceLink],
-    audit_records: Sequence[AuditRecord],
-) -> list[TraceLink]:
+def _sorted_trace(trace_links: Sequence[TraceLink]) -> list[TraceLink]:
     deduped: dict[tuple[str, str, int, datetime], TraceLink] = {}
 
     for trace_link in trace_links:
         deduped[_trace_key(trace_link)] = trace_link
-
-    for record in audit_records:
-        deduped[_trace_key(record.trace)] = record.trace
 
     return sorted(
         deduped.values(),

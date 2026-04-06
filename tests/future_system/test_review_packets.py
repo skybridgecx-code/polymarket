@@ -96,8 +96,21 @@ def test_packet_ordering_is_deterministic() -> None:
 
     assert [event.event_id for event in packets_a[0].events] == ["event-1", "event-2"]
     assert [record.record_id for record in packets_a[0].audit_records] == ["audit-1", "audit-2"]
-    assert [trace.sequence for trace in packets_a[0].ordered_trace] == [1, 2, 3]
+    assert [trace.sequence for trace in packets_a[0].ordered_trace] == [1, 3]
     assert packets_a[0].model_dump() == packets_b[0].model_dump()
+
+
+def test_raw_trace_links_are_not_backfilled_from_audit_records() -> None:
+    packets = build_review_packets(
+        events=[_event("event-1", CorrelationId(value="alpha"), _T1)],
+        audit_records=[_audit("audit-1", "alpha", 2, _T2)],
+        trace_links=[_trace("alpha", 1, _T1)],
+    )
+
+    packet = packets[0]
+    assert [trace.sequence for trace in packet.ordered_trace] == [1]
+    assert packet.completeness_status == PacketCompletenessStatus.COMPLETE
+    assert packet.missing_components == []
 
 
 def test_missing_components_are_detected_and_reported() -> None:

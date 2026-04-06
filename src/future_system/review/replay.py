@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from enum import Enum
-
 from pydantic import BaseModel
 
 from future_system.observability.audit import AuditRecord
@@ -28,13 +26,6 @@ from future_system.review.recommendations import (
 from future_system.review.reports import ReviewReport, render_review_report
 
 
-class ReplayPacketAdjustment(str, Enum):
-    """Bounded harness-local packet adjustments for fixed scenarios."""
-
-    NONE = "none"
-    DROP_TRACE_COVERAGE = "drop_trace_coverage"
-
-
 class ReviewReplayScenario(BaseModel):
     """Fixed in-memory scenario for the bounded review harness."""
 
@@ -45,7 +36,6 @@ class ReviewReplayScenario(BaseModel):
     expected_review_ready: bool
     expected_evidence_status: EvidenceStatus
     expected_deficiency_category: DeficiencyCategory
-    packet_adjustment: ReplayPacketAdjustment = ReplayPacketAdjustment.NONE
 
 
 class ReviewReplayResult(BaseModel):
@@ -73,7 +63,6 @@ def run_review_replay(scenario: ReviewReplayScenario) -> ReviewReplayResult:
         raise ValueError("review_replay_requires_single_packet")
 
     packet = packets[0]
-    packet = _apply_packet_adjustment(packet, scenario.packet_adjustment)
     evidence = evaluate_review_packet(packet)
     deficiency_summary = summarize_deficiencies(evidence)
     recommendations = recommend_review_steps(deficiency_summary)
@@ -95,16 +84,3 @@ def run_review_replay(scenario: ReviewReplayScenario) -> ReviewReplayResult:
         report=report,
         review_ready=report.review_ready,
     )
-
-
-def _apply_packet_adjustment(
-    packet: FutureSystemReviewPacket,
-    adjustment: ReplayPacketAdjustment,
-) -> FutureSystemReviewPacket:
-    if adjustment is ReplayPacketAdjustment.NONE:
-        return packet
-
-    if adjustment is ReplayPacketAdjustment.DROP_TRACE_COVERAGE:
-        return packet.model_copy(update={"ordered_trace": []})
-
-    raise ValueError("review_replay_adjustment_unrecognized")
