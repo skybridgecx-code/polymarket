@@ -15,6 +15,7 @@ from future_system.review.replay import (
     ReviewReplayResult,
     ReviewReplayScenario,
     run_review_replay,
+    run_review_scenario_pack,
 )
 
 _T1 = datetime(2025, 1, 1, 0, 1, 0)
@@ -121,6 +122,85 @@ def test_traceability_deficient_scenario_produces_expected_shape() -> None:
     assert "traceability" in replay.report.readiness_summary.lower()
 
 
+def test_mixed_deficiency_scenario_produces_expected_shape() -> None:
+    scenario = _mixed_scenario()
+
+    replay = run_review_replay(scenario)
+
+    assert replay.review_ready is scenario.expected_review_ready
+    assert replay.evidence.evidence_status is scenario.expected_evidence_status
+    assert (
+        replay.deficiency_summary.deficiency_category
+        is scenario.expected_deficiency_category
+    )
+    assert replay.evidence.attribution_complete is False
+    assert replay.evidence.traceability_complete is False
+    assert replay.report.final_inspection_focus == (
+        "Inspect attribution trail first, then inspect trace consistency."
+    )
+
+
+def test_minimally_sufficient_scenario_is_review_ready() -> None:
+    scenario = _minimal_sufficient_scenario()
+
+    replay = run_review_replay(scenario)
+
+    assert replay.review_ready is True
+    assert replay.evidence.evidence_status is EvidenceStatus.SUFFICIENT
+    assert replay.deficiency_summary.deficiency_category is DeficiencyCategory.NONE
+    assert replay.report.manual_review_required is False
+
+
+def test_missing_component_scenario_preserves_stable_trace_ordering() -> None:
+    scenario = _missing_audit_with_stable_trace_scenario()
+
+    replay = run_review_replay(scenario)
+
+    assert replay.review_ready is scenario.expected_review_ready
+    assert replay.evidence.evidence_status is scenario.expected_evidence_status
+    assert (
+        replay.deficiency_summary.deficiency_category
+        is scenario.expected_deficiency_category
+    )
+    assert [trace.sequence for trace in replay.packet.ordered_trace] == [1, 2]
+    assert replay.packet.missing_components == [replay.packet.missing_components[0]]
+    assert replay.packet.missing_components[0].value == "audit_records"
+
+
+def test_multi_record_single_packet_scenario_remains_deterministic() -> None:
+    scenario = _multi_record_single_packet_scenario()
+
+    replay_a = run_review_replay(scenario)
+    replay_b = run_review_replay(scenario)
+
+    assert replay_a.model_dump() == replay_b.model_dump()
+    assert [event.event_id for event in replay_a.packet.events] == ["ev-a", "ev-b"]
+    assert [record.record_id for record in replay_a.packet.audit_records] == ["aud-a", "aud-b"]
+    assert [trace.sequence for trace in replay_a.packet.ordered_trace] == [1, 2]
+
+
+def test_scenario_pack_runs_deterministically_in_input_order() -> None:
+    scenarios = [
+        _minimal_sufficient_scenario(),
+        _mixed_scenario(),
+        _missing_audit_with_stable_trace_scenario(),
+        _multi_record_single_packet_scenario(),
+    ]
+
+    results_a = run_review_scenario_pack(scenarios)
+    results_b = run_review_scenario_pack(scenarios)
+
+    assert [result.scenario_name for result in results_a] == [
+        "minimal-sufficient",
+        "mixed-deficiency",
+        "missing-audit-stable-trace",
+        "multi-record-single-packet",
+    ]
+    assert [result.model_dump() for result in results_a] == [
+        result.model_dump() for result in results_b
+    ]
+
+
 def test_replay_results_are_pure_in_memory_only() -> None:
     for filename in ("__init__.py", "replay.py"):
         source = (_REVIEW_SRC / filename).read_text()
@@ -192,6 +272,62 @@ def _traceability_scenario() -> ReviewReplayScenario:
         expected_review_ready=False,
         expected_evidence_status=EvidenceStatus.INSUFFICIENT,
         expected_deficiency_category=DeficiencyCategory.TRACEABILITY,
+    )
+
+
+def _mixed_scenario() -> ReviewReplayScenario:
+    return ReviewReplayScenario(
+        scenario_name="mixed-deficiency",
+        events=[
+            _event("ev-a", CorrelationId(value="corr-5"), _T1, attributed_to="")
+        ],
+        audit_records=[_audit("aud-a", "corr-5", 2, _T2)],
+        trace_links=[_trace("corr-5", 1, _T1)],
+        expected_review_ready=False,
+        expected_evidence_status=EvidenceStatus.INSUFFICIENT,
+        expected_deficiency_category=DeficiencyCategory.MIXED,
+    )
+
+
+def _minimal_sufficient_scenario() -> ReviewReplayScenario:
+    return ReviewReplayScenario(
+        scenario_name="minimal-sufficient",
+        events=[_event("ev-min", CorrelationId(value="corr-6"), _T1)],
+        audit_records=[_audit("aud-min", "corr-6", 1, _T1)],
+        trace_links=[_trace("corr-6", 1, _T1)],
+        expected_review_ready=True,
+        expected_evidence_status=EvidenceStatus.SUFFICIENT,
+        expected_deficiency_category=DeficiencyCategory.NONE,
+    )
+
+
+def _missing_audit_with_stable_trace_scenario() -> ReviewReplayScenario:
+    return ReviewReplayScenario(
+        scenario_name="missing-audit-stable-trace",
+        events=[_event("ev-a", CorrelationId(value="corr-7"), _T1)],
+        audit_records=[],
+        trace_links=[_trace("corr-7", 2, _T2), _trace("corr-7", 1, _T1)],
+        expected_review_ready=False,
+        expected_evidence_status=EvidenceStatus.INCOMPLETE,
+        expected_deficiency_category=DeficiencyCategory.COMPLETENESS,
+    )
+
+
+def _multi_record_single_packet_scenario() -> ReviewReplayScenario:
+    return ReviewReplayScenario(
+        scenario_name="multi-record-single-packet",
+        events=[
+            _event("ev-b", CorrelationId(value="corr-8"), _T2),
+            _event("ev-a", CorrelationId(value="corr-8"), _T1),
+        ],
+        audit_records=[
+            _audit("aud-b", "corr-8", 2, _T2),
+            _audit("aud-a", "corr-8", 1, _T1),
+        ],
+        trace_links=[_trace("corr-8", 2, _T2), _trace("corr-8", 1, _T1)],
+        expected_review_ready=True,
+        expected_evidence_status=EvidenceStatus.SUFFICIENT,
+        expected_deficiency_category=DeficiencyCategory.NONE,
     )
 
 

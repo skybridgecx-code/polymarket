@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from pydantic import BaseModel
 
 from future_system.observability.audit import AuditRecord
@@ -84,3 +86,11 @@ def run_review_replay(scenario: ReviewReplayScenario) -> ReviewReplayResult:
         report=report,
         review_ready=report.review_ready,
     )
+
+
+def run_review_scenario_pack(
+    scenarios: Sequence[ReviewReplayScenario],
+) -> list[ReviewReplayResult]:
+    """Run a bounded deterministic scenario pack through the replay harness."""
+
+    return [run_review_replay(scenario) for scenario in scenarios]
