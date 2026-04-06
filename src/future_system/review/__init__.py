@@ -21,6 +21,10 @@ from future_system.review.packets import (
     ReviewPacketScope,
     build_review_packets,
 )
+from future_system.review.recommendations import (
+    ReviewRecommendation,
+    recommend_review_steps,
+)
 
 __all__ = [
     "DeficiencyCategory",
@@ -29,9 +33,11 @@ __all__ = [
     "FutureSystemReviewPacket",
     "PacketCompletenessStatus",
     "PacketMissingComponent",
+    "ReviewRecommendation",
     "ReviewPacketEvidence",
     "ReviewPacketScope",
     "build_review_packets",
     "evaluate_review_packet",
+    "recommend_review_steps",
     "summarize_deficiencies",
 ]
