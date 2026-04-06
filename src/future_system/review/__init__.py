@@ -4,6 +4,7 @@ Builds deterministic in-memory packets from future-system event, audit,
 and trace records.
 """
 
+from future_system.review.bundles import ReviewBundle, format_review_bundle
 from future_system.review.deficiencies import (
     DeficiencyCategory,
     DeficiencySummary,
@@ -33,11 +34,13 @@ __all__ = [
     "FutureSystemReviewPacket",
     "PacketCompletenessStatus",
     "PacketMissingComponent",
+    "ReviewBundle",
     "ReviewRecommendation",
     "ReviewPacketEvidence",
     "ReviewPacketScope",
     "build_review_packets",
     "evaluate_review_packet",
+    "format_review_bundle",
     "recommend_review_steps",
     "summarize_deficiencies",
 ]
