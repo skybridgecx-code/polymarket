@@ -1,5 +1,9 @@
-"""Manual gate packet, replay, and report layer for future-system review reports."""
+"""Manual gate packet, replay, report, and bundle layer for future-system review reports."""
 
+from future_system.manual_gate.bundles import (
+    ManualGateBundle,
+    format_manual_gate_bundle,
+)
 from future_system.manual_gate.packets import (
     ManualGateDisposition,
     ManualGatePacket,
@@ -21,7 +25,9 @@ __all__ = [
     "ManualGateReplayResult",
     "ManualGateReplayScenario",
     "ManualGateReport",
+    "ManualGateBundle",
     "build_manual_gate_packet",
     "run_manual_gate_replay",
     "render_manual_gate_report",
+    "format_manual_gate_bundle",
 ]
