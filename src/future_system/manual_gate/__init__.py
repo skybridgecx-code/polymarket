@@ -1,9 +1,13 @@
-"""Manual gate packet, replay, report, bundle, and comparison-report layer."""
+"""Manual gate packet, replay, report, and comparison artifact layers."""
 
 from future_system.manual_gate.bundles import (
     ManualGateBundle,
     format_manual_gate_bundle,
     format_manual_gate_replay_bundle,
+)
+from future_system.manual_gate.comparison_bundles import (
+    ManualGateComparisonBundle,
+    format_manual_gate_comparison_bundle,
 )
 from future_system.manual_gate.comparison_reports import (
     ManualGateComparisonReport,
@@ -36,9 +40,11 @@ __all__ = [
     "ManualGateReport",
     "ManualGateBundle",
     "ManualGateComparison",
+    "ManualGateComparisonBundle",
     "ManualGateComparisonReport",
     "build_manual_gate_packet",
     "compare_manual_gate_bundles",
+    "format_manual_gate_comparison_bundle",
     "render_manual_gate_comparison_report",
     "run_manual_gate_replay",
     "render_manual_gate_report",
