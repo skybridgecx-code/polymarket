@@ -3,6 +3,7 @@
 from future_system.manual_gate.bundles import (
     ManualGateBundle,
     format_manual_gate_bundle,
+    format_manual_gate_replay_bundle,
 )
 from future_system.manual_gate.packets import (
     ManualGateDisposition,
@@ -30,4 +31,5 @@ __all__ = [
     "run_manual_gate_replay",
     "render_manual_gate_report",
     "format_manual_gate_bundle",
+    "format_manual_gate_replay_bundle",
 ]

@@ -5,7 +5,8 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 from future_system.manual_gate.packets import ManualGateDisposition, ManualGatePacket
-from future_system.manual_gate.reports import ManualGateReport
+from future_system.manual_gate.replay import ManualGateReplayResult
+from future_system.manual_gate.reports import ManualGateReport, render_manual_gate_report
 from future_system.observability.correlation import CorrelationId
 
 
@@ -40,6 +41,13 @@ def format_manual_gate_bundle(
         review_ready=packet.review_ready,
         manual_action_required=packet.manual_action_required,
     )
+
+
+def format_manual_gate_replay_bundle(result: ManualGateReplayResult) -> ManualGateBundle:
+    """Assemble a manual gate bundle from one replay result."""
+
+    report = render_manual_gate_report(result.gate_packet)
+    return format_manual_gate_bundle(result.gate_packet, report)
 
 
 def _validate_alignment(packet: ManualGatePacket, report: ManualGateReport) -> None:

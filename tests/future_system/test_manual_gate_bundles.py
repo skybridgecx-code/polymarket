@@ -6,11 +6,20 @@ import re
 from pathlib import Path
 
 import pytest
-from future_system.manual_gate.bundles import ManualGateBundle, format_manual_gate_bundle
+from future_system.manual_gate.bundles import (
+    ManualGateBundle,
+    format_manual_gate_bundle,
+    format_manual_gate_replay_bundle,
+)
 from future_system.manual_gate.packets import (
     ManualGateDisposition,
     ManualGatePacket,
     build_manual_gate_packet,
+)
+from future_system.manual_gate.replay import (
+    ManualGateReplayResult,
+    ManualGateReplayScenario,
+    run_manual_gate_replay,
 )
 from future_system.manual_gate.reports import ManualGateReport, render_manual_gate_report
 from future_system.observability.correlation import CorrelationId
@@ -121,6 +130,102 @@ def test_hold_packet_report_bundle_deterministically() -> None:
     )
 
 
+def test_ready_replay_result_converts_deterministically_to_bundle() -> None:
+    replay_result = _replay_result(
+        review_ready=True,
+        manual_review_required=False,
+    )
+
+    bundle_a = format_manual_gate_replay_bundle(replay_result)
+    bundle_b = format_manual_gate_replay_bundle(replay_result)
+
+    assert bundle_a.model_dump() == bundle_b.model_dump()
+    assert bundle_a.disposition is ManualGateDisposition.READY_FOR_MANUAL_APPROVAL
+
+
+def test_needs_more_evidence_replay_result_converts_deterministically_to_bundle() -> None:
+    replay_result = _replay_result(
+        review_ready=False,
+        manual_review_required=True,
+        missing_components=[PacketMissingComponent.AUDIT_RECORDS],
+        recommended_checks=["Inspect the packet for absent audit records."],
+        final_inspection_focus=(
+            "Inspect absent packet components before any further review."
+        ),
+    )
+
+    bundle_a = format_manual_gate_replay_bundle(replay_result)
+    bundle_b = format_manual_gate_replay_bundle(replay_result)
+
+    assert bundle_a.model_dump() == bundle_b.model_dump()
+    assert bundle_a.disposition is ManualGateDisposition.NEEDS_MORE_EVIDENCE
+
+
+def test_hold_replay_result_converts_deterministically_to_bundle() -> None:
+    replay_result = _replay_result(
+        review_ready=False,
+        manual_review_required=True,
+        recommended_checks=["Inspect attribution trail consistency."],
+        final_inspection_focus="Inspect attribution trail consistency.",
+    )
+
+    bundle_a = format_manual_gate_replay_bundle(replay_result)
+    bundle_b = format_manual_gate_replay_bundle(replay_result)
+
+    assert bundle_a.model_dump() == bundle_b.model_dump()
+    assert bundle_a.disposition is ManualGateDisposition.HOLD
+
+
+def test_repeated_replay_to_bundle_conversion_is_deterministic() -> None:
+    replay_result = _replay_result(
+        review_ready=True,
+        manual_review_required=False,
+    )
+
+    bundle_a = format_manual_gate_replay_bundle(replay_result)
+    bundle_b = format_manual_gate_replay_bundle(replay_result)
+
+    assert bundle_a.model_dump() == bundle_b.model_dump()
+
+
+def test_replay_to_bundle_result_mirrors_replay_packet_state() -> None:
+    replay_result = _replay_result(
+        review_ready=False,
+        manual_review_required=True,
+        recommended_checks=["Inspect attribution trail consistency."],
+        final_inspection_focus="Inspect attribution trail consistency.",
+    )
+
+    bundle = format_manual_gate_replay_bundle(replay_result)
+
+    assert bundle.packet_id == replay_result.gate_packet.packet_id
+    assert bundle.correlation_id == replay_result.gate_packet.correlation_id
+    assert bundle.disposition is replay_result.disposition
+    assert bundle.packet.model_dump() == replay_result.gate_packet.model_dump()
+    assert bundle.review_ready is replay_result.review_ready
+    assert bundle.manual_action_required is replay_result.manual_action_required
+
+
+def test_replay_to_bundle_helper_matches_manual_composition() -> None:
+    replay_result = _replay_result(
+        review_ready=False,
+        manual_review_required=True,
+        missing_components=[PacketMissingComponent.AUDIT_RECORDS],
+        recommended_checks=["Inspect the packet for absent audit records."],
+        final_inspection_focus=(
+            "Inspect absent packet components before any further review."
+        ),
+    )
+
+    helper_bundle = format_manual_gate_replay_bundle(replay_result)
+    manual_bundle = format_manual_gate_bundle(
+        replay_result.gate_packet,
+        render_manual_gate_report(replay_result.gate_packet),
+    )
+
+    assert helper_bundle.model_dump() == manual_bundle.model_dump()
+
+
 def test_mismatched_packet_ids_raise_bounded_alignment_error() -> None:
     packet, report = _packet_and_report(review_ready=True, manual_review_required=False)
     mismatched_report = report.model_copy(update={"packet_id": "manual-gate:other"})
@@ -215,7 +320,50 @@ def _packet_and_report(
     recommended_checks: list[str] | None = None,
     final_inspection_focus: str = "Minimal bounded review confirmation only.",
 ) -> tuple[ManualGatePacket, ManualGateReport]:
-    review_report = ReviewReport(
+    review_report = _review_report(
+        review_ready=review_ready,
+        manual_review_required=manual_review_required,
+        missing_components=missing_components,
+        recommended_checks=recommended_checks,
+        final_inspection_focus=final_inspection_focus,
+    )
+    packet = build_manual_gate_packet(review_report)
+    report = render_manual_gate_report(packet)
+    return packet, report
+
+
+def _replay_result(
+    review_ready: bool,
+    manual_review_required: bool,
+    missing_components: list[PacketMissingComponent] | None = None,
+    recommended_checks: list[str] | None = None,
+    final_inspection_focus: str = "Minimal bounded review confirmation only.",
+) -> ManualGateReplayResult:
+    review_report = _review_report(
+        review_ready=review_ready,
+        manual_review_required=manual_review_required,
+        missing_components=missing_components,
+        recommended_checks=recommended_checks,
+        final_inspection_focus=final_inspection_focus,
+    )
+    scenario = ManualGateReplayScenario(
+        scenario_name="bundle-replay-fixture",
+        input_report=review_report,
+        expected_disposition=build_manual_gate_packet(review_report).disposition,
+        expected_review_ready=review_ready,
+        expected_manual_action_required=True,
+    )
+    return run_manual_gate_replay(scenario)
+
+
+def _review_report(
+    review_ready: bool,
+    manual_review_required: bool,
+    missing_components: list[PacketMissingComponent] | None = None,
+    recommended_checks: list[str] | None = None,
+    final_inspection_focus: str = "Minimal bounded review confirmation only.",
+) -> ReviewReport:
+    return ReviewReport(
         packet_id="review-packet:corr-1",
         correlation_id=CorrelationId(value="corr-1"),
         review_ready=review_ready,
@@ -228,6 +376,3 @@ def _packet_and_report(
         final_inspection_focus=final_inspection_focus,
         manual_review_required=manual_review_required,
     )
-    packet = build_manual_gate_packet(review_report)
-    report = render_manual_gate_report(packet)
-    return packet, report
