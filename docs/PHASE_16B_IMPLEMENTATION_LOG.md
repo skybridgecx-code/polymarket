@@ -16,8 +16,8 @@ docs/PHASE_16B_IMPLEMENTATION_LOG.md
 - `ManualGateComparison` with:
   - `left_packet_id`
   - `right_packet_id`
-  - `left_correlation_id`
-  - `right_correlation_id`
+  - `left_correlation_id` (`CorrelationId`)
+  - `right_correlation_id` (`CorrelationId`)
   - `left_disposition`
   - `right_disposition`
   - `same_packet_id`
@@ -33,6 +33,7 @@ docs/PHASE_16B_IMPLEMENTATION_LOG.md
 - `compare_manual_gate_bundles(left, right)`:
   - compares bounded existing bundle-derived fields only
   - surfaces packet/correlation differences as booleans (no alignment exceptions)
+  - preserves typed correlation boundary by carrying `CorrelationId` values directly
   - emits sorted stable deltas for reasons and required follow-up
   - remains deterministic and pure in-memory
 

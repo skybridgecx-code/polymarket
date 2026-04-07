@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from future_system.manual_gate.bundles import ManualGateBundle
 from future_system.manual_gate.packets import ManualGateDisposition
+from future_system.observability.correlation import CorrelationId
 
 
 class ManualGateComparison(BaseModel):
@@ -13,8 +14,8 @@ class ManualGateComparison(BaseModel):
 
     left_packet_id: str
     right_packet_id: str
-    left_correlation_id: str
-    right_correlation_id: str
+    left_correlation_id: CorrelationId
+    right_correlation_id: CorrelationId
     left_disposition: ManualGateDisposition
     right_disposition: ManualGateDisposition
     same_packet_id: bool
@@ -67,8 +68,8 @@ def compare_manual_gate_bundles(
     return ManualGateComparison(
         left_packet_id=left.packet_id,
         right_packet_id=right.packet_id,
-        left_correlation_id=left.correlation_id.value,
-        right_correlation_id=right.correlation_id.value,
+        left_correlation_id=left.correlation_id,
+        right_correlation_id=right.correlation_id,
         left_disposition=left.disposition,
         right_disposition=right.disposition,
         same_packet_id=same_packet_id,

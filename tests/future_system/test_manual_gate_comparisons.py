@@ -61,6 +61,10 @@ def test_equal_bundles_compare_as_equal_with_no_deltas() -> None:
     assert comparison.bundles_equal is True
     assert comparison.same_packet_id is True
     assert comparison.same_correlation_id is True
+    assert isinstance(comparison.left_correlation_id, CorrelationId)
+    assert isinstance(comparison.right_correlation_id, CorrelationId)
+    assert comparison.left_correlation_id == left.correlation_id
+    assert comparison.right_correlation_id == right.correlation_id
     assert comparison.disposition_changed is False
     assert comparison.review_ready_changed is False
     assert comparison.manual_action_required_changed is False
@@ -179,6 +183,10 @@ def test_differing_packet_ids_and_correlation_ids_are_surfaced_as_booleans() -> 
 
     assert comparison.same_packet_id is False
     assert comparison.same_correlation_id is False
+    assert isinstance(comparison.left_correlation_id, CorrelationId)
+    assert isinstance(comparison.right_correlation_id, CorrelationId)
+    assert comparison.left_correlation_id == left.correlation_id
+    assert comparison.right_correlation_id == right.correlation_id
     assert comparison.bundles_equal is False
 
 
