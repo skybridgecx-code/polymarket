@@ -15,6 +15,7 @@ from polymarket_arb.services.orchestration_service import RefreshOrchestratorSer
 from polymarket_arb.services.paper_trade_service import PaperTradeService
 from polymarket_arb.services.scan_service import ScanService
 from polymarket_arb.services.screen_service import ScreenService
+from polymarket_arb.services.trade_service import TradeService
 from polymarket_arb.services.wallet_backfill_service import WalletBackfillService
 
 app = typer.Typer(add_completion=False, help="Read-only Polymarket analytics CLI.")
@@ -48,6 +49,55 @@ def screen(
     configure_logging(settings.log_level)
     rows = asyncio.run(ScreenService(settings).build_screen_rows(limit=limit, min_spread=min_spread))
     typer.echo(json.dumps(rows, indent=2, sort_keys=True))
+
+
+@app.command("derive-creds")
+def derive_creds() -> None:
+    """Derive Polymarket API credentials from your private key. Run once."""
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    result = TradeService(settings).derive_api_credentials()
+    typer.echo(json.dumps(result, indent=2))
+
+
+@app.command("balance")
+def balance() -> None:
+    """Check USDC balance."""
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    result = TradeService(settings).get_balance()
+    typer.echo(json.dumps(result, indent=2))
+
+
+@app.command("buy")
+def buy(
+    token_id: str = typer.Option(..., help="Token ID of the outcome to buy."),
+    price: float = typer.Option(..., help="Limit price (0-1)."),
+    size: float = typer.Option(..., help="Number of shares to buy."),
+) -> None:
+    """Place a limit buy order."""
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    result = TradeService(settings).buy(token_id=token_id, price=price, size=size)
+    typer.echo(json.dumps(result, indent=2, default=str))
+
+
+@app.command("orders")
+def orders() -> None:
+    """Show open orders."""
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    result = TradeService(settings).get_open_orders()
+    typer.echo(json.dumps(result, indent=2, default=str))
+
+
+@app.command("cancel-all")
+def cancel_all_orders() -> None:
+    """Cancel all open orders."""
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    result = TradeService(settings).cancel_all_orders()
+    typer.echo(json.dumps(result, indent=2, default=str))
 
 
 @app.command("wallet-backfill")
