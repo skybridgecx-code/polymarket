@@ -14,6 +14,10 @@ from future_system.manual_gate.comparison_replay import (
     ManualGateComparisonReplayScenario,
     run_manual_gate_comparison_replay,
 )
+from future_system.manual_gate.comparison_replay_reports import (
+    ManualGateComparisonReplayReport,
+    render_manual_gate_comparison_replay_report,
+)
 from future_system.manual_gate.comparison_reports import (
     ManualGateComparisonReport,
     render_manual_gate_comparison_report,
@@ -47,6 +51,7 @@ __all__ = [
     "ManualGateComparison",
     "ManualGateComparisonBundle",
     "ManualGateComparisonReport",
+    "ManualGateComparisonReplayReport",
     "ManualGateComparisonReplayResult",
     "ManualGateComparisonReplayScenario",
     "build_manual_gate_packet",
@@ -54,6 +59,7 @@ __all__ = [
     "format_manual_gate_comparison_bundle",
     "render_manual_gate_comparison_report",
     "run_manual_gate_comparison_replay",
+    "render_manual_gate_comparison_replay_report",
     "run_manual_gate_replay",
     "render_manual_gate_report",
     "format_manual_gate_bundle",
