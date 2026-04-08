@@ -14,6 +14,7 @@ from polymarket_arb.services.copier_detection_service import CopierDetectionServ
 from polymarket_arb.services.orchestration_service import RefreshOrchestratorService
 from polymarket_arb.services.paper_trade_service import PaperTradeService
 from polymarket_arb.services.scan_service import ScanService
+from polymarket_arb.services.screen_service import ScreenService
 from polymarket_arb.services.wallet_backfill_service import WalletBackfillService
 
 app = typer.Typer(add_completion=False, help="Read-only Polymarket analytics CLI.")
@@ -35,6 +36,17 @@ def scan(
     settings = get_settings()
     configure_logging(settings.log_level)
     rows = asyncio.run(ScanService(settings).build_scan_rows(limit=limit))
+    typer.echo(json.dumps(rows, indent=2, sort_keys=True))
+
+
+@app.command()
+def screen(
+    limit: int = typer.Option(20, min=1, help="Number of markets to display."),
+    min_spread: float = typer.Option(0.02, help="Minimum spread to include."),
+) -> None:
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    rows = asyncio.run(ScreenService(settings).build_screen_rows(limit=limit, min_spread=min_spread))
     typer.echo(json.dumps(rows, indent=2, sort_keys=True))
 
 
