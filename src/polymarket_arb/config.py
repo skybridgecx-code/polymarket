@@ -32,6 +32,11 @@ class Settings(BaseSettings):
         default=cast(AnyUrl, "wss://ws-subscriptions-clob.polymarket.com/ws/market"),
         validation_alias="POLY_WS_MARKET_URL",
     )
+    poly_private_key: str | None = Field(default=None, validation_alias="POLY_PRIVATE_KEY")
+    poly_api_key: str | None = Field(default=None, validation_alias="POLY_API_KEY")
+    poly_api_secret: str | None = Field(default=None, validation_alias="POLY_API_SECRET")
+    poly_passphrase: str | None = Field(default=None, validation_alias="POLY_PASSPHRASE")
+    poly_chain_id: int = Field(default=137, validation_alias="POLY_CHAIN_ID")
     data_dir: Path = Field(default=Path("./data"), validation_alias="DATA_DIR")
     state_dir: Path = Field(default=Path("./state"), validation_alias="STATE_DIR")
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
