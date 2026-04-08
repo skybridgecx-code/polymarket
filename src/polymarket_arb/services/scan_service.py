@@ -48,11 +48,27 @@ class ScanService:
             await gamma_client.aclose()
             await clob_client.aclose()
 
+    async def _fetch_in_batches(self, token_ids: list[str], fetch_fn) -> list:
+        results: list[Any] = []
+        batch_size = 10
+
+        for start in range(0, len(token_ids), batch_size):
+            batch = token_ids[start : start + batch_size]
+            batch_results = await asyncio.gather(
+                *(fetch_fn(token_id) for token_id in batch),
+                return_exceptions=True,
+            )
+            for result in batch_results:
+                if not isinstance(result, BaseException):
+                    results.append(result)
+
+            if start + batch_size < len(token_ids):
+                await asyncio.sleep(0.5)
+
+        return results
+
     async def _fetch_books(self, client: ClobClient, token_ids: list[str]) -> list[RawClobBook]:
-        results = await asyncio.gather(
-            *(client.get_book(token_id) for token_id in token_ids),
-            return_exceptions=True,
-        )
+        results = await self._fetch_in_batches(token_ids, client.get_book)
         books: list[RawClobBook] = []
         for result in results:
             if isinstance(result, RawClobBook):
@@ -64,10 +80,7 @@ class ScanService:
         client: ClobClient,
         token_ids: list[str],
     ) -> list[RawClobFeeRate]:
-        results = await asyncio.gather(
-            *(client.get_fee_rate(token_id) for token_id in token_ids),
-            return_exceptions=True,
-        )
+        results = await self._fetch_in_batches(token_ids, client.get_fee_rate)
         fee_rates: list[RawClobFeeRate] = []
         for result in results:
             if isinstance(result, RawClobFeeRate):
