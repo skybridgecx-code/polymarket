@@ -1,4 +1,4 @@
-# Phase 18F — Theme-Linked Crypto Evidence Assembly
+# Phase 18G — Polymarket vs Crypto Comparison
 
 ## Role
 You are the implementation engine, not the architect.
@@ -11,69 +11,69 @@ Preserve current boundaries.
 ## Architectural truth
 - `src/polymarket_arb/*` remains the bounded Polymarket intelligence/opportunity module.
 - `src/future_system/theme_graph/*` is the canonical theme-linking layer.
-- `src/future_system/evidence/*` is the canonical Polymarket evidence contract + assembly layer.
-- `src/future_system/divergence/*` is the deterministic disagreement layer for theme evidence packets.
+- `src/future_system/evidence/*` is the canonical Polymarket evidence layer.
+- `src/future_system/divergence/*` is the deterministic disagreement layer.
 - `src/future_system/crypto_adapter/*` is the normalized crypto source boundary.
-- This phase adds the missing bridge from theme-linked asset definitions + normalized crypto states into a canonical theme-scoped crypto evidence packet.
-- This phase is deterministic assembly only.
-- Do not add cross-market comparison, live fetches, websocket logic, reasoning, policy, execution, UI, storage, or network clients.
+- `src/future_system/crypto_evidence/*` is the theme-linked crypto evidence layer.
+- This phase adds the first cross-market comparison layer between canonical Polymarket evidence and canonical crypto evidence.
+- This phase is deterministic comparison only.
+- Do not add news, reasoning, policy, execution, UI, storage, or live network logic.
 
 ## Why this phase exists
-The system now knows:
-- what themes are
-- what linked crypto assets are
-- how to parse normalized crypto market states
+The system now has two separate theme-scoped evidence families:
+- Polymarket evidence
+- crypto proxy evidence
 
 But it still cannot answer:
-- what is the current crypto evidence for this theme
-- which linked crypto symbols matched
-- how fresh/liquid those linked proxies are
-- what aggregate crypto proxy state should be compared later against Polymarket
+- are they directionally aligned
+- are they weakly aligned
+- are they conflicting
+- is crypto missing or insufficient
+- how strong is the comparison signal
 
-This phase creates that canonical crypto evidence layer.
+This phase creates the first canonical cross-market comparison packet.
 
 ## Phase objective
-Build `src/future_system/crypto_evidence/` so the system can:
+Build `src/future_system/comparison/` so the system can:
 
-1. accept a `ThemeLinkPacket`
-2. accept one or more `NormalizedCryptoMarketState` inputs
-3. select only the crypto states relevant to the linked theme assets
-4. compute deterministic freshness/liquidity summaries for matched crypto proxies
-5. emit a canonical `ThemeCryptoEvidencePacket`
+1. accept a `ThemeEvidencePacket`
+2. accept a `ThemeCryptoEvidencePacket`
+3. compare them deterministically for one theme
+4. classify posture:
+   - `aligned`
+   - `weakly_aligned`
+   - `conflicted`
+   - `insufficient`
+5. emit a canonical `ThemeComparisonPacket`
 
-This phase does not compare crypto to Polymarket.
-This phase does not merge source families.
-This phase does not do reasoning or policy.
+This phase does not do LLM reasoning.
+This phase does not make policy decisions.
+This phase does not execute trades.
 
 ## In scope
 
 Create these files if they do not already exist:
 
-- `src/future_system/crypto_evidence/__init__.py`
-- `src/future_system/crypto_evidence/models.py`
-- `src/future_system/crypto_evidence/assembler.py`
-- `src/future_system/crypto_evidence/scoring.py`
+- `src/future_system/comparison/__init__.py`
+- `src/future_system/comparison/models.py`
+- `src/future_system/comparison/comparator.py`
+- `src/future_system/comparison/scoring.py`
 
 Create tests:
 
-- `tests/future_system/test_crypto_evidence_models.py`
-- `tests/future_system/test_crypto_evidence_assembler.py`
-- `tests/future_system/test_crypto_evidence_scoring.py`
+- `tests/future_system/test_comparison_models.py`
+- `tests/future_system/test_comparison_comparator.py`
+- `tests/future_system/test_comparison_scoring.py`
 
 Create fixtures:
 
-- `tests/fixtures/future_system/crypto/theme_crypto_states.json`
+- `tests/fixtures/future_system/comparison/theme_comparison_inputs.json`
 
 Follow existing repo style and fixture conventions if they already exist.
 
 ## Out of scope
 Do not build or touch:
 
-- live HTTP clients
-- websocket clients
-- scheduler / polling jobs
-- mixed-source evidence merger
-- Polymarket-vs-crypto comparison
 - news adapters
 - reasoning / prompts / LLM logic
 - policy engine
@@ -81,6 +81,8 @@ Do not build or touch:
 - CLI/API surfaces
 - dashboard/UI
 - persistence/database
+- schedulers
+- live network calls
 - repo-wide refactors
 
 ## Do not touch
@@ -95,116 +97,149 @@ If imports require tiny changes elsewhere, keep them minimal and explain them.
 
 Implement strongly typed models using existing repo conventions.
 
-### 1. `CryptoProxyEvidence`
-Represents one linked crypto proxy’s theme-scoped evidence.
+### 1. `ComparisonDirection`
+Use an enum or literal model for:
+- `bullish`
+- `bearish`
+- `mixed`
+- `unknown`
+
+This represents the comparison-implied directional posture of each evidence family.
+
+### 2. `ComparisonAlignment`
+Use an enum or literal model for:
+- `aligned`
+- `weakly_aligned`
+- `conflicted`
+- `insufficient`
+
+### 3. `EvidenceFamilySummary`
+Represents a normalized summary of one evidence family for comparison.
 
 Suggested fields:
-- `symbol: str`
-- `market_type: Literal["spot", "perp"]`
-- `exchange: str`
-- `role: Literal["primary_proxy", "confirmation_proxy", "hedge_proxy", "context_only"]`
-- `direction_if_theme_up: Literal["up", "down", "mixed", "unknown"]`
-- `last_price: float | None`
-- `mid_price: float | None`
-- `funding_rate: float | None`
-- `open_interest: float | None`
-- `liquidity_score: float`
+- `family: Literal["polymarket", "crypto"]`
+- `direction: ComparisonDirection`
+- `strength_score: float`
 - `freshness_score: float`
+- `liquidity_score: float | None`
+- `coverage_score: float | None`
 - `flags: list[str]`
-- `is_primary: bool = False`
 
-### 2. `ThemeCryptoEvidencePacket`
-Canonical crypto evidence output for one theme.
+### 4. `ThemeComparisonPacket`
+Canonical comparison output for one theme.
 
 Suggested fields:
 - `theme_id: str`
-- `primary_symbol: str | None`
-- `proxy_evidence: list[CryptoProxyEvidence]`
-- `matched_symbols: list[str]`
-- `liquidity_score: float`
-- `freshness_score: float`
-- `coverage_score: float`
+- `polymarket_summary: EvidenceFamilySummary`
+- `crypto_summary: EvidenceFamilySummary`
+- `alignment: ComparisonAlignment`
+- `agreement_score: float`
+- `confidence_score: float`
 - `flags: list[str]`
 - `explanation: str`
 
-### 3. `CryptoEvidenceAssemblyError`
-Raised when assembly cannot build a valid packet from the provided theme links and normalized crypto states.
+### 5. `ComparisonError`
+Raised when comparison cannot be computed from the provided packets.
 
-## Assembly behavior
+## Comparison behavior
 
-Implement deterministic assembly from:
-- `ThemeLinkPacket`
-- sequence of `NormalizedCryptoMarketState` or plain mappings that validate into that model
+Implement deterministic comparison from:
+- `ThemeEvidencePacket`
+- `ThemeCryptoEvidencePacket`
 
 Rules:
 
-1. Only include crypto states whose symbols match linked theme asset symbols where:
-   - asset type is relevant to crypto proxies (`spot` or `perp`)
-   - symbol matches exactly after deterministic normalization
+1. Theme ids must match.
+   - if they do not, raise `ComparisonError`
 
-2. If no linked crypto states match:
-   - raise `CryptoEvidenceAssemblyError`
-   - do not invent a packet
+2. Derive Polymarket direction deterministically from `aggregate_yes_probability`:
+   Suggested thresholds:
+   - `> 0.55` -> `bullish`
+   - `< 0.45` -> `bearish`
+   - otherwise `mixed`
+   - if aggregate missing -> `unknown`
 
-3. Only use theme asset links that are crypto-relevant.
-Ignore non-crypto asset links like equities, yields, FX, etc.
+Keep thresholds explicit in code.
 
-4. Select primary proxy deterministically:
-   - `primary_proxy` role wins over others
-   - among same role, highest liquidity score wins
-   - ties break by symbol ascending
+3. Derive crypto direction deterministically from theme-linked proxy evidence.
 
-5. Compute freshness score deterministically from `snapshot_at` age relative to an explicit `reference_time` input.
-   - no hidden use of current system time in core logic
-   - keep scoring simple and explicit
+Use a simple explicit approach:
+- evaluate each proxy using its `direction_if_theme_up`
+- infer whether observed crypto state is supportive, unsupportive, mixed, or unknown
+- keep this small and inspectable
 
-Suggested buckets:
-- <= 5 minutes: 1.00
-- <= 30 minutes: 0.80
-- <= 2 hours: 0.50
-- > 2 hours: 0.20 and add stale flag
+Suggested interpretation:
+- for proxies with `direction_if_theme_up == "up"`:
+  - presence of usable price evidence counts as supportive-positive input
+- for proxies with `direction_if_theme_up == "down"`:
+  - usable price evidence counts as inverse-support input
+- if proxy evidence is too incomplete, it contributes `unknown`
 
-6. Compute liquidity score deterministically and simply.
-Use available crypto inputs like:
-- bid/ask spread if bid and ask exist
-- volume_24h
-- open_interest for perps when present
+You must choose a clear deterministic rule and apply it consistently in code/tests.
+Do not invent a fake market-return model.
+This is a bounded structural comparison phase, not full signal inference.
 
-Keep this explicit and bounded.
-Do not over-engineer a fake quant model.
+A practical simple rule is acceptable, for example:
+- if majority of usable proxies are role-weighted supportive of theme-up -> `bullish`
+- if majority are role-weighted supportive of theme-down -> `bearish`
+- ties / mixed -> `mixed`
+- too few usable proxies -> `unknown`
 
-7. Coverage score:
-   - deterministic bounded score in `[0.0, 1.0]`
-   - based on proportion of linked crypto symbols actually matched
-   - for example: matched / linked-crypto-assets
-   - if there are no crypto-linked assets in the theme packet, raise `CryptoEvidenceAssemblyError`
+4. Strength score:
+- derive bounded family-level strength scores in `[0.0, 1.0]`
+- for Polymarket, can use existing evidence score or a deterministic combination of liquidity/freshness/presence of aggregate probability
+- for crypto, can use deterministic combination of liquidity/freshness/coverage
+- keep this simple and explicit
 
-8. Packet-level scores:
-   - liquidity score = mean of proxy liquidity scores
-   - freshness score = mean of proxy freshness scores
-   - all bounded in `[0.0, 1.0]`
+5. Agreement score:
+- bounded in `[0.0, 1.0]`
+- higher when families are directionally aligned and both families have decent quality
+- lower when mixed/conflicted/unknown
+- keep this deterministic and inspectable
 
-9. Surface explicit flags for:
-   - stale snapshot
-   - missing mid/last price
-   - low liquidity
-   - no crypto-linked assets
-   - incomplete linked symbol coverage
+6. Confidence score:
+- bounded in `[0.0, 1.0]`
+- derived from agreement plus evidence-family quality
+- should drop when either family is weak/stale/incomplete
 
-10. Explanation:
-   Produce a short deterministic explanation string summarizing:
-   - matched symbol count
-   - primary proxy
-   - packet scores
-   - key flags
+7. Alignment classification:
+- `aligned`
+  - clear directional match with usable quality
+- `weakly_aligned`
+  - partial match or weaker evidence quality
+- `conflicted`
+  - directional mismatch with usable quality
+- `insufficient`
+  - one or both families unknown/incomplete
+
+Use explicit thresholds.
+
+8. Flags:
+Surface explicit packet-level flags for cases like:
+- `theme_id_mismatch`
+- `polymarket_unknown_direction`
+- `crypto_unknown_direction`
+- `weak_crypto_coverage`
+- `stale_polymarket_evidence`
+- `stale_crypto_evidence`
+- `cross_market_conflict`
+
+9. Explanation:
+Produce a short deterministic explanation string summarizing:
+- each family direction
+- alignment classification
+- agreement/confidence
+- key flags
 
 ## Scoring requirements
 Create small pure functions in `scoring.py`.
 
 Suggested functions:
-- `compute_crypto_freshness_score(...)`
-- `compute_crypto_liquidity_score(...)`
-- `compute_crypto_coverage_score(...)`
+- `derive_polymarket_direction(...)`
+- `derive_crypto_direction(...)`
+- `compute_agreement_score(...)`
+- `compute_comparison_confidence_score(...)`
+- `classify_alignment(...)`
 
 Keep them:
 - deterministic
@@ -216,55 +251,40 @@ No randomization.
 No hidden global time.
 No network assumptions.
 
-## Symbol matching and normalization
-Keep normalization simple and deterministic.
-
-Examples:
-- `BTC` theme asset should match `BTC-USD` spot and `BTC-PERP` perp only if your matching rule explicitly supports base-asset matching
-- or require exact symbol equality if you choose a stricter rule
-
-Pick one clear rule and apply it consistently in code and tests.
-Do not use fuzzy matching.
-
-Preferred approach:
-- allow a linked asset symbol like `BTC` to match normalized crypto states whose `base_asset == BTC`
-- retain exact symbol matching when the linked symbol itself is already a full market symbol like `BTC-PERP`
-
-Keep this logic small and explicit.
-
 ## Test requirements
 
-### `test_crypto_evidence_models.py`
+### `test_comparison_models.py`
 Cover:
-- valid packet models
-- invalid bounded scores rejected
-- required fields enforced
+- valid comparison models
+- bounded scores rejected if invalid
+- invalid alignment/direction rejected
 
-### `test_crypto_evidence_assembler.py`
+### `test_comparison_comparator.py`
 Cover:
-- linked crypto states selected correctly
-- non-crypto theme assets ignored
-- no matches raises `CryptoEvidenceAssemblyError`
-- no crypto-linked assets raises `CryptoEvidenceAssemblyError`
-- primary proxy selection deterministic
-- coverage score deterministic
-- stale and incomplete-coverage flags surface correctly
+- matching theme ids required
+- aligned case produces `aligned`
+- weaker alignment produces `weakly_aligned`
+- directional mismatch produces `conflicted`
+- missing/unknown family produces `insufficient`
+- packet flags deterministic
 - explanation string deterministic
 
-### `test_crypto_evidence_scoring.py`
+### `test_comparison_scoring.py`
 Cover:
-- freshness score buckets
-- liquidity score bounded in `[0,1]`
-- coverage score bounded in `[0,1]`
-- deterministic outputs for known inputs
+- Polymarket direction thresholds deterministic
+- crypto direction derivation deterministic for known proxy mixes
+- agreement score bounded in `[0,1]`
+- confidence score bounded in `[0,1]`
+- alignment thresholds deterministic
 
 ## Fixtures
 Create a small deterministic fixture set with at least:
-- one BTC spot state
-- one BTC perp state
-- one ETH spot state
-- one unrelated crypto state
-- timestamps that allow at least one stale case in tests
+- one aligned comparison input
+- one weakly aligned input
+- one conflicted input
+- one insufficient input
+
+These can be JSON representations of `ThemeEvidencePacket` and `ThemeCryptoEvidencePacket` shaped inputs.
 
 ## Constraints
 - keep code small
@@ -272,17 +292,17 @@ Create a small deterministic fixture set with at least:
 - do not add new dependencies unless absolutely necessary
 - do not fetch live data
 - do not touch `src/polymarket_arb/*`
-- do not implement mixed-source comparison in this phase
+- do not implement reasoning/policy/trading in this phase
 
 ## Acceptance criteria
 This phase is complete only if all are true:
 
-1. `src/future_system/crypto_evidence/*` exists with the files listed above
+1. `src/future_system/comparison/*` exists with the files listed above
 2. typed models validate correctly
-3. assembler consumes `ThemeLinkPacket` + normalized crypto states
-4. only linked crypto-relevant assets are included
-5. deterministic primary proxy selection works
-6. freshness/liquidity/coverage scores are deterministic and bounded
+3. comparator consumes `ThemeEvidencePacket` + `ThemeCryptoEvidencePacket`
+4. direction derivation is deterministic
+5. alignment classification works for aligned / weakly_aligned / conflicted / insufficient
+6. agreement and confidence scores are deterministic and bounded
 7. explicit flags surface correctly
 8. tests pass
 9. no unrelated modules were modified
@@ -293,12 +313,12 @@ Before finishing:
 - inspect repo commands and run the narrowest relevant checks
 - run targeted tests first
 - run narrow ruff check for touched files
-- run narrow mypy check for the new crypto evidence module if mypy is already in use
+- run narrow mypy check for the new comparison module if mypy is already in use
 
 At minimum, run:
-- targeted pytest for the new crypto evidence tests
+- targeted pytest for the new comparison tests
 - narrow ruff check for touched files
-- narrow mypy check for the new crypto evidence module
+- narrow mypy check for the new comparison module
 
 ## Final output format
 Return only:
@@ -310,6 +330,6 @@ Return only:
 6. explicit note whether `src/polymarket_arb/*` was untouched
 
 Do not widen the phase.
-Do not start Polymarket-vs-crypto comparison.
+Do not start news ingestion.
 Do not start reasoning or policy.
 Complete only this bounded phase.
