@@ -1,0 +1,184 @@
+[
+  {
+    "case": "aligned",
+    "packet": {
+      "theme_id": "theme_aligned",
+      "primary_market_slug": "aligned-primary",
+      "market_evidence": [
+        {
+          "market_slug": "aligned-primary",
+          "condition_id": "0xaligned1",
+          "implied_yes_probability": 0.59,
+          "spread": 0.02,
+          "liquidity_score": 0.9,
+          "freshness_score": 0.95,
+          "flags": [],
+          "is_primary": true
+        },
+        {
+          "market_slug": "aligned-secondary",
+          "condition_id": "0xaligned2",
+          "implied_yes_probability": 0.61,
+          "spread": 0.03,
+          "liquidity_score": 0.78,
+          "freshness_score": 0.88,
+          "flags": [],
+          "is_primary": false
+        },
+        {
+          "market_slug": "aligned-tertiary",
+          "condition_id": "0xaligned3",
+          "implied_yes_probability": 0.6,
+          "spread": 0.04,
+          "liquidity_score": 0.76,
+          "freshness_score": 0.9,
+          "flags": [],
+          "is_primary": false
+        }
+      ],
+      "aggregate_yes_probability": 0.6,
+      "liquidity_score": 0.82,
+      "freshness_score": 0.91,
+      "evidence_score": 0.856,
+      "flags": [],
+      "explanation": "Aligned fixture packet."
+    }
+  },
+  {
+    "case": "mixed",
+    "packet": {
+      "theme_id": "theme_mixed",
+      "primary_market_slug": "mixed-primary",
+      "market_evidence": [
+        {
+          "market_slug": "mixed-primary",
+          "condition_id": "0xmixed1",
+          "implied_yes_probability": 0.48,
+          "spread": 0.08,
+          "liquidity_score": 0.43,
+          "freshness_score": 0.65,
+          "flags": [],
+          "is_primary": true
+        },
+        {
+          "market_slug": "mixed-secondary",
+          "condition_id": "0xmixed2",
+          "implied_yes_probability": 0.68,
+          "spread": 0.09,
+          "liquidity_score": 0.41,
+          "freshness_score": 0.52,
+          "flags": [
+            "stale_snapshot"
+          ],
+          "is_primary": false
+        },
+        {
+          "market_slug": "mixed-unknown-probability",
+          "condition_id": "0xmixed3",
+          "implied_yes_probability": null,
+          "spread": null,
+          "liquidity_score": 0.36,
+          "freshness_score": 0.57,
+          "flags": [
+            "missing_implied_probability",
+            "missing_book_data"
+          ],
+          "is_primary": false
+        }
+      ],
+      "aggregate_yes_probability": 0.55,
+      "liquidity_score": 0.42,
+      "freshness_score": 0.58,
+      "evidence_score": 0.484,
+      "flags": [],
+      "explanation": "Mixed fixture packet."
+    }
+  },
+  {
+    "case": "conflicted",
+    "packet": {
+      "theme_id": "theme_conflicted",
+      "primary_market_slug": "conflicted-primary",
+      "market_evidence": [
+        {
+          "market_slug": "conflicted-primary",
+          "condition_id": "0xconflict1",
+          "implied_yes_probability": 0.12,
+          "spread": 0.03,
+          "liquidity_score": 0.73,
+          "freshness_score": 0.86,
+          "flags": [],
+          "is_primary": true
+        },
+        {
+          "market_slug": "conflicted-secondary",
+          "condition_id": "0xconflict2",
+          "implied_yes_probability": 0.88,
+          "spread": 0.04,
+          "liquidity_score": 0.69,
+          "freshness_score": 0.75,
+          "flags": [],
+          "is_primary": false
+        },
+        {
+          "market_slug": "conflicted-tertiary",
+          "condition_id": "0xconflict3",
+          "implied_yes_probability": 0.5,
+          "spread": 0.05,
+          "liquidity_score": 0.66,
+          "freshness_score": 0.67,
+          "flags": [],
+          "is_primary": false
+        }
+      ],
+      "aggregate_yes_probability": 0.5,
+      "liquidity_score": 0.69,
+      "freshness_score": 0.76,
+      "evidence_score": 0.718,
+      "flags": [],
+      "explanation": "Conflicted fixture packet."
+    }
+  },
+  {
+    "case": "insufficient",
+    "packet": {
+      "theme_id": "theme_insufficient",
+      "primary_market_slug": "insufficient-primary",
+      "market_evidence": [
+        {
+          "market_slug": "insufficient-primary",
+          "condition_id": "0xinsufficient1",
+          "implied_yes_probability": 0.51,
+          "spread": 0.08,
+          "liquidity_score": 0.57,
+          "freshness_score": 0.49,
+          "flags": [
+            "stale_snapshot"
+          ],
+          "is_primary": true
+        },
+        {
+          "market_slug": "insufficient-secondary",
+          "condition_id": "0xinsufficient2",
+          "implied_yes_probability": null,
+          "spread": null,
+          "liquidity_score": 0.47,
+          "freshness_score": 0.41,
+          "flags": [
+            "missing_implied_probability",
+            "missing_book_data"
+          ],
+          "is_primary": false
+        }
+      ],
+      "aggregate_yes_probability": null,
+      "liquidity_score": 0.52,
+      "freshness_score": 0.49,
+      "evidence_score": 0.508,
+      "flags": [
+        "missing_implied_probability"
+      ],
+      "explanation": "Insufficient fixture packet."
+    }
+  }
+]
