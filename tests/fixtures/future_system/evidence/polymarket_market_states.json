@@ -1,0 +1,53 @@
+[
+  {
+    "market_slug": "fed-cut-june-2026-primary",
+    "event_slug": "fed-rate-cut-june-2026",
+    "condition_id": "0xlinkedprimary",
+    "question": "Will the Fed cut rates by June 2026?",
+    "yes_bid": 0.58,
+    "yes_ask": 0.6,
+    "no_bid": 0.4,
+    "no_ask": 0.42,
+    "last_price_yes": 0.59,
+    "volume_24h": 200000.0,
+    "depth_near_mid": 10000.0,
+    "snapshot_at": "2026-01-10T12:08:00Z",
+    "last_trade_at": "2026-01-10T12:07:00Z",
+    "resolution_at": "2026-06-30T12:00:00Z",
+    "status": "active"
+  },
+  {
+    "market_slug": "fed-cut-june-2026-secondary",
+    "event_slug": "fed-rate-cut-june-2026",
+    "condition_id": null,
+    "question": "Will Fed policy ease by June 2026?",
+    "yes_bid": 0.5,
+    "yes_ask": 0.56,
+    "no_bid": 0.44,
+    "no_ask": 0.5,
+    "last_price_yes": null,
+    "volume_24h": 5000.0,
+    "depth_near_mid": 200.0,
+    "snapshot_at": "2026-01-10T08:30:00Z",
+    "last_trade_at": "2026-01-10T08:25:00Z",
+    "resolution_at": "2026-06-30T12:00:00Z",
+    "status": "active"
+  },
+  {
+    "market_slug": "unrelated-weather-market",
+    "event_slug": "weather-event-2026",
+    "condition_id": "0xunrelated",
+    "question": "Will rainfall exceed threshold in Region X?",
+    "yes_bid": 0.21,
+    "yes_ask": 0.27,
+    "no_bid": 0.73,
+    "no_ask": 0.79,
+    "last_price_yes": 0.24,
+    "volume_24h": 1200.0,
+    "depth_near_mid": 80.0,
+    "snapshot_at": "2026-01-10T12:05:00Z",
+    "last_trade_at": "2026-01-10T12:04:00Z",
+    "resolution_at": "2026-02-01T12:00:00Z",
+    "status": "active"
+  }
+]
