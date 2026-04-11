@@ -1,4 +1,4 @@
-# Phase 18E — Crypto Adapter Baseline
+# Phase 18F — Theme-Linked Crypto Evidence Assembly
 
 ## Role
 You are the implementation engine, not the architect.
@@ -11,55 +11,58 @@ Preserve current boundaries.
 ## Architectural truth
 - `src/polymarket_arb/*` remains the bounded Polymarket intelligence/opportunity module.
 - `src/future_system/theme_graph/*` is the canonical theme-linking layer.
-- `src/future_system/evidence/*` is the canonical evidence contract + assembly layer.
-- `src/future_system/divergence/*` is the deterministic disagreement layer.
-- This phase adds the first non-Polymarket source boundary: a bounded crypto adapter baseline.
-- This phase is normalization and adapter-contract work only.
-- Do not add live network fetches, websocket streams, schedulers, policy logic, reasoning, UI, persistence, or execution.
+- `src/future_system/evidence/*` is the canonical Polymarket evidence contract + assembly layer.
+- `src/future_system/divergence/*` is the deterministic disagreement layer for theme evidence packets.
+- `src/future_system/crypto_adapter/*` is the normalized crypto source boundary.
+- This phase adds the missing bridge from theme-linked asset definitions + normalized crypto states into a canonical theme-scoped crypto evidence packet.
+- This phase is deterministic assembly only.
+- Do not add cross-market comparison, live fetches, websocket logic, reasoning, policy, execution, UI, storage, or network clients.
 
 ## Why this phase exists
-The larger system now has internal structure but still only knows how to operate on Polymarket-shaped inputs.
+The system now knows:
+- what themes are
+- what linked crypto assets are
+- how to parse normalized crypto market states
 
-Before it can compare markets, it needs a clean external-source adapter boundary that:
-- accepts raw source payloads
-- normalizes them into canonical crypto market-state models
-- exposes deterministic adapter behavior
-- stays small and inspectable
+But it still cannot answer:
+- what is the current crypto evidence for this theme
+- which linked crypto symbols matched
+- how fresh/liquid those linked proxies are
+- what aggregate crypto proxy state should be compared later against Polymarket
 
-This phase proves that boundary with fixture-based parsing only.
+This phase creates that canonical crypto evidence layer.
 
 ## Phase objective
-Build `src/future_system/crypto_adapter/` so the system can:
+Build `src/future_system/crypto_evidence/` so the system can:
 
-1. define canonical normalized crypto market-state models
-2. define a small adapter protocol / interface
-3. parse fixture-based raw payloads into normalized crypto market states
-4. filter to only relevant symbols from manual inputs
-5. emit deterministic normalized outputs with validation
+1. accept a `ThemeLinkPacket`
+2. accept one or more `NormalizedCryptoMarketState` inputs
+3. select only the crypto states relevant to the linked theme assets
+4. compute deterministic freshness/liquidity summaries for matched crypto proxies
+5. emit a canonical `ThemeCryptoEvidencePacket`
 
-This phase does not compare crypto to Polymarket yet.
-It does not assemble mixed-source evidence yet.
-It does not fetch live data.
+This phase does not compare crypto to Polymarket.
+This phase does not merge source families.
+This phase does not do reasoning or policy.
 
 ## In scope
 
 Create these files if they do not already exist:
 
-- `src/future_system/crypto_adapter/__init__.py`
-- `src/future_system/crypto_adapter/models.py`
-- `src/future_system/crypto_adapter/protocol.py`
-- `src/future_system/crypto_adapter/parser.py`
-- `src/future_system/crypto_adapter/filters.py`
+- `src/future_system/crypto_evidence/__init__.py`
+- `src/future_system/crypto_evidence/models.py`
+- `src/future_system/crypto_evidence/assembler.py`
+- `src/future_system/crypto_evidence/scoring.py`
 
 Create tests:
 
-- `tests/future_system/test_crypto_adapter_models.py`
-- `tests/future_system/test_crypto_adapter_parser.py`
-- `tests/future_system/test_crypto_adapter_filters.py`
+- `tests/future_system/test_crypto_evidence_models.py`
+- `tests/future_system/test_crypto_evidence_assembler.py`
+- `tests/future_system/test_crypto_evidence_scoring.py`
 
 Create fixtures:
 
-- `tests/fixtures/future_system/crypto/market_snapshots.json`
+- `tests/fixtures/future_system/crypto/theme_crypto_states.json`
 
 Follow existing repo style and fixture conventions if they already exist.
 
@@ -69,8 +72,8 @@ Do not build or touch:
 - live HTTP clients
 - websocket clients
 - scheduler / polling jobs
-- cross-market evidence merger
-- divergence updates for crypto
+- mixed-source evidence merger
+- Polymarket-vs-crypto comparison
 - news adapters
 - reasoning / prompts / LLM logic
 - policy engine
@@ -92,138 +95,176 @@ If imports require tiny changes elsewhere, keep them minimal and explain them.
 
 Implement strongly typed models using existing repo conventions.
 
-### 1. `NormalizedCryptoMarketState`
-Canonical normalized crypto market snapshot.
+### 1. `CryptoProxyEvidence`
+Represents one linked crypto proxy’s theme-scoped evidence.
 
 Suggested fields:
-- `source: Literal["fixture", "exchange"]`
-- `exchange: str`
 - `symbol: str`
-- `base_asset: str`
-- `quote_asset: str`
 - `market_type: Literal["spot", "perp"]`
+- `exchange: str`
+- `role: Literal["primary_proxy", "confirmation_proxy", "hedge_proxy", "context_only"]`
+- `direction_if_theme_up: Literal["up", "down", "mixed", "unknown"]`
 - `last_price: float | None`
-- `bid_price: float | None`
-- `ask_price: float | None`
 - `mid_price: float | None`
-- `volume_24h: float | None`
-- `open_interest: float | None`
 - `funding_rate: float | None`
-- `snapshot_at: datetime`
-- `status: Literal["active", "halted", "unknown"]`
+- `open_interest: float | None`
+- `liquidity_score: float`
+- `freshness_score: float`
+- `flags: list[str]`
+- `is_primary: bool = False`
 
-Validation:
-- `symbol`, `base_asset`, `quote_asset`, `exchange` must be non-empty
-- numeric price/volume/open_interest fields cannot be negative
-- `funding_rate` may be negative but must be bounded reasonably if you choose validation
-- if both `bid_price` and `ask_price` are present, `ask_price >= bid_price`
-- if `mid_price` is missing and both bid/ask exist, parser should compute it deterministically
-
-### 2. `CryptoAdapterParseResult`
-Represents parser output.
+### 2. `ThemeCryptoEvidencePacket`
+Canonical crypto evidence output for one theme.
 
 Suggested fields:
-- `exchange: str`
-- `market_states: list[NormalizedCryptoMarketState]`
-- `skipped_records: int`
+- `theme_id: str`
+- `primary_symbol: str | None`
+- `proxy_evidence: list[CryptoProxyEvidence]`
+- `matched_symbols: list[str]`
+- `liquidity_score: float`
+- `freshness_score: float`
+- `coverage_score: float`
 - `flags: list[str]`
+- `explanation: str`
 
-### 3. `CryptoSymbolFilter`
-Optional helper model if useful.
+### 3. `CryptoEvidenceAssemblyError`
+Raised when assembly cannot build a valid packet from the provided theme links and normalized crypto states.
 
-### 4. `CryptoAdapterError`
-Raised when raw payloads cannot be parsed into valid normalized states.
+## Assembly behavior
 
-## Adapter protocol
+Implement deterministic assembly from:
+- `ThemeLinkPacket`
+- sequence of `NormalizedCryptoMarketState` or plain mappings that validate into that model
 
-Implement a very small protocol or interface in `protocol.py`.
+Rules:
 
-It should define a bounded contract for adapter-like behavior, such as:
-- parse raw payloads into normalized states
-- optionally filter normalized states by allowed symbols
+1. Only include crypto states whose symbols match linked theme asset symbols where:
+   - asset type is relevant to crypto proxies (`spot` or `perp`)
+   - symbol matches exactly after deterministic normalization
 
-Do not add live client methods.
-Do not add auth.
-Do not add retries.
+2. If no linked crypto states match:
+   - raise `CryptoEvidenceAssemblyError`
+   - do not invent a packet
 
-This is a contract layer only.
+3. Only use theme asset links that are crypto-relevant.
+Ignore non-crypto asset links like equities, yields, FX, etc.
 
-## Parser behavior
+4. Select primary proxy deterministically:
+   - `primary_proxy` role wins over others
+   - among same role, highest liquidity score wins
+   - ties break by symbol ascending
 
-Implement deterministic parsing from fixture-based raw payloads.
+5. Compute freshness score deterministically from `snapshot_at` age relative to an explicit `reference_time` input.
+   - no hidden use of current system time in core logic
+   - keep scoring simple and explicit
 
-Assume fixtures contain a list of raw records representing a small exchange-style snapshot set.
+Suggested buckets:
+- <= 5 minutes: 1.00
+- <= 30 minutes: 0.80
+- <= 2 hours: 0.50
+- > 2 hours: 0.20 and add stale flag
 
-Parser rules:
+6. Compute liquidity score deterministically and simply.
+Use available crypto inputs like:
+- bid/ask spread if bid and ask exist
+- volume_24h
+- open_interest for perps when present
 
-1. Accept either:
-- already-loaded Python mappings / sequences
-- or JSON fixture content loaded by tests
+Keep this explicit and bounded.
+Do not over-engineer a fake quant model.
 
-2. Map raw fields deterministically into `NormalizedCryptoMarketState`
+7. Coverage score:
+   - deterministic bounded score in `[0.0, 1.0]`
+   - based on proportion of linked crypto symbols actually matched
+   - for example: matched / linked-crypto-assets
+   - if there are no crypto-linked assets in the theme packet, raise `CryptoEvidenceAssemblyError`
 
-3. Compute `mid_price`:
-- if raw mid exists, use it
-- else if bid and ask both exist, use `(bid + ask) / 2`
-- else leave `None`
+8. Packet-level scores:
+   - liquidity score = mean of proxy liquidity scores
+   - freshness score = mean of proxy freshness scores
+   - all bounded in `[0.0, 1.0]`
 
-4. Skip malformed records only when they are clearly unusable.
-- count them in `skipped_records`
-- add an explicit flag like `skipped_invalid_records`
-- do not silently swallow parser problems that break the whole payload format
+9. Surface explicit flags for:
+   - stale snapshot
+   - missing mid/last price
+   - low liquidity
+   - no crypto-linked assets
+   - incomplete linked symbol coverage
 
-5. Support both `spot` and `perp` records in the fixture
+10. Explanation:
+   Produce a short deterministic explanation string summarizing:
+   - matched symbol count
+   - primary proxy
+   - packet scores
+   - key flags
 
-6. Keep symbol normalization deterministic.
-Suggested examples:
-- `BTC-USD`
-- `ETH-USD`
-- `BTC-PERP`
+## Scoring requirements
+Create small pure functions in `scoring.py`.
 
-Do not invent complex symbol translation logic.
+Suggested functions:
+- `compute_crypto_freshness_score(...)`
+- `compute_crypto_liquidity_score(...)`
+- `compute_crypto_coverage_score(...)`
 
-## Filter behavior
+Keep them:
+- deterministic
+- bounded
+- easy to inspect
+- free of side effects
 
-Implement deterministic filtering helpers.
+No randomization.
+No hidden global time.
+No network assumptions.
 
-Suggested behavior:
-- include only explicitly requested symbols when a filter list is provided
-- preserve input order after filtering
-- exact normalized symbol match only
-- return empty list when nothing matches
+## Symbol matching and normalization
+Keep normalization simple and deterministic.
 
-No fuzzy matching.
+Examples:
+- `BTC` theme asset should match `BTC-USD` spot and `BTC-PERP` perp only if your matching rule explicitly supports base-asset matching
+- or require exact symbol equality if you choose a stricter rule
+
+Pick one clear rule and apply it consistently in code and tests.
+Do not use fuzzy matching.
+
+Preferred approach:
+- allow a linked asset symbol like `BTC` to match normalized crypto states whose `base_asset == BTC`
+- retain exact symbol matching when the linked symbol itself is already a full market symbol like `BTC-PERP`
+
+Keep this logic small and explicit.
 
 ## Test requirements
 
-### `test_crypto_adapter_models.py`
+### `test_crypto_evidence_models.py`
 Cover:
-- valid normalized state
-- negative numeric fields rejected
-- bid/ask ordering enforced
-- required string fields enforced
+- valid packet models
+- invalid bounded scores rejected
+- required fields enforced
 
-### `test_crypto_adapter_parser.py`
+### `test_crypto_evidence_assembler.py`
 Cover:
-- valid fixture parses into normalized states
-- mid price computed deterministically from bid/ask when missing
-- malformed records increase `skipped_records`
-- spot and perp records both supported
-- parser flags deterministic
+- linked crypto states selected correctly
+- non-crypto theme assets ignored
+- no matches raises `CryptoEvidenceAssemblyError`
+- no crypto-linked assets raises `CryptoEvidenceAssemblyError`
+- primary proxy selection deterministic
+- coverage score deterministic
+- stale and incomplete-coverage flags surface correctly
+- explanation string deterministic
 
-### `test_crypto_adapter_filters.py`
+### `test_crypto_evidence_scoring.py`
 Cover:
-- exact symbol filter works
-- unmatched symbols return empty list
-- input order preserved
-- normalization behavior deterministic
+- freshness score buckets
+- liquidity score bounded in `[0,1]`
+- coverage score bounded in `[0,1]`
+- deterministic outputs for known inputs
 
 ## Fixtures
 Create a small deterministic fixture set with at least:
-- one BTC spot record
-- one ETH spot record
-- one BTC perp record
-- one malformed record that should be skipped
+- one BTC spot state
+- one BTC perp state
+- one ETH spot state
+- one unrelated crypto state
+- timestamps that allow at least one stale case in tests
 
 ## Constraints
 - keep code small
@@ -231,31 +272,33 @@ Create a small deterministic fixture set with at least:
 - do not add new dependencies unless absolutely necessary
 - do not fetch live data
 - do not touch `src/polymarket_arb/*`
-- do not implement cross-market comparison in this phase
+- do not implement mixed-source comparison in this phase
 
 ## Acceptance criteria
 This phase is complete only if all are true:
 
-1. `src/future_system/crypto_adapter/*` exists with the files listed above
+1. `src/future_system/crypto_evidence/*` exists with the files listed above
 2. typed models validate correctly
-3. parser emits deterministic normalized crypto market states
-4. malformed fixture records are handled deterministically
-5. symbol filtering works deterministically
-6. tests pass
-7. no unrelated modules were modified
-8. `src/polymarket_arb/*` remains untouched
+3. assembler consumes `ThemeLinkPacket` + normalized crypto states
+4. only linked crypto-relevant assets are included
+5. deterministic primary proxy selection works
+6. freshness/liquidity/coverage scores are deterministic and bounded
+7. explicit flags surface correctly
+8. tests pass
+9. no unrelated modules were modified
+10. `src/polymarket_arb/*` remains untouched
 
 ## Validation
 Before finishing:
 - inspect repo commands and run the narrowest relevant checks
 - run targeted tests first
 - run narrow ruff check for touched files
-- run narrow mypy check for the new crypto adapter module if mypy is already in use
+- run narrow mypy check for the new crypto evidence module if mypy is already in use
 
 At minimum, run:
-- targeted pytest for the new crypto adapter tests
+- targeted pytest for the new crypto evidence tests
 - narrow ruff check for touched files
-- narrow mypy check for the new crypto adapter module
+- narrow mypy check for the new crypto evidence module
 
 ## Final output format
 Return only:
@@ -267,7 +310,6 @@ Return only:
 6. explicit note whether `src/polymarket_arb/*` was untouched
 
 Do not widen the phase.
-Do not start live exchange ingestion.
-Do not start mixed-source evidence merging.
+Do not start Polymarket-vs-crypto comparison.
 Do not start reasoning or policy.
 Complete only this bounded phase.
