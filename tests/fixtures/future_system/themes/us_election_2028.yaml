@@ -1,0 +1,53 @@
+theme_id: us_election_2028
+title: US Presidential Election 2028 Outcome
+description: Theme tracking the eventual winner and major probability shifts in the 2028 US presidential election cycle.
+status: active
+category: politics
+start_at: "2027-01-15T00:00:00Z"
+expected_resolution_at: "2028-11-07T00:00:00Z"
+primary_question: Who will win the 2028 US presidential election?
+aliases:
+  - 2028 us election
+  - us presidential election 2028
+  - white house race 2028
+polymarket_links:
+  - condition_id: "0xuselection2028winner"
+    market_slug: who-will-win-us-presidential-election-2028
+    event_slug: us-presidential-election-2028
+    outcome_map:
+      Democrat: democratic_ticket
+      Republican: republican_ticket
+    confidence: 0.98
+    link_basis: manual
+    notes: Canonical winner market link for the 2028 election cycle.
+asset_links:
+  - symbol: DXY
+    asset_type: fx
+    relevance: 0.57
+    role: context_only
+    direction_if_theme_up: mixed
+    link_basis: inferred
+  - symbol: SPY
+    asset_type: etf
+    relevance: 0.49
+    role: hedge_proxy
+    direction_if_theme_up: mixed
+    link_basis: historical
+news_entities:
+  - entity_name: United States
+    entity_type: country
+    relevance: 1.0
+    required: true
+  - entity_name: Federal Election Commission
+    entity_type: institution
+    relevance: 0.63
+    required: false
+relationship_templates:
+  - trigger: Swing state polling inflection
+    supporting_moves:
+      - Candidate-specific election probabilities reprice
+      - Prediction market volumes surge
+    contradicting_moves:
+      - National polling remains unchanged for multiple cycles
+    notes: Polling and market volume should move together during durable trend shifts.
+review_required: true

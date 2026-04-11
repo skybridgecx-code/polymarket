@@ -1,0 +1,53 @@
+theme_id: fed_rate_cut_june_2026
+title: Federal Reserve Rate Cut by June 2026
+description: Theme tracking whether the Federal Reserve delivers at least one policy rate cut by the June 2026 FOMC meeting.
+status: active
+category: macro
+start_at: "2026-01-02T00:00:00Z"
+expected_resolution_at: "2026-06-18T00:00:00Z"
+primary_question: Will the Federal Reserve deliver at least one rate cut by the June 2026 FOMC meeting?
+aliases:
+  - fed june 2026 rate cut
+  - fed funds cut june 2026
+  - fomc june 2026 cut
+polymarket_links:
+  - condition_id: "0xfedcutjune2026"
+    market_slug: will-fed-cut-rates-by-june-2026
+    event_slug: us-fed-policy-2026
+    outcome_map:
+      "Yes": rate_cut_occurs
+      "No": no_rate_cut
+    confidence: 0.99
+    link_basis: manual
+    notes: Primary manually curated mapping for the policy outcome market.
+asset_links:
+  - symbol: US02Y
+    asset_type: yield
+    relevance: 0.94
+    role: primary_proxy
+    direction_if_theme_up: down
+    link_basis: manual
+  - symbol: TLT
+    asset_type: etf
+    relevance: 0.68
+    role: confirmation_proxy
+    direction_if_theme_up: up
+    link_basis: inferred
+news_entities:
+  - entity_name: Federal Reserve
+    entity_type: institution
+    relevance: 1.0
+    required: true
+  - entity_name: Jerome Powell
+    entity_type: person
+    relevance: 0.72
+    required: false
+relationship_templates:
+  - trigger: Dovish FOMC guidance
+    supporting_moves:
+      - US02Y drops
+      - Fed funds futures imply higher cut probability
+    contradicting_moves:
+      - US02Y rises sharply
+    notes: Rates market should lead if cut probability is truly increasing.
+review_required: true

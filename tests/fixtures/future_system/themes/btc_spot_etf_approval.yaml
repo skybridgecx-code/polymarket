@@ -1,0 +1,53 @@
+theme_id: btc_spot_etf_approval
+title: US Bitcoin Spot ETF Approval Expansion
+description: Theme tracking US regulatory decisions on additional Bitcoin spot ETF approvals and listing expansions.
+status: watch
+category: regulatory
+start_at: "2025-12-01T00:00:00Z"
+expected_resolution_at: "2026-12-31T00:00:00Z"
+primary_question: Will US regulators approve additional Bitcoin spot ETF products in the current review cycle?
+aliases:
+  - bitcoin spot etf
+  - btc etf approval
+  - sec spot bitcoin fund
+polymarket_links:
+  - condition_id: "0xbtcspotetfapproval"
+    market_slug: will-sec-approve-new-btc-spot-etf-by-2026
+    event_slug: sec-crypto-etf-decisions
+    outcome_map:
+      "Yes": approval
+      "No": rejection_or_delay
+    confidence: 0.97
+    link_basis: manual
+    notes: Canonical mapping for ETF approval probability market.
+asset_links:
+  - symbol: BTC
+    asset_type: spot
+    relevance: 1.0
+    role: primary_proxy
+    direction_if_theme_up: up
+    link_basis: manual
+  - symbol: IBIT
+    asset_type: etf
+    relevance: 0.81
+    role: confirmation_proxy
+    direction_if_theme_up: up
+    link_basis: historical
+news_entities:
+  - entity_name: U.S. Securities and Exchange Commission
+    entity_type: institution
+    relevance: 1.0
+    required: true
+  - entity_name: BlackRock
+    entity_type: company
+    relevance: 0.66
+    required: false
+relationship_templates:
+  - trigger: Positive SEC filing update
+    supporting_moves:
+      - BTC spot price appreciates
+      - ETF net inflow expectations rise
+    contradicting_moves:
+      - SEC enforcement headlines increase
+    notes: Regulatory signal should align with crypto beta and ETF flow expectations.
+review_required: true
