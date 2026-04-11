@@ -1,0 +1,524 @@
+[
+  {
+    "case": "strong_candidate",
+    "link_packet": {
+      "theme_id": "theme_cand_strong",
+      "matched_polymarket_markets": [
+        {
+          "condition_id": "0xstrong1",
+          "market_slug": "strong-primary-market",
+          "event_slug": "strong-event",
+          "outcome_map": {"Yes": "yes", "No": "no"},
+          "confidence": 0.95,
+          "link_basis": "manual",
+          "notes": "Primary deterministic match."
+        }
+      ],
+      "matched_assets": [
+        {
+          "symbol": "BTC",
+          "asset_type": "spot",
+          "relevance": 0.8,
+          "role": "primary_proxy",
+          "direction_if_theme_up": "up",
+          "link_basis": "manual"
+        }
+      ],
+      "matched_entities": [],
+      "ambiguity_flags": [],
+      "confidence_score": 0.92,
+      "explanation": "Strong theme-link packet."
+    },
+    "evidence_packet": {
+      "theme_id": "theme_cand_strong",
+      "primary_market_slug": "strong-primary-market",
+      "market_evidence": [
+        {
+          "market_slug": "strong-primary-market",
+          "condition_id": "0xstrong1",
+          "implied_yes_probability": 0.67,
+          "spread": 0.03,
+          "liquidity_score": 0.83,
+          "freshness_score": 0.9,
+          "flags": [],
+          "is_primary": true
+        }
+      ],
+      "aggregate_yes_probability": 0.66,
+      "liquidity_score": 0.8,
+      "freshness_score": 0.88,
+      "evidence_score": 0.82,
+      "flags": [],
+      "explanation": "Strong polymarket evidence packet."
+    },
+    "divergence_packet": {
+      "theme_id": "theme_cand_strong",
+      "primary_market_slug": "strong-primary-market",
+      "aggregate_yes_probability": 0.66,
+      "dispersion_score": 0.11,
+      "quality_penalty": 0.14,
+      "divergence_score": 0.12,
+      "posture": "aligned",
+      "market_disagreements": [
+        {
+          "market_slug": "strong-primary-market",
+          "condition_id": "0xstrong1",
+          "implied_yes_probability": 0.67,
+          "distance_from_aggregate": 0.01,
+          "liquidity_score": 0.83,
+          "freshness_score": 0.9,
+          "flags": [],
+          "severity": "low"
+        }
+      ],
+      "flags": [],
+      "explanation": "Low disagreement divergence packet."
+    },
+    "crypto_packet": {
+      "theme_id": "theme_cand_strong",
+      "primary_symbol": "BTC-PERP",
+      "proxy_evidence": [
+        {
+          "symbol": "BTC-PERP",
+          "market_type": "perp",
+          "exchange": "deribit",
+          "role": "primary_proxy",
+          "direction_if_theme_up": "up",
+          "last_price": 70320.0,
+          "mid_price": 70320.0,
+          "funding_rate": 0.0001,
+          "open_interest": 11000000.0,
+          "liquidity_score": 0.8,
+          "freshness_score": 0.85,
+          "flags": [],
+          "is_primary": true
+        }
+      ],
+      "matched_symbols": ["BTC-PERP"],
+      "liquidity_score": 0.78,
+      "freshness_score": 0.84,
+      "coverage_score": 0.92,
+      "flags": [],
+      "explanation": "Strong crypto evidence packet."
+    },
+    "comparison_packet": {
+      "theme_id": "theme_cand_strong",
+      "polymarket_summary": {
+        "family": "polymarket",
+        "direction": "bullish",
+        "strength_score": 0.84,
+        "freshness_score": 0.88,
+        "liquidity_score": 0.8,
+        "coverage_score": null,
+        "flags": []
+      },
+      "crypto_summary": {
+        "family": "crypto",
+        "direction": "bullish",
+        "strength_score": 0.82,
+        "freshness_score": 0.84,
+        "liquidity_score": 0.78,
+        "coverage_score": 0.92,
+        "flags": []
+      },
+      "alignment": "aligned",
+      "agreement_score": 0.9,
+      "confidence_score": 0.86,
+      "flags": [],
+      "explanation": "Strong aligned comparison packet."
+    }
+  },
+  {
+    "case": "watch",
+    "link_packet": {
+      "theme_id": "theme_cand_watch",
+      "matched_polymarket_markets": [
+        {
+          "condition_id": "0xwatch1",
+          "market_slug": "watch-primary-market",
+          "event_slug": "watch-event",
+          "outcome_map": {"Yes": "yes", "No": "no"},
+          "confidence": 0.76,
+          "link_basis": "rule",
+          "notes": "Moderate confidence match."
+        }
+      ],
+      "matched_assets": [
+        {
+          "symbol": "ETH",
+          "asset_type": "spot",
+          "relevance": 0.65,
+          "role": "confirmation_proxy",
+          "direction_if_theme_up": "up",
+          "link_basis": "manual"
+        }
+      ],
+      "matched_entities": [],
+      "ambiguity_flags": ["multiple_strong_matches:theme_cand_watch,theme_adjacent_watch"],
+      "confidence_score": 0.73,
+      "explanation": "Watch theme-link packet."
+    },
+    "evidence_packet": {
+      "theme_id": "theme_cand_watch",
+      "primary_market_slug": "watch-primary-market",
+      "market_evidence": [
+        {
+          "market_slug": "watch-primary-market",
+          "condition_id": "0xwatch1",
+          "implied_yes_probability": 0.53,
+          "spread": 0.05,
+          "liquidity_score": 0.58,
+          "freshness_score": 0.69,
+          "flags": [],
+          "is_primary": true
+        }
+      ],
+      "aggregate_yes_probability": 0.53,
+      "liquidity_score": 0.56,
+      "freshness_score": 0.67,
+      "evidence_score": 0.6,
+      "flags": [],
+      "explanation": "Moderate polymarket evidence packet."
+    },
+    "divergence_packet": {
+      "theme_id": "theme_cand_watch",
+      "primary_market_slug": "watch-primary-market",
+      "aggregate_yes_probability": 0.53,
+      "dispersion_score": 0.36,
+      "quality_penalty": 0.29,
+      "divergence_score": 0.35,
+      "posture": "mixed",
+      "market_disagreements": [
+        {
+          "market_slug": "watch-primary-market",
+          "condition_id": "0xwatch1",
+          "implied_yes_probability": 0.53,
+          "distance_from_aggregate": 0.0,
+          "liquidity_score": 0.58,
+          "freshness_score": 0.69,
+          "flags": [],
+          "severity": "low"
+        }
+      ],
+      "flags": [],
+      "explanation": "Mixed divergence packet."
+    },
+    "crypto_packet": {
+      "theme_id": "theme_cand_watch",
+      "primary_symbol": "ETH-PERP",
+      "proxy_evidence": [
+        {
+          "symbol": "ETH-PERP",
+          "market_type": "perp",
+          "exchange": "deribit",
+          "role": "primary_proxy",
+          "direction_if_theme_up": "up",
+          "last_price": 3820.0,
+          "mid_price": 3820.0,
+          "funding_rate": 0.0001,
+          "open_interest": 8200000.0,
+          "liquidity_score": 0.61,
+          "freshness_score": 0.64,
+          "flags": [],
+          "is_primary": true
+        }
+      ],
+      "matched_symbols": ["ETH-PERP"],
+      "liquidity_score": 0.57,
+      "freshness_score": 0.62,
+      "coverage_score": 0.63,
+      "flags": [],
+      "explanation": "Moderate crypto evidence packet."
+    },
+    "comparison_packet": {
+      "theme_id": "theme_cand_watch",
+      "polymarket_summary": {
+        "family": "polymarket",
+        "direction": "mixed",
+        "strength_score": 0.61,
+        "freshness_score": 0.67,
+        "liquidity_score": 0.56,
+        "coverage_score": null,
+        "flags": []
+      },
+      "crypto_summary": {
+        "family": "crypto",
+        "direction": "mixed",
+        "strength_score": 0.59,
+        "freshness_score": 0.62,
+        "liquidity_score": 0.57,
+        "coverage_score": 0.63,
+        "flags": []
+      },
+      "alignment": "weakly_aligned",
+      "agreement_score": 0.58,
+      "confidence_score": 0.54,
+      "flags": [],
+      "explanation": "Weakly aligned comparison packet."
+    }
+  },
+  {
+    "case": "high_conflict",
+    "link_packet": {
+      "theme_id": "theme_cand_conflict",
+      "matched_polymarket_markets": [
+        {
+          "condition_id": "0xconflict1",
+          "market_slug": "conflict-primary-market",
+          "event_slug": "conflict-event",
+          "outcome_map": {"Yes": "yes", "No": "no"},
+          "confidence": 0.9,
+          "link_basis": "manual",
+          "notes": "Conflict case match."
+        }
+      ],
+      "matched_assets": [
+        {
+          "symbol": "BTC",
+          "asset_type": "perp",
+          "relevance": 0.75,
+          "role": "primary_proxy",
+          "direction_if_theme_up": "down",
+          "link_basis": "historical"
+        }
+      ],
+      "matched_entities": [],
+      "ambiguity_flags": [],
+      "confidence_score": 0.89,
+      "explanation": "Conflict theme-link packet."
+    },
+    "evidence_packet": {
+      "theme_id": "theme_cand_conflict",
+      "primary_market_slug": "conflict-primary-market",
+      "market_evidence": [
+        {
+          "market_slug": "conflict-primary-market",
+          "condition_id": "0xconflict1",
+          "implied_yes_probability": 0.71,
+          "spread": 0.03,
+          "liquidity_score": 0.8,
+          "freshness_score": 0.82,
+          "flags": [],
+          "is_primary": true
+        }
+      ],
+      "aggregate_yes_probability": 0.71,
+      "liquidity_score": 0.79,
+      "freshness_score": 0.81,
+      "evidence_score": 0.78,
+      "flags": [],
+      "explanation": "Strong polymarket evidence with conflict downstream."
+    },
+    "divergence_packet": {
+      "theme_id": "theme_cand_conflict",
+      "primary_market_slug": "conflict-primary-market",
+      "aggregate_yes_probability": 0.71,
+      "dispersion_score": 0.79,
+      "quality_penalty": 0.32,
+      "divergence_score": 0.76,
+      "posture": "conflicted",
+      "market_disagreements": [
+        {
+          "market_slug": "conflict-primary-market",
+          "condition_id": "0xconflict1",
+          "implied_yes_probability": 0.71,
+          "distance_from_aggregate": 0.0,
+          "liquidity_score": 0.8,
+          "freshness_score": 0.82,
+          "flags": [],
+          "severity": "high"
+        }
+      ],
+      "flags": ["high_internal_dispersion"],
+      "explanation": "Conflicted divergence packet."
+    },
+    "crypto_packet": {
+      "theme_id": "theme_cand_conflict",
+      "primary_symbol": "BTC-PERP",
+      "proxy_evidence": [
+        {
+          "symbol": "BTC-PERP",
+          "market_type": "perp",
+          "exchange": "deribit",
+          "role": "primary_proxy",
+          "direction_if_theme_up": "down",
+          "last_price": 70110.0,
+          "mid_price": 70110.0,
+          "funding_rate": -0.0002,
+          "open_interest": 10400000.0,
+          "liquidity_score": 0.75,
+          "freshness_score": 0.77,
+          "flags": [],
+          "is_primary": true
+        }
+      ],
+      "matched_symbols": ["BTC-PERP"],
+      "liquidity_score": 0.74,
+      "freshness_score": 0.76,
+      "coverage_score": 0.82,
+      "flags": [],
+      "explanation": "Conflict-oriented crypto evidence packet."
+    },
+    "comparison_packet": {
+      "theme_id": "theme_cand_conflict",
+      "polymarket_summary": {
+        "family": "polymarket",
+        "direction": "bullish",
+        "strength_score": 0.8,
+        "freshness_score": 0.81,
+        "liquidity_score": 0.79,
+        "coverage_score": null,
+        "flags": []
+      },
+      "crypto_summary": {
+        "family": "crypto",
+        "direction": "bearish",
+        "strength_score": 0.77,
+        "freshness_score": 0.76,
+        "liquidity_score": 0.74,
+        "coverage_score": 0.82,
+        "flags": []
+      },
+      "alignment": "conflicted",
+      "agreement_score": 0.18,
+      "confidence_score": 0.72,
+      "flags": ["cross_market_conflict"],
+      "explanation": "Strong but opposed directions."
+    }
+  },
+  {
+    "case": "insufficient",
+    "link_packet": {
+      "theme_id": "theme_cand_insufficient",
+      "matched_polymarket_markets": [
+        {
+          "condition_id": "0xinsufficient1",
+          "market_slug": "insufficient-primary-market",
+          "event_slug": "insufficient-event",
+          "outcome_map": {"Yes": "yes", "No": "no"},
+          "confidence": 0.52,
+          "link_basis": "pattern",
+          "notes": "Low quality linkage."
+        }
+      ],
+      "matched_assets": [
+        {
+          "symbol": "ETH",
+          "asset_type": "spot",
+          "relevance": 0.45,
+          "role": "context_only",
+          "direction_if_theme_up": "unknown",
+          "link_basis": "inferred"
+        }
+      ],
+      "matched_entities": [],
+      "ambiguity_flags": [],
+      "confidence_score": 0.49,
+      "explanation": "Low confidence theme-link packet."
+    },
+    "evidence_packet": {
+      "theme_id": "theme_cand_insufficient",
+      "primary_market_slug": "insufficient-primary-market",
+      "market_evidence": [
+        {
+          "market_slug": "insufficient-primary-market",
+          "condition_id": "0xinsufficient1",
+          "implied_yes_probability": null,
+          "spread": null,
+          "liquidity_score": 0.34,
+          "freshness_score": 0.43,
+          "flags": ["missing_implied_probability"],
+          "is_primary": true
+        }
+      ],
+      "aggregate_yes_probability": null,
+      "liquidity_score": 0.34,
+      "freshness_score": 0.43,
+      "evidence_score": 0.31,
+      "flags": ["missing_probability_inputs", "stale_snapshot"],
+      "explanation": "Insufficient polymarket evidence packet."
+    },
+    "divergence_packet": {
+      "theme_id": "theme_cand_insufficient",
+      "primary_market_slug": "insufficient-primary-market",
+      "aggregate_yes_probability": null,
+      "dispersion_score": 0.42,
+      "quality_penalty": 0.66,
+      "divergence_score": 0.58,
+      "posture": "insufficient",
+      "market_disagreements": [
+        {
+          "market_slug": "insufficient-primary-market",
+          "condition_id": "0xinsufficient1",
+          "implied_yes_probability": null,
+          "distance_from_aggregate": null,
+          "liquidity_score": 0.34,
+          "freshness_score": 0.43,
+          "flags": ["missing_implied_probability"],
+          "severity": "unknown"
+        }
+      ],
+      "flags": ["no_aggregate_probability", "missing_probability_inputs"],
+      "explanation": "Insufficient divergence packet."
+    },
+    "crypto_packet": {
+      "theme_id": "theme_cand_insufficient",
+      "primary_symbol": "ETH-USD",
+      "proxy_evidence": [
+        {
+          "symbol": "ETH-USD",
+          "market_type": "spot",
+          "exchange": "coinbase",
+          "role": "primary_proxy",
+          "direction_if_theme_up": "unknown",
+          "last_price": null,
+          "mid_price": null,
+          "funding_rate": null,
+          "open_interest": null,
+          "liquidity_score": 0.41,
+          "freshness_score": 0.44,
+          "flags": ["missing_price_data"],
+          "is_primary": true
+        }
+      ],
+      "matched_symbols": ["ETH-USD"],
+      "liquidity_score": 0.41,
+      "freshness_score": 0.44,
+      "coverage_score": 0.32,
+      "flags": ["stale_snapshot", "missing_price_data"],
+      "explanation": "Insufficient crypto evidence packet."
+    },
+    "comparison_packet": {
+      "theme_id": "theme_cand_insufficient",
+      "polymarket_summary": {
+        "family": "polymarket",
+        "direction": "unknown",
+        "strength_score": 0.31,
+        "freshness_score": 0.43,
+        "liquidity_score": 0.34,
+        "coverage_score": null,
+        "flags": ["missing_probability_inputs"]
+      },
+      "crypto_summary": {
+        "family": "crypto",
+        "direction": "unknown",
+        "strength_score": 0.33,
+        "freshness_score": 0.44,
+        "liquidity_score": 0.41,
+        "coverage_score": 0.32,
+        "flags": ["missing_price_data"]
+      },
+      "alignment": "insufficient",
+      "agreement_score": 0.0,
+      "confidence_score": 0.24,
+      "flags": [
+        "crypto_unknown_direction",
+        "polymarket_unknown_direction",
+        "weak_crypto_coverage",
+        "stale_crypto_evidence",
+        "stale_polymarket_evidence"
+      ],
+      "explanation": "Insufficient comparison packet."
+    }
+  }
+]

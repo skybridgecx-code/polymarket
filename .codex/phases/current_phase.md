@@ -1,4 +1,4 @@
-# Phase 18G — Polymarket vs Crypto Comparison
+# Phase 18H — Candidate Signal Contract + Ranking
 
 ## Role
 You are the implementation engine, not the architect.
@@ -15,36 +15,44 @@ Preserve current boundaries.
 - `src/future_system/divergence/*` is the deterministic disagreement layer.
 - `src/future_system/crypto_adapter/*` is the normalized crypto source boundary.
 - `src/future_system/crypto_evidence/*` is the theme-linked crypto evidence layer.
-- This phase adds the first cross-market comparison layer between canonical Polymarket evidence and canonical crypto evidence.
-- This phase is deterministic comparison only.
-- Do not add news, reasoning, policy, execution, UI, storage, or live network logic.
+- `src/future_system/comparison/*` is the deterministic Polymarket-vs-crypto comparison layer.
+- This phase adds the candidate signal layer that turns those upstream packets into a canonical ranked opportunity surface.
+- This phase is deterministic aggregation and ranking only.
+- Do not add news, LLM reasoning, policy, execution, UI, storage, schedulers, or live network logic.
 
 ## Why this phase exists
-The system now has two separate theme-scoped evidence families:
-- Polymarket evidence
-- crypto proxy evidence
+The system can now:
+- define a theme
+- assemble Polymarket evidence
+- detect internal divergence
+- assemble crypto evidence
+- compare Polymarket vs crypto
 
 But it still cannot answer:
-- are they directionally aligned
-- are they weakly aligned
-- are they conflicting
-- is crypto missing or insufficient
-- how strong is the comparison signal
+- is this worth surfacing as a candidate
+- is it a weak watch item or a strong candidate
+- is it internally conflicted and unsafe
+- how should multiple candidates be ranked against each other
 
-This phase creates the first canonical cross-market comparison packet.
+This phase creates the first canonical opportunity surface.
 
 ## Phase objective
-Build `src/future_system/comparison/` so the system can:
+Build `src/future_system/candidates/` so the system can:
 
-1. accept a `ThemeEvidencePacket`
-2. accept a `ThemeCryptoEvidencePacket`
-3. compare them deterministically for one theme
-4. classify posture:
-   - `aligned`
-   - `weakly_aligned`
-   - `conflicted`
+1. accept canonical upstream packets for one theme:
+   - `ThemeLinkPacket`
+   - `ThemeEvidencePacket`
+   - `ThemeDivergencePacket`
+   - `ThemeCryptoEvidencePacket`
+   - `ThemeComparisonPacket`
+2. compute a deterministic candidate score
+3. classify candidate posture:
+   - `watch`
+   - `candidate`
+   - `high_conflict`
    - `insufficient`
-5. emit a canonical `ThemeComparisonPacket`
+4. emit a canonical `CandidateSignalPacket`
+5. rank multiple candidate packets deterministically
 
 This phase does not do LLM reasoning.
 This phase does not make policy decisions.
@@ -54,20 +62,22 @@ This phase does not execute trades.
 
 Create these files if they do not already exist:
 
-- `src/future_system/comparison/__init__.py`
-- `src/future_system/comparison/models.py`
-- `src/future_system/comparison/comparator.py`
-- `src/future_system/comparison/scoring.py`
+- `src/future_system/candidates/__init__.py`
+- `src/future_system/candidates/models.py`
+- `src/future_system/candidates/builder.py`
+- `src/future_system/candidates/scoring.py`
+- `src/future_system/candidates/ranker.py`
 
 Create tests:
 
-- `tests/future_system/test_comparison_models.py`
-- `tests/future_system/test_comparison_comparator.py`
-- `tests/future_system/test_comparison_scoring.py`
+- `tests/future_system/test_candidates_models.py`
+- `tests/future_system/test_candidates_builder.py`
+- `tests/future_system/test_candidates_scoring.py`
+- `tests/future_system/test_candidates_ranker.py`
 
 Create fixtures:
 
-- `tests/fixtures/future_system/comparison/theme_comparison_inputs.json`
+- `tests/fixtures/future_system/candidates/candidate_inputs.json`
 
 Follow existing repo style and fixture conventions if they already exist.
 
@@ -97,149 +107,158 @@ If imports require tiny changes elsewhere, keep them minimal and explain them.
 
 Implement strongly typed models using existing repo conventions.
 
-### 1. `ComparisonDirection`
+### 1. `CandidatePosture`
 Use an enum or literal model for:
-- `bullish`
-- `bearish`
-- `mixed`
-- `unknown`
-
-This represents the comparison-implied directional posture of each evidence family.
-
-### 2. `ComparisonAlignment`
-Use an enum or literal model for:
-- `aligned`
-- `weakly_aligned`
-- `conflicted`
+- `watch`
+- `candidate`
+- `high_conflict`
 - `insufficient`
 
-### 3. `EvidenceFamilySummary`
-Represents a normalized summary of one evidence family for comparison.
+### 2. `CandidateReasonCode`
+Use an enum or literal model for explicit reasons such as:
+- `strong_cross_market_alignment`
+- `weak_cross_market_alignment`
+- `cross_market_conflict`
+- `high_internal_divergence`
+- `weak_liquidity`
+- `stale_evidence`
+- `weak_crypto_coverage`
+- `missing_probability_inputs`
+- `insufficient_comparison_confidence`
 
-Suggested fields:
-- `family: Literal["polymarket", "crypto"]`
-- `direction: ComparisonDirection`
-- `strength_score: float`
-- `freshness_score: float`
-- `liquidity_score: float | None`
-- `coverage_score: float | None`
-- `flags: list[str]`
+You may add a few more if needed, but keep the set small and explicit.
 
-### 4. `ThemeComparisonPacket`
-Canonical comparison output for one theme.
+### 3. `CandidateSignalPacket`
+Canonical candidate output for one theme.
 
 Suggested fields:
 - `theme_id: str`
-- `polymarket_summary: EvidenceFamilySummary`
-- `crypto_summary: EvidenceFamilySummary`
-- `alignment: ComparisonAlignment`
-- `agreement_score: float`
+- `title: str | None`
+- `posture: CandidatePosture`
+- `candidate_score: float`
 - `confidence_score: float`
+- `conflict_score: float`
+- `alignment: str`
+- `primary_market_slug: str | None`
+- `primary_symbol: str | None`
+- `reason_codes: list[CandidateReasonCode | str]`
 - `flags: list[str]`
 - `explanation: str`
 
-### 5. `ComparisonError`
-Raised when comparison cannot be computed from the provided packets.
+### 4. `CandidateBuildError`
+Raised when candidate construction cannot be computed from the provided packets.
 
-## Comparison behavior
+### 5. `CandidateRankEntry`
+Optional helper model if useful for ranking output.
 
-Implement deterministic comparison from:
+## Candidate build behavior
+
+Implement deterministic candidate construction from:
+- `ThemeLinkPacket`
 - `ThemeEvidencePacket`
+- `ThemeDivergencePacket`
 - `ThemeCryptoEvidencePacket`
+- `ThemeComparisonPacket`
 
 Rules:
 
-1. Theme ids must match.
-   - if they do not, raise `ComparisonError`
+1. Theme ids must match across all inputs.
+   - if they do not, raise `CandidateBuildError`
 
-2. Derive Polymarket direction deterministically from `aggregate_yes_probability`:
-   Suggested thresholds:
-   - `> 0.55` -> `bullish`
-   - `< 0.45` -> `bearish`
-   - otherwise `mixed`
-   - if aggregate missing -> `unknown`
+2. `candidate_score` must be bounded in `[0.0, 1.0]`
+   and should reward:
+   - higher cross-market agreement
+   - better comparison confidence
+   - better evidence freshness/liquidity
+   - better crypto coverage
 
-Keep thresholds explicit in code.
+   and penalize:
+   - higher internal divergence
+   - cross-market conflict
+   - stale / weak evidence
+   - insufficient comparison quality
 
-3. Derive crypto direction deterministically from theme-linked proxy evidence.
+Keep this formula explicit and simple.
+Do not invent a fake quant model.
 
-Use a simple explicit approach:
-- evaluate each proxy using its `direction_if_theme_up`
-- infer whether observed crypto state is supportive, unsupportive, mixed, or unknown
-- keep this small and inspectable
+3. `conflict_score` must be bounded in `[0.0, 1.0]`
+   and should primarily reflect:
+   - divergence score
+   - comparison alignment conflict
+   - serious evidence flags
 
-Suggested interpretation:
-- for proxies with `direction_if_theme_up == "up"`:
-  - presence of usable price evidence counts as supportive-positive input
-- for proxies with `direction_if_theme_up == "down"`:
-  - usable price evidence counts as inverse-support input
-- if proxy evidence is too incomplete, it contributes `unknown`
+4. `confidence_score` should be deterministic and bounded in `[0.0, 1.0]`
+   using available upstream confidence/quality signals.
+   It should drop when inputs are stale, incomplete, or conflicting.
 
-You must choose a clear deterministic rule and apply it consistently in code/tests.
-Do not invent a fake market-return model.
-This is a bounded structural comparison phase, not full signal inference.
-
-A practical simple rule is acceptable, for example:
-- if majority of usable proxies are role-weighted supportive of theme-up -> `bullish`
-- if majority are role-weighted supportive of theme-down -> `bearish`
-- ties / mixed -> `mixed`
-- too few usable proxies -> `unknown`
-
-4. Strength score:
-- derive bounded family-level strength scores in `[0.0, 1.0]`
-- for Polymarket, can use existing evidence score or a deterministic combination of liquidity/freshness/presence of aggregate probability
-- for crypto, can use deterministic combination of liquidity/freshness/coverage
-- keep this simple and explicit
-
-5. Agreement score:
-- bounded in `[0.0, 1.0]`
-- higher when families are directionally aligned and both families have decent quality
-- lower when mixed/conflicted/unknown
-- keep this deterministic and inspectable
-
-6. Confidence score:
-- bounded in `[0.0, 1.0]`
-- derived from agreement plus evidence-family quality
-- should drop when either family is weak/stale/incomplete
-
-7. Alignment classification:
-- `aligned`
-  - clear directional match with usable quality
-- `weakly_aligned`
-  - partial match or weaker evidence quality
-- `conflicted`
-  - directional mismatch with usable quality
-- `insufficient`
-  - one or both families unknown/incomplete
+5. Candidate posture classification:
+   - `candidate`
+     - strong enough candidate score
+     - no major conflict
+     - not insufficient
+   - `watch`
+     - usable but weaker
+     - moderate score or weaker quality
+   - `high_conflict`
+     - serious divergence or cross-market conflict
+   - `insufficient`
+     - missing or weak comparison / evidence / aggregate quality
 
 Use explicit thresholds.
 
-8. Flags:
-Surface explicit packet-level flags for cases like:
-- `theme_id_mismatch`
-- `polymarket_unknown_direction`
-- `crypto_unknown_direction`
-- `weak_crypto_coverage`
-- `stale_polymarket_evidence`
-- `stale_crypto_evidence`
-- `cross_market_conflict`
+6. `alignment` should reflect the upstream comparison alignment value directly or in a normalized string form.
 
-9. Explanation:
-Produce a short deterministic explanation string summarizing:
-- each family direction
-- alignment classification
-- agreement/confidence
-- key flags
+7. `title`
+   - may be taken from `ThemeLinkPacket`/theme metadata if available
+   - if not available, allow `None`
+   - do not fabricate titles from nowhere
+
+8. `reason_codes`
+   - derive deterministically from upstream packet state
+   - include the most important reasons only
+   - keep the list short and explicit
+
+9. `flags`
+   - carry forward important upstream flags where useful
+   - do not blindly dump every upstream flag if that becomes noisy
+   - keep deterministic and useful
+
+10. `explanation`
+   Produce a short deterministic explanation string summarizing:
+   - posture
+   - candidate/confidence/conflict scores
+   - alignment
+   - top reason codes
+
+## Ranking behavior
+
+Implement deterministic ranking over multiple `CandidateSignalPacket` values.
+
+Rules:
+
+1. Primary sort:
+   - higher `candidate_score` first
+
+2. Secondary sort:
+   - lower `conflict_score` first
+
+3. Tertiary sort:
+   - higher `confidence_score` first
+
+4. Final tie-break:
+   - `theme_id` ascending
+
+5. Optionally expose a helper that filters to only non-`insufficient` candidates before ranking, but keep this small and explicit.
 
 ## Scoring requirements
 Create small pure functions in `scoring.py`.
 
 Suggested functions:
-- `derive_polymarket_direction(...)`
-- `derive_crypto_direction(...)`
-- `compute_agreement_score(...)`
-- `compute_comparison_confidence_score(...)`
-- `classify_alignment(...)`
+- `compute_candidate_score(...)`
+- `compute_candidate_confidence_score(...)`
+- `compute_candidate_conflict_score(...)`
+- `classify_candidate_posture(...)`
+- `derive_candidate_reason_codes(...)`
 
 Keep them:
 - deterministic
@@ -253,38 +272,46 @@ No network assumptions.
 
 ## Test requirements
 
-### `test_comparison_models.py`
+### `test_candidates_models.py`
 Cover:
-- valid comparison models
-- bounded scores rejected if invalid
-- invalid alignment/direction rejected
+- valid candidate models
+- invalid bounded scores rejected
+- invalid posture rejected
 
-### `test_comparison_comparator.py`
+### `test_candidates_builder.py`
 Cover:
 - matching theme ids required
-- aligned case produces `aligned`
-- weaker alignment produces `weakly_aligned`
-- directional mismatch produces `conflicted`
-- missing/unknown family produces `insufficient`
-- packet flags deterministic
-- explanation string deterministic
+- strong aligned case yields `candidate`
+- weaker case yields `watch`
+- conflict case yields `high_conflict`
+- insufficient case yields `insufficient`
+- reason codes deterministic
+- explanation deterministic
+- important upstream flags propagate appropriately
 
-### `test_comparison_scoring.py`
+### `test_candidates_scoring.py`
 Cover:
-- Polymarket direction thresholds deterministic
-- crypto direction derivation deterministic for known proxy mixes
-- agreement score bounded in `[0,1]`
+- candidate score bounded in `[0,1]`
 - confidence score bounded in `[0,1]`
-- alignment thresholds deterministic
+- conflict score bounded in `[0,1]`
+- posture thresholds deterministic
+
+### `test_candidates_ranker.py`
+Cover:
+- ranking order uses candidate score first
+- lower conflict wins tie
+- higher confidence wins next tie
+- theme_id ascending is final tie-break
+- optional insufficient filtering behavior is deterministic if implemented
 
 ## Fixtures
 Create a small deterministic fixture set with at least:
-- one aligned comparison input
-- one weakly aligned input
-- one conflicted input
-- one insufficient input
+- one strong candidate case
+- one watch case
+- one high-conflict case
+- one insufficient case
 
-These can be JSON representations of `ThemeEvidencePacket` and `ThemeCryptoEvidencePacket` shaped inputs.
+These can be JSON representations of the upstream packet inputs needed to build candidates.
 
 ## Constraints
 - keep code small
@@ -297,13 +324,13 @@ These can be JSON representations of `ThemeEvidencePacket` and `ThemeCryptoEvide
 ## Acceptance criteria
 This phase is complete only if all are true:
 
-1. `src/future_system/comparison/*` exists with the files listed above
+1. `src/future_system/candidates/*` exists with the files listed above
 2. typed models validate correctly
-3. comparator consumes `ThemeEvidencePacket` + `ThemeCryptoEvidencePacket`
-4. direction derivation is deterministic
-5. alignment classification works for aligned / weakly_aligned / conflicted / insufficient
-6. agreement and confidence scores are deterministic and bounded
-7. explicit flags surface correctly
+3. builder consumes the canonical upstream packets
+4. candidate/confidence/conflict scores are deterministic and bounded
+5. posture classification works for watch / candidate / high_conflict / insufficient
+6. ranking is deterministic
+7. reason codes and flags surface correctly
 8. tests pass
 9. no unrelated modules were modified
 10. `src/polymarket_arb/*` remains untouched
@@ -313,12 +340,12 @@ Before finishing:
 - inspect repo commands and run the narrowest relevant checks
 - run targeted tests first
 - run narrow ruff check for touched files
-- run narrow mypy check for the new comparison module if mypy is already in use
+- run narrow mypy check for the new candidates module if mypy is already in use
 
 At minimum, run:
-- targeted pytest for the new comparison tests
+- targeted pytest for the new candidates tests
 - narrow ruff check for touched files
-- narrow mypy check for the new comparison module
+- narrow mypy check for the new candidates module
 
 ## Final output format
 Return only:
@@ -329,7 +356,9 @@ Return only:
 5. any deviations from spec
 6. explicit note whether `src/polymarket_arb/*` was untouched
 
+List only the final successful validation commands once in section 3.
+Mention earlier failed runs only in section 4 if they occurred.
+
 Do not widen the phase.
-Do not start news ingestion.
 Do not start reasoning or policy.
 Complete only this bounded phase.
