@@ -1,0 +1,19 @@
+[
+  {
+    "case": "success_strong",
+    "context_bundle_case": "strong_complete",
+    "expected_status": "success",
+    "expected_policy_decision": "allow",
+    "expected_run_flags": [
+      "analysis_dry_run",
+      "stub_analyst_used",
+      "reasoning_parsed",
+      "policy_computed"
+    ]
+  },
+  {
+    "case": "malformed_analyst_output",
+    "context_bundle_case": "strong_complete",
+    "malformed_payload": "{\"theme_id\":\"theme_ctx_strong\","
+  }
+]

@@ -1,4 +1,4 @@
-# Phase 18M — Policy Engine Contracts + Decision Layer
+# Phase 18N — End-to-End Analysis Runtime (dry-run only)
 
 ## Role
 You are the implementation engine, not the architect.
@@ -21,66 +21,67 @@ Preserve current boundaries.
 - `src/future_system/news_evidence/*` is the theme-linked news evidence layer.
 - `src/future_system/context_bundle/*` is the canonical bundled operator/reasoning input.
 - `src/future_system/reasoning_contracts/*` is the strict reasoning interface.
-- This phase adds the deterministic policy layer that consumes bundled context + validated reasoning output and emits a canonical decision packet.
+- `src/future_system/policy_engine/*` is the deterministic decision gate.
+- This phase adds the dry-run runtime that wires those layers together through a pluggable analyst interface.
+- This phase does not perform live model calls.
 - This phase does not execute trades.
-- Do not add execution logic, UI, storage, schedulers, or live network logic.
+- Do not add scheduling, UI, persistence, or live network logic.
 
 ## Why this phase exists
-The system now has:
-- structured market evidence
-- structured news evidence
-- deterministic cross-market comparison
-- deterministic candidate ranking
-- strict reasoning input/output contracts
+The architecture is complete in pieces, but the system still lacks one bounded runtime proving the full chain works end to end.
 
-But it still lacks the final deterministic gate that decides:
-- is this allowed forward
-- should it be held for more evidence
-- should it be denied because the setup is too weak or conflicted
+Without this phase:
+- components are validated only in isolation
+- there is no canonical run artifact
+- later live model integration will be harder to control
+- operator review lacks a single end-to-end dry-run packet
 
-Without that layer, the architecture is incomplete.
+This phase creates that runtime while keeping the analyst pluggable and fully offline for tests.
 
 ## Phase objective
-Build `src/future_system/policy_engine/` so the system can:
+Build `src/future_system/runtime/` so the system can:
 
 1. accept an `OpportunityContextBundle`
-2. accept a validated `ReasoningOutputPacket`
-3. compute deterministic policy scores and readiness
-4. classify final decision:
-   - `allow`
-   - `hold`
-   - `deny`
-5. emit a canonical `PolicyDecisionPacket`
-6. surface explicit deterministic reason codes
+2. build a `ReasoningInputPacket`
+3. render a deterministic prompt packet
+4. call a pluggable analyst interface
+5. parse the analyst output into a validated `ReasoningOutputPacket`
+6. pass bundle + reasoning into the policy engine
+7. emit a canonical `AnalysisRunPacket`
+8. emit a compact deterministic run summary
 
-This phase does not execute anything.
-This phase does not call an LLM.
-This phase does not place trades.
+This phase is dry-run only.
+No live LLM call.
+No execution.
 
 ## In scope
 
 Create these files if they do not already exist:
 
-- `src/future_system/policy_engine/__init__.py`
-- `src/future_system/policy_engine/models.py`
-- `src/future_system/policy_engine/engine.py`
-- `src/future_system/policy_engine/scoring.py`
+- `src/future_system/runtime/__init__.py`
+- `src/future_system/runtime/models.py`
+- `src/future_system/runtime/protocol.py`
+- `src/future_system/runtime/stub_analyst.py`
+- `src/future_system/runtime/runner.py`
+- `src/future_system/runtime/summary.py`
 
 Create tests:
 
-- `tests/future_system/test_policy_engine_models.py`
-- `tests/future_system/test_policy_engine_engine.py`
-- `tests/future_system/test_policy_engine_scoring.py`
+- `tests/future_system/test_runtime_models.py`
+- `tests/future_system/test_runtime_runner.py`
+- `tests/future_system/test_runtime_stub_analyst.py`
+- `tests/future_system/test_runtime_summary.py`
 
 Create fixtures:
 
-- `tests/fixtures/future_system/policy/policy_inputs.json`
+- `tests/fixtures/future_system/runtime/runtime_inputs.json`
 
 Follow existing repo style and fixture conventions if they already exist.
 
 ## Out of scope
 Do not build or touch:
 
+- live LLM client integration
 - execution logic
 - broker/order logic
 - CLI/API surfaces
@@ -102,193 +103,138 @@ If imports require tiny changes elsewhere, keep them minimal and explain them.
 
 Implement strongly typed models using existing repo conventions.
 
-### 1. `PolicyDecisionAction`
+### 1. `AnalysisRunStatus`
 Use an enum or literal model for:
-- `allow`
-- `hold`
-- `deny`
+- `success`
+- `failed`
 
-### 2. `PolicyReasonCode`
-Use an enum or literal model for explicit reasons such as:
-- `strong_candidate_alignment`
-- `reasoning_supportive`
-- `weak_candidate_score`
-- `weak_confidence`
-- `high_conflict`
-- `candidate_insufficient`
-- `comparison_conflicted`
-- `reasoning_high_conflict`
-- `missing_information_significant`
-- `insufficient_news_support`
-- `stale_context`
-- `bundle_incomplete`
-- `reasoning_posture_deny`
-- `reasoning_posture_insufficient`
-
-Keep the set small and explicit. Add a few more only if truly necessary.
-
-### 3. `PolicyDecisionPacket`
-Canonical deterministic policy output.
+### 2. `AnalysisRunPacket`
+Canonical end-to-end dry-run output.
 
 Suggested fields:
 - `theme_id: str`
-- `decision: PolicyDecisionAction`
-- `decision_score: float`
-- `readiness_score: float`
-- `risk_penalty: float`
-- `reason_codes: list[PolicyReasonCode | str]`
-- `flags: list[str]`
-- `summary: str`
+- `status: AnalysisRunStatus`
+- `context_bundle: OpportunityContextBundle`
+- `reasoning_input: ReasoningInputPacket`
+- `rendered_prompt: RenderedPromptPacket | dict | None`
+- `reasoning_output: ReasoningOutputPacket`
+- `policy_decision: PolicyDecisionPacket`
+- `run_flags: list[str]`
+- `run_summary: str`
 
-All scores must be bounded in `[0.0, 1.0]`.
+### 3. `AnalysisRunError`
+Raised when the runtime cannot complete the dry-run pipeline.
 
-### 4. `PolicyDecisionError`
-Raised when policy decision cannot be computed from the provided bundle/reasoning inputs.
+## Analyst protocol
 
-## Policy engine behavior
+Implement a small protocol/interface in `protocol.py`.
 
-Implement deterministic policy construction from:
+Suggested behavior:
+- accepts a `ReasoningInputPacket` and/or rendered prompt packet
+- returns model-like output in either mapping or JSON-string form suitable for the existing reasoning parser
+
+Do not add live model transport methods.
+Do not add auth.
+Do not add retries.
+
+This is an offline pluggable boundary only.
+
+## Stub analyst
+
+Implement `stub_analyst.py` with a deterministic analyst used for tests.
+
+Requirements:
+- produce stable output for known reasoning inputs
+- can be rule-based
+- should reflect input posture/alignment in a simple deterministic way
+- must return output that the existing reasoning parser validates
+
+Keep it small and explicit.
+
+## Runner behavior
+
+Implement deterministic `run_analysis_pipeline(...)` from:
 - `OpportunityContextBundle`
-- `ReasoningOutputPacket`
+- analyst implementation conforming to the protocol
+
+Required flow:
+
+1. Build `ReasoningInputPacket` from bundle using existing reasoning builder
+2. Render prompt packet using existing renderer
+3. Call analyst protocol with the reasoning input or rendered prompt
+4. Parse analyst output using existing reasoning parser
+5. Build `PolicyDecisionPacket` using existing policy engine
+6. Emit `AnalysisRunPacket`
 
 Rules:
 
-1. Theme ids must match.
-   - if they do not, raise `PolicyDecisionError`
+- theme id must carry through consistently
+- failures in analyst output parsing should raise `AnalysisRunError`
+- policy engine should only receive validated reasoning output
+- no hidden retries
+- no hidden global state
+- keep the flow synchronous and explicit
 
-2. `decision_score`
-- bounded in `[0.0, 1.0]`
-- should reward:
-  - stronger candidate score
-  - stronger context confidence
-  - aligned comparison
-  - supportive reasoning posture
-  - stronger readiness/completeness
-- should penalize:
-  - higher conflict score
-  - conflicting comparison
-  - reasoning posture of `deny` or `high_conflict`
-  - bundle weakness / stale context / missing info
+## Run flags
 
-Keep this formula explicit and small.
-Do not invent a fake quant model.
+Surface explicit run-level flags such as:
+- `analysis_dry_run`
+- `stub_analyst_used`
+- `reasoning_parsed`
+- `policy_computed`
 
-3. `readiness_score`
-- bounded in `[0.0, 1.0]`
-- should reflect whether the context is sufficiently complete and usable
-- draw from bundle completeness/freshness/confidence and reasoning quality fields
-- keep simple and explicit
+Include failure-related flags if useful in error paths, but keep this small.
 
-4. `risk_penalty`
-- bounded in `[0.0, 1.0]`
-- should reflect:
-  - context conflict
-  - candidate conflict
-  - comparison conflict
-  - strong negative reasoning signals
-  - significant missing information or uncertainty
-- keep simple and explicit
+## Run summary
 
-5. Decision classification:
-- `allow`
-  - strong decision score
-  - adequate readiness
-  - low enough risk penalty
-  - no major deny-style reason present
-- `hold`
-  - middling setup, incomplete setup, or unresolved tension
-- `deny`
-  - weak score, low readiness, or high conflict/risk
-  - or reasoning posture explicitly denies
-
-Use explicit thresholds in code.
-
-6. `reason_codes`
-- derive deterministically from bundle + reasoning state
-- include only the most important reasons
-- keep the list short and explicit
-
-7. `flags`
-- carry forward only important bundle/reasoning flags
-- do not dump every upstream flag blindly
-- keep deterministic and useful
-
-8. `summary`
-Produce a short deterministic summary string including:
+Implement one deterministic helper in `summary.py` that produces a compact run summary string including:
 - theme id
-- final decision
-- decision/readiness/risk scores
-- top reason codes
+- candidate posture
+- reasoning recommended posture
+- final policy decision
+- top scores or flags
 
-## Scoring requirements
-Create small pure functions in `scoring.py`.
-
-Suggested functions:
-- `compute_policy_decision_score(...)`
-- `compute_policy_readiness_score(...)`
-- `compute_policy_risk_penalty(...)`
-- `classify_policy_decision(...)`
-- `derive_policy_reason_codes(...)`
-
-Keep them:
-- deterministic
-- bounded
-- easy to inspect
-- free of side effects
-
-No randomization.
-No hidden global time.
-No network assumptions.
-
-## Handling reasoning output
-Use validated `ReasoningOutputPacket` only.
-Do not attempt to repair invalid reasoning output here.
-Assume parser already enforced schema.
-
-You may deterministically interpret fields like:
-- `recommended_posture`
-- number of `missing_information` items
-- number of `uncertainty_notes` items
-- `analyst_flags`
-
-Keep interpretation small and explicit.
+Keep it short, stable, and explicit.
 
 ## Test requirements
 
-### `test_policy_engine_models.py`
+### `test_runtime_models.py`
 Cover:
-- valid decision models
-- invalid bounded scores rejected
-- invalid decision rejected
+- valid run models
+- invalid status rejected if applicable
+- required fields enforced
 
-### `test_policy_engine_engine.py`
+### `test_runtime_stub_analyst.py`
 Cover:
-- matching theme ids required
-- strong supportive case yields `allow`
-- middling / incomplete case yields `hold`
-- high-conflict / deny-style case yields `deny`
-- reason codes deterministic
-- summary deterministic
-- important bundle/reasoning flags propagate appropriately
+- stub analyst returns deterministic output
+- output shape is parseable by the reasoning parser
+- different known input states produce deterministic posture differences if designed that way
 
-### `test_policy_engine_scoring.py`
+### `test_runtime_runner.py`
 Cover:
-- decision score bounded in `[0,1]`
-- readiness score bounded in `[0,1]`
-- risk penalty bounded in `[0,1]`
-- explicit thresholds yield deterministic decisions for known inputs
+- full dry-run succeeds end to end for valid input
+- reasoning input is built deterministically
+- prompt packet is rendered deterministically
+- parsed reasoning output is validated
+- policy decision is computed
+- run flags deterministic
+- malformed analyst output raises `AnalysisRunError`
+- status/error path behavior deterministic
+
+### `test_runtime_summary.py`
+Cover:
+- run summary deterministic
+- summary reflects theme id
+- summary reflects reasoning posture
+- summary reflects final decision
+- summary reflects important flags where applicable
 
 ## Fixtures
 Create a small deterministic fixture set with at least:
-- one `allow` case
-- one `hold` case
-- one `deny` case
+- one successful dry-run input case
+- one case used to simulate malformed analyst output handling
 
-These can be JSON representations of:
-- `OpportunityContextBundle`
-- `ReasoningOutputPacket`
-
-needed to compute the policy decision.
+Fixtures can include serialized context bundle shapes and/or minimal data required for runner tests.
 
 ## Constraints
 - keep code small
@@ -296,33 +242,34 @@ needed to compute the policy decision.
 - do not add new dependencies unless absolutely necessary
 - do not fetch live data
 - do not touch `src/polymarket_arb/*`
-- do not implement execution/trading in this phase
+- do not implement live model calls or execution in this phase
 
 ## Acceptance criteria
 This phase is complete only if all are true:
 
-1. `src/future_system/policy_engine/*` exists with the files listed above
+1. `src/future_system/runtime/*` exists with the files listed above
 2. typed models validate correctly
-3. engine consumes `OpportunityContextBundle` + `ReasoningOutputPacket`
-4. decision/readiness/risk scores are deterministic and bounded
-5. decision classification works for allow / hold / deny
-6. reason codes and flags surface correctly
-7. summary is deterministic
-8. tests pass
-9. no unrelated modules were modified
-10. `src/polymarket_arb/*` remains untouched
+3. runtime consumes `OpportunityContextBundle`
+4. runtime uses existing reasoning builder/renderer/parser and policy engine
+5. stub analyst is deterministic
+6. full dry-run pipeline works end to end
+7. malformed analyst output fails cleanly
+8. run summary is deterministic
+9. tests pass
+10. no unrelated modules were modified
+11. `src/polymarket_arb/*` remains untouched
 
 ## Validation
 Before finishing:
 - inspect repo commands and run the narrowest relevant checks
 - run targeted tests first
 - run narrow ruff check for touched files
-- run narrow mypy check for the new policy_engine module if mypy is already in use
+- run narrow mypy check for the new runtime module if mypy is already in use
 
 At minimum, run:
-- targeted pytest for the new policy_engine tests
+- targeted pytest for the new runtime tests
 - narrow ruff check for touched files
-- narrow mypy check for the new policy_engine module
+- narrow mypy check for the new runtime module
 
 ## Final output format
 Return only:
@@ -337,5 +284,6 @@ List only the final successful validation commands once in section 3.
 Mention earlier failed runs only in section 4 if they occurred.
 
 Do not widen the phase.
+Do not start live model calls.
 Do not start execution.
 Complete only this bounded phase.
