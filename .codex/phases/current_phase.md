@@ -1,106 +1,120 @@
-# Phase 18O — Live Analyst Adapter Boundary
+# Phase 18P — Runtime Result Surface
 
 ## Goal
 
-Add a bounded live analyst transport layer under `src/future_system/live_analyst/` that lets the existing 18N dry-run runtime call a real model boundary while preserving the current deterministic flow:
+Add a bounded operator-safe result layer for the dry-run analysis runtime so the system can return deterministic success/failure packets without forcing callers to infer meaning from exceptions alone.
 
-- deterministic context assembly stays upstream
-- reasoning parsing/validation stays mandatory
-- deterministic policy stays downstream
+This phase is about the runtime result boundary only.
 
-This phase is about the analyst transport boundary only.
+18O added a live analyst transport boundary and explicit timeout / transport / parser-failure handling.
+18P should convert those runtime outcomes into stable, structured result packets suitable for operator review and later artifact/export work.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
 - `src/future_system/runtime/*`
+- `src/future_system/live_analyst/*`
 - `src/future_system/reasoning_contracts/*`
 - `src/future_system/policy_engine/*`
 
-Also read any directly relevant tests for 18L, 18M, and 18N before implementing.
+Also read the directly relevant runtime and live-analyst tests before implementing.
 
 ## Required deliverable
 
-Build a bounded `src/future_system/live_analyst/` module that:
+Build a bounded runtime result surface that:
 
-- implements the runtime analyst protocol through a real model-call transport boundary
-- accepts either a `ReasoningInputPacket` or an already-rendered prompt packet/string from the existing reasoning layer
-- returns model-like output that is still forced through the existing reasoning parser/validator
-- enforces explicit timeout handling
-- enforces explicit clean failure behavior
-- is covered with mocked, deterministic unit tests only
+- preserves the existing successful `AnalysisRunPacket` path
+- introduces explicit structured failure packet/model(s) for runtime failures
+- introduces a top-level result envelope / union that can represent either success or failure deterministically
+- adds a wrapper entrypoint that returns the structured result envelope instead of raising for expected runtime-stage failures
+- preserves explicit distinction between:
+  - analyst timeout
+  - analyst transport failure
+  - reasoning parse/validation failure
+- emits deterministic operator-safe summary text/fields for both success and failure cases
+- is covered with deterministic unit tests only
 
 ## Scope allowed
 
 Allowed work in this phase:
 
-- new files under `src/future_system/live_analyst/`
-- minimal runtime wiring needed so runtime can swap stub analyst vs live analyst without rewriting core logic
-- minimal shared types, request/response metadata, or error classes strictly needed for this boundary
-- minimal new test fixtures strictly needed for mocked unit tests
+- minimal additions under `src/future_system/runtime/*`
+- new runtime result/failure models if needed
+- minimal summary/helper additions strictly needed for this result surface
+- minimal test fixture additions strictly needed for deterministic tests
 
 ## Hard constraints
 
 Do not:
 
 - modify anything under `src/polymarket_arb/*`
+- add persistence, database, or filesystem artifact writing
 - add scheduling
-- add execution or trading behavior
-- add persistence or database work
+- add execution or order placement behavior
+- add retries/backoff loops
 - add UI
-- bypass the existing reasoning parser/validator
-- let live analyst code make policy decisions
-- silently fall back to stub outputs on transport/parser failure
-- widen into orchestration/retry systems beyond a single clear timeout/failure boundary
-- introduce speculative architecture outside this boundary
+- change policy scoring logic
+- change reasoning schema contracts
+- blur failure-stage distinctions into a generic error bucket
+- remove the existing exception-raising pipeline if other code already depends on it
+- introduce speculative orchestration architecture
 
-Prefer existing dependencies or stdlib.
-Do not add a new third-party package unless it is clearly necessary and there is no simpler bounded option.
+## Desired shape
 
-## Suggested file shape
+Prefer extending the existing runtime package rather than creating a broad new subsystem.
 
-Expected shape, adjusted only if the repo’s existing patterns strongly suggest a small variation:
+Likely shape:
 
-- `src/future_system/live_analyst/__init__.py`
-- `src/future_system/live_analyst/adapter.py` or `client.py`
-- `src/future_system/live_analyst/models.py` only if needed
-- `src/future_system/live_analyst/errors.py` only if needed
-
-Tests should cover:
-
-- successful response path
-- malformed transport response
-- timeout path
-- reasoning parser/validation failure path
+- extend `src/future_system/runtime/models.py`
+- minimally update `src/future_system/runtime/runner.py`
+- minimally update `src/future_system/runtime/summary.py`
+- add tests in `tests/future_system/test_runtime_runner.py`
+- add a dedicated runtime result test file only if clearly needed
 
 ## Behavioral requirements
 
 The implementation must preserve this contract:
 
-1. Runtime prepares deterministic context and prompt input using the existing reasoning layer.
-2. Live analyst boundary performs the transport/model call.
-3. Raw returned content goes through the existing reasoning parse/validation path.
-4. Only validated reasoning output proceeds downstream.
-5. Transport failures and parser failures remain distinguishable.
+1. Existing success path still yields `AnalysisRunPacket`.
+2. Existing strict pipeline logic remains intact.
+3. New wrapper/result entrypoint returns a deterministic structured result envelope.
+4. Expected runtime-stage failures become structured failure packets in that wrapper/result entrypoint.
+5. Failure packets preserve exact stage identity and run flags.
+6. Success and failure summaries remain operator-readable and deterministic.
 
-Specific requirements:
+Failure packet/result requirements:
 
-- expose a clean call surface that runtime can depend on
-- timeout failures must raise an explicit live-analyst timeout error
-- malformed or incomplete transport responses must raise an explicit live-analyst response/transport error
-- parser/validation failures must remain explicit and distinct from transport failures
-- no fake/default reasoning output may be injected on failure
-- runtime must be able to use either the existing stub analyst or the new live analyst boundary with minimal wiring
+- must include `theme_id`
+- must include `status`
+- must include explicit `failure_stage`
+- must include `run_flags`
+- must include a deterministic summary string
+- must not include fake reasoning output or fake policy output
+- must distinguish expected runtime-stage failures from unexpected programming errors
+
+Error handling requirements:
+
+- expected runtime-stage failures:
+  - analyst timeout
+  - analyst transport failure
+  - reasoning parse failure
+  should map to structured failure results in the new wrapper/result entrypoint
+
+- unexpected exceptions should remain explicit and should not be silently converted into a normal-looking success or generic safe placeholder
 
 ## Acceptance criteria
 
 This phase is complete when:
 
-- runtime can swap stub analyst for live analyst boundary without a core-logic rewrite
-- live analyst output still must pass through the existing `ReasoningOutputPacket` parsing/validation path
-- timeout, malformed response, and parser-failure behavior are explicit and test-covered
-- tests are mocked and deterministic
+- callers can use a new runtime result entrypoint and receive either a success packet or a structured failure packet deterministically
+- success packets preserve the existing `AnalysisRunPacket`
+- failure packets explicitly distinguish:
+  - `analyst_timeout`
+  - `analyst_transport`
+  - `reasoning_parse`
+- summaries for both success and failure are deterministic and operator-safe
+- tests cover success plus each expected failure stage
 - `src/polymarket_arb/*` remains untouched
 
 ## Validation
@@ -109,9 +123,8 @@ Run narrow validation only.
 
 At minimum, run the smallest reasonable set covering:
 
-- new `live_analyst` module files
-- any minimally touched runtime files
-- new/updated unit tests
+- touched `runtime` files
+- any touched tests
 
 Use:
 

@@ -20,7 +20,7 @@ from future_system.reasoning_contracts.builder import build_reasoning_input_pack
 from future_system.reasoning_contracts.models import RenderedPromptPacket
 from future_system.reasoning_contracts.renderer import render_reasoning_prompt_packet
 from future_system.runtime.models import AnalysisRunError
-from future_system.runtime.runner import run_analysis_pipeline
+from future_system.runtime.runner import run_analysis_pipeline, run_analysis_pipeline_result
 from future_system.runtime.stub_analyst import DeterministicStubAnalyst
 from future_system.theme_graph.models import ThemeLinkPacket
 
@@ -48,6 +48,85 @@ def test_full_dry_run_succeeds_end_to_end_for_valid_input() -> None:
     assert packet.reasoning_output.theme_id == bundle.theme_id
     assert packet.policy_decision.decision == case["expected_policy_decision"]
     assert packet.run_flags == case["expected_run_flags"]
+
+
+def test_result_entrypoint_returns_success_envelope_for_valid_input() -> None:
+    case = _runtime_case("success_strong")
+    bundle = _bundle(case["context_bundle_case"])
+
+    result = run_analysis_pipeline_result(
+        context_bundle=bundle,
+        analyst=DeterministicStubAnalyst(),
+    )
+
+    assert result.status == "success"
+    assert result.success is not None
+    assert result.failure is None
+    assert result.success.theme_id == bundle.theme_id
+    assert result.success.status == "success"
+
+
+def test_result_entrypoint_maps_analyst_timeout_to_failure_packet() -> None:
+    case = _runtime_case("success_strong")
+    bundle = _bundle(case["context_bundle_case"])
+    analyst = LiveAnalystAdapter(
+        transport=_TimeoutTransport(),
+        timeout_seconds=0.1,
+    )
+
+    result = run_analysis_pipeline_result(context_bundle=bundle, analyst=analyst)
+
+    assert result.status == "failed"
+    assert result.success is None
+    assert result.failure is not None
+    assert result.failure.failure_stage == "analyst_timeout"
+    assert result.failure.run_flags == ["analysis_dry_run", "analyst_timeout"]
+    assert (
+        result.failure.run_summary
+        == "theme_id=theme_ctx_strong; status=failed; failure_stage=analyst_timeout; "
+        "run_flags=analysis_dry_run,analyst_timeout."
+    )
+
+
+def test_result_entrypoint_maps_analyst_transport_to_failure_packet() -> None:
+    case = _runtime_case("success_strong")
+    bundle = _bundle(case["context_bundle_case"])
+    analyst = LiveAnalystAdapter(
+        transport=_StaticTransport(response={"choices": []}),
+        timeout_seconds=1.0,
+    )
+
+    result = run_analysis_pipeline_result(context_bundle=bundle, analyst=analyst)
+
+    assert result.status == "failed"
+    assert result.success is None
+    assert result.failure is not None
+    assert result.failure.failure_stage == "analyst_transport"
+    assert result.failure.run_flags == ["analysis_dry_run", "analyst_transport_failed"]
+    assert (
+        result.failure.run_summary
+        == "theme_id=theme_ctx_strong; status=failed; failure_stage=analyst_transport; "
+        "run_flags=analysis_dry_run,analyst_transport_failed."
+    )
+
+
+def test_result_entrypoint_maps_reasoning_parse_to_failure_packet() -> None:
+    case = _runtime_case("malformed_analyst_output")
+    bundle = _bundle(case["context_bundle_case"])
+    analyst = _MalformedAnalyst(payload=case["malformed_payload"])
+
+    result = run_analysis_pipeline_result(context_bundle=bundle, analyst=analyst)
+
+    assert result.status == "failed"
+    assert result.success is None
+    assert result.failure is not None
+    assert result.failure.failure_stage == "reasoning_parse"
+    assert result.failure.run_flags == ["analysis_dry_run", "reasoning_parse_failed"]
+    assert (
+        result.failure.run_summary
+        == "theme_id=theme_ctx_strong; status=failed; failure_stage=reasoning_parse; "
+        "run_flags=analysis_dry_run,reasoning_parse_failed."
+    )
 
 
 def test_runtime_can_swap_stub_for_live_analyst_without_core_logic_rewrite() -> None:
@@ -133,6 +212,17 @@ def test_live_analyst_parser_validation_failure_remains_reasoning_parse_stage() 
     assert "reasoning_parse_failed" in str(first_exc.value)
 
 
+def test_result_entrypoint_does_not_swallow_unexpected_programming_errors() -> None:
+    case = _runtime_case("success_strong")
+    bundle = _bundle(case["context_bundle_case"])
+
+    with pytest.raises(RuntimeError, match="unexpected_programming_error"):
+        run_analysis_pipeline_result(
+            context_bundle=bundle,
+            analyst=_UnexpectedFailureAnalyst(),
+        )
+
+
 class _MalformedAnalyst:
     is_stub = False
 
@@ -141,6 +231,13 @@ class _MalformedAnalyst:
 
     def analyze(self, **_: object) -> str:
         return self._payload
+
+
+class _UnexpectedFailureAnalyst:
+    is_stub = False
+
+    def analyze(self, **_: object) -> str:
+        raise RuntimeError("unexpected_programming_error")
 
 
 class _StaticTransport:

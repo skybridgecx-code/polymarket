@@ -29,3 +29,20 @@ def build_analysis_run_summary(
         f"risk_penalty={risk_penalty:.3f}; "
         f"run_flags={flags_text}."
     )
+
+
+def build_analysis_failure_summary(
+    *,
+    theme_id: str,
+    failure_stage: str,
+    run_flags: Sequence[str],
+) -> str:
+    """Build compact deterministic runtime failure summary for operator inspection."""
+
+    flags_text = "none" if not run_flags else ",".join(run_flags[:4])
+    return (
+        f"theme_id={theme_id}; "
+        "status=failed; "
+        f"failure_stage={failure_stage}; "
+        f"run_flags={flags_text}."
+    )

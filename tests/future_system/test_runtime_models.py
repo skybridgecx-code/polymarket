@@ -14,7 +14,11 @@ from future_system.crypto_evidence.models import ThemeCryptoEvidencePacket
 from future_system.divergence.models import ThemeDivergencePacket
 from future_system.evidence.models import ThemeEvidencePacket
 from future_system.news_evidence.models import ThemeNewsEvidencePacket
-from future_system.runtime.models import AnalysisRunPacket
+from future_system.runtime.models import (
+    AnalysisRunFailurePacket,
+    AnalysisRunPacket,
+    AnalysisRunResultEnvelope,
+)
 from future_system.runtime.runner import run_analysis_pipeline
 from future_system.runtime.stub_analyst import DeterministicStubAnalyst
 from future_system.theme_graph.models import ThemeLinkPacket
@@ -55,6 +59,59 @@ def test_required_fields_are_enforced() -> None:
 
     with pytest.raises(ValidationError):
         AnalysisRunPacket.model_validate(blank_summary)
+
+
+def test_runtime_failure_models_accept_valid_payloads() -> None:
+    failure_packet = AnalysisRunFailurePacket.model_validate(
+        {
+            "theme_id": "theme_runtime_failure",
+            "status": "failed",
+            "failure_stage": "analyst_transport",
+            "run_flags": ["analysis_dry_run", "analyst_transport_failed"],
+            "run_summary": (
+                "theme_id=theme_runtime_failure; status=failed; "
+                "failure_stage=analyst_transport; "
+                "run_flags=analysis_dry_run,analyst_transport_failed."
+            ),
+            "error_message": "analysis_run_failed: stage=analyst_transport.",
+        }
+    )
+    result = AnalysisRunResultEnvelope.model_validate(
+        {
+            "status": "failed",
+            "failure": failure_packet.model_dump(mode="json"),
+        }
+    )
+
+    assert result.status == "failed"
+    assert result.success is None
+    assert result.failure is not None
+    assert result.failure.failure_stage == "analyst_transport"
+
+
+def test_runtime_result_envelope_requires_consistent_status_payloads() -> None:
+    success_packet = _successful_run_packet()
+
+    with pytest.raises(ValidationError):
+        AnalysisRunResultEnvelope.model_validate({"status": "success"})
+    with pytest.raises(ValidationError):
+        AnalysisRunResultEnvelope.model_validate(
+            {
+                "status": "failed",
+                "success": success_packet.model_dump(mode="json"),
+            }
+        )
+    with pytest.raises(ValidationError):
+        AnalysisRunFailurePacket.model_validate(
+            {
+                "theme_id": "theme_runtime_failure",
+                "status": "failed",
+                "failure_stage": "analyst_parse",
+                "run_flags": ["analysis_dry_run"],
+                "run_summary": "deterministic failure summary",
+                "error_message": "deterministic failure message",
+            }
+        )
 
 
 def _successful_run_packet() -> AnalysisRunPacket:

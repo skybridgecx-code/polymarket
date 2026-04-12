@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from future_system.runtime.summary import build_analysis_run_summary
+from future_system.runtime.summary import (
+    build_analysis_failure_summary,
+    build_analysis_run_summary,
+)
 
 
 def test_run_summary_is_deterministic() -> None:
@@ -62,4 +65,33 @@ def test_summary_reflects_important_flags_where_applicable() -> None:
     assert (
         "run_flags=analysis_dry_run,stub_analyst_used,reasoning_parsed,policy_computed."
         in summary
+    )
+
+
+def test_failure_summary_is_deterministic() -> None:
+    summary_a = build_analysis_failure_summary(
+        theme_id="theme_runtime_summary",
+        failure_stage="analyst_transport",
+        run_flags=["analysis_dry_run", "analyst_transport_failed"],
+    )
+    summary_b = build_analysis_failure_summary(
+        theme_id="theme_runtime_summary",
+        failure_stage="analyst_transport",
+        run_flags=["analysis_dry_run", "analyst_transport_failed"],
+    )
+
+    assert summary_a == summary_b
+
+
+def test_failure_summary_reflects_theme_stage_and_flags() -> None:
+    summary = build_analysis_failure_summary(
+        theme_id="theme_runtime_summary",
+        failure_stage="reasoning_parse",
+        run_flags=["analysis_dry_run", "reasoning_parse_failed"],
+    )
+
+    assert (
+        summary
+        == "theme_id=theme_runtime_summary; status=failed; failure_stage=reasoning_parse; "
+        "run_flags=analysis_dry_run,reasoning_parse_failed."
     )

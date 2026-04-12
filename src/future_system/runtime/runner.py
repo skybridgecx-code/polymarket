@@ -9,9 +9,14 @@ from future_system.reasoning_contracts.builder import build_reasoning_input_pack
 from future_system.reasoning_contracts.models import ReasoningParseError
 from future_system.reasoning_contracts.parser import parse_reasoning_output
 from future_system.reasoning_contracts.renderer import render_reasoning_prompt_packet
-from future_system.runtime.models import AnalysisRunError, AnalysisRunPacket
+from future_system.runtime.models import (
+    AnalysisRunError,
+    AnalysisRunFailurePacket,
+    AnalysisRunPacket,
+    AnalysisRunResultEnvelope,
+)
 from future_system.runtime.protocol import AnalystProtocol
-from future_system.runtime.summary import build_analysis_run_summary
+from future_system.runtime.summary import build_analysis_failure_summary, build_analysis_run_summary
 
 
 def run_analysis_pipeline(
@@ -39,7 +44,10 @@ def run_analysis_pipeline(
             "analysis_run_failed: "
             f"theme_id={context_bundle.theme_id}; "
             "stage=analyst_timeout; "
-            f"flags={','.join(failure_flags)}."
+            f"flags={','.join(failure_flags)}.",
+            theme_id=context_bundle.theme_id,
+            failure_stage="analyst_timeout",
+            run_flags=failure_flags,
         ) from exc
     except LiveAnalystTransportError as exc:
         failure_flags = [*run_flags, "analyst_transport_failed"]
@@ -47,7 +55,10 @@ def run_analysis_pipeline(
             "analysis_run_failed: "
             f"theme_id={context_bundle.theme_id}; "
             "stage=analyst_transport; "
-            f"flags={','.join(failure_flags)}."
+            f"flags={','.join(failure_flags)}.",
+            theme_id=context_bundle.theme_id,
+            failure_stage="analyst_transport",
+            run_flags=failure_flags,
         ) from exc
 
     try:
@@ -58,7 +69,10 @@ def run_analysis_pipeline(
             "analysis_run_failed: "
             f"theme_id={context_bundle.theme_id}; "
             "stage=reasoning_parse; "
-            f"flags={','.join(failure_flags)}."
+            f"flags={','.join(failure_flags)}.",
+            theme_id=context_bundle.theme_id,
+            failure_stage="reasoning_parse",
+            run_flags=failure_flags,
         ) from exc
 
     run_flags.append("reasoning_parsed")
@@ -91,3 +105,36 @@ def run_analysis_pipeline(
         run_flags=run_flags,
         run_summary=run_summary,
     )
+
+
+def run_analysis_pipeline_result(
+    *,
+    context_bundle: OpportunityContextBundle,
+    analyst: AnalystProtocol,
+) -> AnalysisRunResultEnvelope:
+    """Run deterministic pipeline and return structured success/failure result envelope."""
+
+    try:
+        success_packet = run_analysis_pipeline(
+            context_bundle=context_bundle,
+            analyst=analyst,
+        )
+    except AnalysisRunError as exc:
+        if exc.failure_stage is None:
+            raise
+
+        failure_packet = AnalysisRunFailurePacket(
+            theme_id=exc.theme_id,
+            status="failed",
+            failure_stage=exc.failure_stage,
+            run_flags=exc.run_flags,
+            run_summary=build_analysis_failure_summary(
+                theme_id=exc.theme_id,
+                failure_stage=exc.failure_stage,
+                run_flags=exc.run_flags,
+            ),
+            error_message=str(exc),
+        )
+        return AnalysisRunResultEnvelope(status="failed", failure=failure_packet)
+
+    return AnalysisRunResultEnvelope(status="success", success=success_packet)
