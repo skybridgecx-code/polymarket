@@ -1,76 +1,73 @@
-# Phase 18Q — Review Packet Surface
+# Phase 18R — Review Packet Renderer Surface
 
 ## Goal
 
-Add a bounded operator-review packet surface that converts the structured runtime result envelope from 18P into deterministic review packets suitable for human inspection and later export/artifact work.
+Add a bounded renderer surface that converts 18Q review packets into deterministic operator-facing text/markdown renderings for inspection and later export work.
 
-This phase is about review-packet construction only.
+This phase is about rendering only.
 
-18P introduced structured success/failure runtime results.
-18Q should transform those results into stable, operator-safe review packet models/builders without adding filesystem export, UI, or orchestration.
+18Q created structured success/failure review packets.
+18R should render those packets into stable human-readable outputs without introducing file writing, UI, or orchestration.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
+- `src/future_system/review_packets/*`
 - `src/future_system/runtime/*`
-- `src/future_system/live_analyst/*`
-- `src/future_system/reasoning_contracts/*`
-- `src/future_system/policy_engine/*`
+- any directly relevant summary/helper code already used by runtime or review packet layers
 
-Also read any existing review/packet patterns in the repo that are directly relevant, but do not widen scope or pull `src/polymarket_arb/*` into this phase.
-
-Read the directly relevant runtime tests before implementing.
+Also read the directly relevant review packet tests before implementing.
 
 ## Required deliverable
 
-Build a bounded review-packet layer that:
+Build a bounded renderer layer that:
 
-- accepts the structured runtime result envelope from 18P
-- produces deterministic operator-review packet model(s) for both success and failure outcomes
+- accepts the 18Q review packet models
+- produces deterministic operator-safe rendered output
+- supports at least:
+  - plain text rendering
+  - markdown rendering
 - preserves explicit distinction between:
-  - successful analysis result
-  - analyst timeout failure
-  - analyst transport failure
-  - reasoning parse failure
-- exposes a builder/helper entrypoint that converts runtime result -> review packet
-- emits deterministic operator-safe summary fields/content suitable for later export/rendering work
+  - success review packet
+  - analyst timeout failure review packet
+  - analyst transport failure review packet
+  - reasoning parse failure review packet
+- exposes a small builder/renderer entrypoint that callers can use without knowing packet internals
 - is covered with deterministic unit tests only
 
 ## Scope allowed
 
 Allowed work in this phase:
 
-- new bounded files under `src/future_system/review_packets/*` if needed
-- or minimal bounded additions under `src/future_system/runtime/*` if the repo shape strongly prefers that
-- new review packet models/builders/helpers strictly needed for this surface
-- minimal test fixtures/additions strictly needed for deterministic tests
+- new bounded files under `src/future_system/review_renderers/*`
+- or minimal bounded additions under `src/future_system/review_packets/*` if the repo shape strongly prefers that
+- minimal helper/model additions strictly needed for rendering
+- minimal test additions strictly needed for deterministic coverage
 
 ## Hard constraints
 
 Do not:
 
 - modify anything under `src/polymarket_arb/*`
-- add filesystem writing or artifact export
-- add database or persistence work
+- add filesystem writing or export jobs
+- add database/persistence work
 - add scheduling/orchestration
-- add execution or order placement behavior
 - add UI
-- change policy logic
-- change reasoning schema contracts
-- collapse failure stages into a generic bucket
-- add speculative “reporting platform” architecture
-- add transport/retry logic here
+- add execution/trading behavior
+- change runtime, policy, or reasoning logic
+- change review packet meaning/structure beyond minimal bounded rendering support
+- collapse failure stages into generic text
+- add speculative reporting/inbox architecture
 
 ## Desired shape
 
-Prefer a small dedicated review packet surface, for example:
+Prefer a small dedicated rendering surface, for example:
 
-- `src/future_system/review_packets/__init__.py`
-- `src/future_system/review_packets/models.py`
-- `src/future_system/review_packets/builder.py`
+- `src/future_system/review_renderers/__init__.py`
+- `src/future_system/review_renderers/renderer.py`
 
-Or a minimal equivalent if the repo’s existing patterns strongly suggest a smaller shape.
+Optionally add a small models/helpers file only if clearly necessary.
 
 Tests should stay narrow and deterministic.
 
@@ -78,39 +75,45 @@ Tests should stay narrow and deterministic.
 
 The implementation must preserve this contract:
 
-1. Runtime remains the source of truth for analysis success/failure.
-2. Review packet layer is downstream of runtime result construction.
-3. Review packet construction does not re-run policy or reasoning logic.
-4. Success review packets may include validated reasoning/policy/result summaries.
-5. Failure review packets must not invent fake reasoning output or fake policy output.
-6. Failure review packets must preserve exact failure stage identity.
-7. Review packet content remains deterministic and operator-safe.
+1. Review packets remain the source of truth for operator review content.
+2. Renderer layer is downstream of review packet construction.
+3. Rendering does not re-run reasoning, runtime, or policy logic.
+4. Text and markdown outputs must be deterministic.
+5. Success and failure renderings must remain structurally distinct.
+6. Failure renderings must preserve exact failure-stage identity.
+7. Rendered output must remain operator-safe and based only on real packet contents.
 
-Review packet requirements:
+Renderer requirements:
 
 - must include `theme_id`
-- must include explicit packet/result status
-- must include packet kind/type that distinguishes success vs failure review packets
-- must include explicit failure stage on failure packets
+- must include packet kind/status
 - must include deterministic summary text
 - must include `run_flags`
-- success packets should include the bounded success details already available from runtime output
-- failure packets should include only safe, real failure details already available from runtime failure output
+- failure renderings must include explicit failure stage
+- success renderings may include bounded reasoning/policy/result fields already present in the review packet
+- failure renderings must not invent fake reasoning or fake policy content
+- markdown output should be stable and readable, not styled for any UI framework
 
-The builder/entrypoint should make it easy for later phases to consume review packets without needing to know runtime exception details.
+Expose a small entrypoint such as:
+
+- render_review_packet(...)
+- render_review_packet_markdown(...)
+- render_review_packet_text(...)
+
+or a similarly small bounded equivalent.
 
 ## Acceptance criteria
 
 This phase is complete when:
 
-- callers can convert the 18P runtime result envelope into deterministic review packets
-- success and failure review packets are explicit and structurally distinct
-- failure review packets explicitly distinguish:
+- callers can render 18Q review packets into deterministic plain text and markdown
+- success and failure renderings are explicit and structurally distinct
+- failure renderings explicitly distinguish:
   - `analyst_timeout`
   - `analyst_transport`
   - `reasoning_parse`
-- no fake reasoning/policy output is introduced on failures
-- tests cover success plus each expected failure stage
+- no filesystem writing or UI work is added
+- tests cover success plus each expected failure stage in at least one rendering format, and confirm stable rendering behavior
 - `src/polymarket_arb/*` remains untouched
 
 ## Validation
@@ -119,7 +122,7 @@ Run narrow validation only.
 
 At minimum, run the smallest reasonable set covering:
 
-- touched `review_packets` and/or `runtime` files
+- touched renderer/review packet files
 - touched tests
 
 Use:
