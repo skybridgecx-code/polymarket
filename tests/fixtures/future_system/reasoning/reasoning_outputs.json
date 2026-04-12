@@ -1,0 +1,52 @@
+[
+  {
+    "case": "valid",
+    "output": {
+      "theme_id": "theme_ctx_strong",
+      "thesis": "Cross-market and official-source evidence supports a constructive watch-to-candidate stance.",
+      "counter_thesis": "Signal quality could degrade quickly if regulatory headlines reverse or liquidity weakens.",
+      "key_drivers": [
+        "Aligned comparison across Polymarket and crypto proxies",
+        "Official-source news evidence present"
+      ],
+      "missing_information": [
+        "Updated policy timeline from primary regulator"
+      ],
+      "uncertainty_notes": [
+        "Outcome sensitivity remains high to unexpected macro statements"
+      ],
+      "recommended_posture": "candidate",
+      "confidence_explanation": "Confidence is moderate-high due to alignment and quality, but still event-sensitive.",
+      "analyst_flags": [
+        "monitor_regulatory_calendar"
+      ]
+    }
+  },
+  {
+    "case": "invalid_posture",
+    "output": {
+      "theme_id": "theme_ctx_strong",
+      "thesis": "Example thesis",
+      "counter_thesis": "Example counter thesis",
+      "key_drivers": ["Driver"],
+      "missing_information": ["Missing input"],
+      "uncertainty_notes": ["Uncertain"],
+      "recommended_posture": "promote",
+      "confidence_explanation": "Example confidence explanation",
+      "analyst_flags": []
+    }
+  },
+  {
+    "case": "invalid_missing_fields",
+    "output": {
+      "theme_id": "theme_ctx_strong",
+      "counter_thesis": "Counter thesis present but thesis missing",
+      "key_drivers": ["Driver"],
+      "missing_information": ["Missing input"],
+      "uncertainty_notes": ["Uncertain"],
+      "recommended_posture": "watch",
+      "confidence_explanation": "Example confidence explanation",
+      "analyst_flags": []
+    }
+  }
+]

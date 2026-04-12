@@ -1,0 +1,30 @@
+[
+  {
+    "case": "strong_complete",
+    "input_packet": {
+      "theme_id": "theme_ctx_strong",
+      "title": "Crypto Regulation Signal",
+      "candidate_posture": "candidate",
+      "comparison_alignment": "aligned",
+      "candidate_score": 0.84,
+      "confidence_score": 0.86,
+      "conflict_score": 0.12,
+      "bundle_flags": [],
+      "operator_summary": "theme_id=theme_ctx_strong; posture=candidate; alignment=aligned; completeness=1.000; freshness=0.870; confidence=0.859; conflict=0.127; flags=none.",
+      "structured_facts": {
+        "candidate_posture": "candidate",
+        "comparison_alignment": "aligned",
+        "candidate_score": 0.84,
+        "confidence_score": 0.86,
+        "conflict_score": 0.12,
+        "primary_market_slug": "crypto-regulation-signal",
+        "primary_symbol": "BTC-PERP",
+        "news_matched_article_count": 2,
+        "news_official_source_present": true,
+        "bundle_completeness_score": 1.0,
+        "bundle_key_flags": []
+      },
+      "prompt_version": "v1"
+    }
+  }
+]
