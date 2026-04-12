@@ -1,50 +1,48 @@
-# Phase 18S — Review Bundle Surface
+# Phase 18T — Review Bundle Export Surface
 
 ## Goal
 
-Add a bounded in-memory review bundle surface that composes the existing runtime result, review packet, and rendered review outputs into one deterministic bundle for downstream operator handling and later export work.
+Add a bounded export surface that converts the 18S in-memory review bundle into deterministic export payloads suitable for later file-writing, delivery, or API response work.
 
-This phase is about in-memory bundle construction only.
+This phase is about export payload construction only.
 
-18P introduced structured runtime results.
-18Q introduced structured review packets.
-18R introduced deterministic text/markdown rendering.
-
-18S should combine those layers into one stable review bundle without adding filesystem export, UI, persistence, or orchestration.
+18S introduced a deterministic in-memory review bundle.
+18T should transform that bundle into stable exportable payloads without adding filesystem writing, persistence, UI, or orchestration.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
-- `src/future_system/runtime/*`
+- `src/future_system/review_bundles/*`
 - `src/future_system/review_packets/*`
 - `src/future_system/review_renderers/*`
+- any directly relevant runtime/result models that flow into the bundle
 
 Also read the directly relevant tests for those layers before implementing.
 
 ## Required deliverable
 
-Build a bounded review bundle layer that:
+Build a bounded export layer that:
 
-- accepts the structured runtime result envelope from 18P
-- derives the review packet using the 18Q builder
-- derives deterministic text and markdown renderings using the 18R renderer
-- returns a single deterministic in-memory review bundle model
-- supports both success and expected failure outcomes
+- accepts the 18S review bundle
+- produces deterministic export payload models for at least:
+  - structured JSON-ready payload
+  - markdown document payload
 - preserves explicit distinction between:
   - success
   - analyst timeout failure
   - analyst transport failure
   - reasoning parse failure
-- exposes a small builder entrypoint for callers
+- exposes a small builder/entrypoint for callers
+- returns payloads only, without writing them anywhere
 - is covered with deterministic unit tests only
 
 ## Scope allowed
 
 Allowed work in this phase:
 
-- new bounded files under `src/future_system/review_bundles/*`
-- minimal helper/model additions strictly needed for the bundle surface
+- new bounded files under `src/future_system/review_exports/*`
+- minimal helper/model additions strictly needed for export payload construction
 - minimal test additions strictly needed for deterministic coverage
 
 ## Hard constraints
@@ -52,22 +50,22 @@ Allowed work in this phase:
 Do not:
 
 - modify anything under `src/polymarket_arb/*`
-- add filesystem writing or export jobs
+- add filesystem writing
 - add database/persistence work
 - add scheduling/orchestration
 - add UI
 - add execution/trading behavior
-- change runtime, policy, reasoning, review packet, or renderer semantics beyond minimal bounded integration support
-- collapse failure stages into generic bundle status
-- add speculative queue/inbox/reporting architecture
+- change runtime, review packet, renderer, or review bundle semantics beyond minimal bounded export support
+- collapse failure stages into generic export status
+- add speculative notification/inbox/reporting infrastructure
 
 ## Desired shape
 
-Prefer a small dedicated bundle surface, for example:
+Prefer a small dedicated export surface, for example:
 
-- `src/future_system/review_bundles/__init__.py`
-- `src/future_system/review_bundles/models.py`
-- `src/future_system/review_bundles/builder.py`
+- `src/future_system/review_exports/__init__.py`
+- `src/future_system/review_exports/models.py`
+- `src/future_system/review_exports/builder.py`
 
 Tests should stay narrow and deterministic.
 
@@ -75,42 +73,46 @@ Tests should stay narrow and deterministic.
 
 The implementation must preserve this contract:
 
-1. Runtime result remains the source of truth for success/failure outcome.
-2. Review packet remains the structured review representation.
-3. Renderer remains the source of text/markdown rendering.
-4. Review bundle is a pure composition layer downstream of those components.
-5. Review bundle construction does not re-run runtime, reasoning, or policy logic.
-6. Success and failure bundles remain structurally distinct or explicitly typed.
-7. Failure bundles preserve exact failure-stage identity.
-8. Bundle content remains deterministic and operator-safe.
+1. Review bundle remains the source of truth for export construction.
+2. Export layer is downstream of review bundle construction.
+3. Export construction does not re-run runtime, reasoning, policy, review packet, or rendering logic.
+4. Export payloads must be deterministic and operator-safe.
+5. Success and failure exports must remain structurally distinct or explicitly typed.
+6. Failure exports must preserve exact failure-stage identity.
+7. Export layer returns payloads only, not side effects.
 
-Review bundle requirements:
+Export payload requirements:
 
 - must include `theme_id`
-- must include bundle status / kind
-- must include the original runtime result envelope or a bounded reference to it
-- must include the derived review packet
-- must include rendered plain text output
-- must include rendered markdown output
+- must include export kind/type
+- must include bundle status / packet kind context
+- must include deterministic plain text and/or markdown content where appropriate
+- must include a structured JSON-ready representation
 - must include `run_flags`
-- failure bundles must include explicit failure stage
-- success bundles may include bounded success details already present in upstream models
-- failure bundles must not invent fake reasoning or fake policy content
+- failure exports must include explicit failure stage
+- success exports may include bounded success details already present in upstream bundle content
+- failure exports must not invent fake reasoning or fake policy content
 
 Expose a small entrypoint such as:
 
-- `build_review_bundle(...)`
+- `build_review_export_payloads(...)`
 
 or a similarly small bounded equivalent.
+
+A good outcome is a model that contains, at minimum:
+
+- a JSON-ready export payload
+- a markdown export payload
+- minimal metadata describing the export package
 
 ## Acceptance criteria
 
 This phase is complete when:
 
-- callers can convert an 18P runtime result envelope into a deterministic review bundle
-- the bundle contains runtime result, review packet, text rendering, and markdown rendering
+- callers can convert an 18S review bundle into deterministic export payloads
+- exports include a JSON-ready structured payload and a markdown payload
 - success and failure outcomes are preserved cleanly
-- failure bundles explicitly distinguish:
+- failure exports explicitly distinguish:
   - `analyst_timeout`
   - `analyst_transport`
   - `reasoning_parse`
@@ -124,7 +126,7 @@ Run narrow validation only.
 
 At minimum, run the smallest reasonable set covering:
 
-- touched `review_bundles` files
+- touched `review_exports` files
 - any touched tests
 
 Use:
