@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from future_system.context_bundle.models import OpportunityContextBundle
+from future_system.live_analyst.errors import LiveAnalystTimeoutError, LiveAnalystTransportError
 from future_system.policy_engine.engine import evaluate_policy_decision
 from future_system.reasoning_contracts.builder import build_reasoning_input_packet
 from future_system.reasoning_contracts.models import ReasoningParseError
@@ -27,10 +28,27 @@ def run_analysis_pipeline(
     reasoning_input = build_reasoning_input_packet(bundle=context_bundle)
     rendered_prompt = render_reasoning_prompt_packet(reasoning_input=reasoning_input)
 
-    analyst_payload = analyst.analyze(
-        reasoning_input=reasoning_input,
-        rendered_prompt=rendered_prompt,
-    )
+    try:
+        analyst_payload = analyst.analyze(
+            reasoning_input=reasoning_input,
+            rendered_prompt=rendered_prompt,
+        )
+    except LiveAnalystTimeoutError as exc:
+        failure_flags = [*run_flags, "analyst_timeout"]
+        raise AnalysisRunError(
+            "analysis_run_failed: "
+            f"theme_id={context_bundle.theme_id}; "
+            "stage=analyst_timeout; "
+            f"flags={','.join(failure_flags)}."
+        ) from exc
+    except LiveAnalystTransportError as exc:
+        failure_flags = [*run_flags, "analyst_transport_failed"]
+        raise AnalysisRunError(
+            "analysis_run_failed: "
+            f"theme_id={context_bundle.theme_id}; "
+            "stage=analyst_transport; "
+            f"flags={','.join(failure_flags)}."
+        ) from exc
 
     try:
         reasoning_output = parse_reasoning_output(analyst_payload)

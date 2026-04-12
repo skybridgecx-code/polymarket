@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,7 @@ from future_system.context_bundle.builder import build_opportunity_context_bundl
 from future_system.crypto_evidence.models import ThemeCryptoEvidencePacket
 from future_system.divergence.models import ThemeDivergencePacket
 from future_system.evidence.models import ThemeEvidencePacket
+from future_system.live_analyst.adapter import LiveAnalystAdapter
 from future_system.news_evidence.models import ThemeNewsEvidencePacket
 from future_system.reasoning_contracts.builder import build_reasoning_input_packet
 from future_system.reasoning_contracts.models import RenderedPromptPacket
@@ -48,10 +50,78 @@ def test_full_dry_run_succeeds_end_to_end_for_valid_input() -> None:
     assert packet.run_flags == case["expected_run_flags"]
 
 
+def test_runtime_can_swap_stub_for_live_analyst_without_core_logic_rewrite() -> None:
+    case = _runtime_case("success_strong")
+    bundle = _bundle(case["context_bundle_case"])
+    transport = _StaticTransport(
+        response={"content": _valid_reasoning_output(theme_id=bundle.theme_id)}
+    )
+    analyst = LiveAnalystAdapter(transport=transport, timeout_seconds=1.0)
+
+    packet = run_analysis_pipeline(context_bundle=bundle, analyst=analyst)
+
+    assert packet.status == "success"
+    assert packet.reasoning_output.theme_id == bundle.theme_id
+    assert packet.policy_decision.decision == "allow"
+    assert packet.run_flags == ["analysis_dry_run", "reasoning_parsed", "policy_computed"]
+
+
+def test_live_analyst_transport_failure_is_distinct_from_parser_failure() -> None:
+    case = _runtime_case("success_strong")
+    bundle = _bundle(case["context_bundle_case"])
+    analyst = LiveAnalystAdapter(
+        transport=_StaticTransport(response={"choices": []}),
+        timeout_seconds=1.0,
+    )
+
+    with pytest.raises(AnalysisRunError) as exc:
+        run_analysis_pipeline(context_bundle=bundle, analyst=analyst)
+
+    assert "stage=analyst_transport" in str(exc.value)
+    assert "analyst_transport_failed" in str(exc.value)
+    assert "reasoning_parse_failed" not in str(exc.value)
+
+
+def test_live_analyst_timeout_failure_has_explicit_timeout_stage() -> None:
+    case = _runtime_case("success_strong")
+    bundle = _bundle(case["context_bundle_case"])
+    analyst = LiveAnalystAdapter(
+        transport=_TimeoutTransport(),
+        timeout_seconds=0.1,
+    )
+
+    with pytest.raises(AnalysisRunError) as exc:
+        run_analysis_pipeline(context_bundle=bundle, analyst=analyst)
+
+    assert "stage=analyst_timeout" in str(exc.value)
+    assert "analyst_timeout" in str(exc.value)
+    assert "stage=reasoning_parse" not in str(exc.value)
+
+
 def test_malformed_analyst_output_raises_analysis_run_error_deterministically() -> None:
     case = _runtime_case("malformed_analyst_output")
     bundle = _bundle(case["context_bundle_case"])
     analyst = _MalformedAnalyst(payload=case["malformed_payload"])
+
+    with pytest.raises(AnalysisRunError) as first_exc:
+        run_analysis_pipeline(context_bundle=bundle, analyst=analyst)
+    with pytest.raises(AnalysisRunError) as second_exc:
+        run_analysis_pipeline(context_bundle=bundle, analyst=analyst)
+
+    assert str(first_exc.value) == str(second_exc.value)
+    assert "stage=reasoning_parse" in str(first_exc.value)
+    assert "reasoning_parse_failed" in str(first_exc.value)
+
+
+def test_live_analyst_parser_validation_failure_remains_reasoning_parse_stage() -> None:
+    case = _runtime_case("success_strong")
+    bundle = _bundle(case["context_bundle_case"])
+    invalid_reasoning_output = _valid_reasoning_output(theme_id=bundle.theme_id)
+    invalid_reasoning_output["recommended_posture"] = "escalate"
+    analyst = LiveAnalystAdapter(
+        transport=_StaticTransport(response={"content": invalid_reasoning_output}),
+        timeout_seconds=1.0,
+    )
 
     with pytest.raises(AnalysisRunError) as first_exc:
         run_analysis_pipeline(context_bundle=bundle, analyst=analyst)
@@ -71,6 +141,35 @@ class _MalformedAnalyst:
 
     def analyze(self, **_: object) -> str:
         return self._payload
+
+
+class _StaticTransport:
+    def __init__(self, *, response: Mapping[str, Any] | str) -> None:
+        self._response = response
+
+    def request(self, *, request: object) -> Mapping[str, Any] | str:
+        del request
+        return self._response
+
+
+class _TimeoutTransport:
+    def request(self, *, request: object) -> Mapping[str, Any] | str:
+        del request
+        raise TimeoutError("simulated timeout")
+
+
+def _valid_reasoning_output(*, theme_id: str) -> dict[str, object]:
+    return {
+        "theme_id": theme_id,
+        "thesis": "Cross-market alignment supports deterministic promotion.",
+        "counter_thesis": "Residual uncertainty still warrants caution.",
+        "key_drivers": ["Aligned signal from candidate and comparison packets."],
+        "missing_information": ["Confirm next catalyst timing."],
+        "uncertainty_notes": ["Event volatility remains present."],
+        "recommended_posture": "candidate",
+        "confidence_explanation": "Signals are aligned with manageable conflict.",
+        "analyst_flags": [],
+    }
 
 
 def _runtime_case(case_name: str) -> dict[str, Any]:
