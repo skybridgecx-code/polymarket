@@ -1,48 +1,50 @@
-# Phase 18R — Review Packet Renderer Surface
+# Phase 18S — Review Bundle Surface
 
 ## Goal
 
-Add a bounded renderer surface that converts 18Q review packets into deterministic operator-facing text/markdown renderings for inspection and later export work.
+Add a bounded in-memory review bundle surface that composes the existing runtime result, review packet, and rendered review outputs into one deterministic bundle for downstream operator handling and later export work.
 
-This phase is about rendering only.
+This phase is about in-memory bundle construction only.
 
-18Q created structured success/failure review packets.
-18R should render those packets into stable human-readable outputs without introducing file writing, UI, or orchestration.
+18P introduced structured runtime results.
+18Q introduced structured review packets.
+18R introduced deterministic text/markdown rendering.
+
+18S should combine those layers into one stable review bundle without adding filesystem export, UI, persistence, or orchestration.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
-- `src/future_system/review_packets/*`
 - `src/future_system/runtime/*`
-- any directly relevant summary/helper code already used by runtime or review packet layers
+- `src/future_system/review_packets/*`
+- `src/future_system/review_renderers/*`
 
-Also read the directly relevant review packet tests before implementing.
+Also read the directly relevant tests for those layers before implementing.
 
 ## Required deliverable
 
-Build a bounded renderer layer that:
+Build a bounded review bundle layer that:
 
-- accepts the 18Q review packet models
-- produces deterministic operator-safe rendered output
-- supports at least:
-  - plain text rendering
-  - markdown rendering
+- accepts the structured runtime result envelope from 18P
+- derives the review packet using the 18Q builder
+- derives deterministic text and markdown renderings using the 18R renderer
+- returns a single deterministic in-memory review bundle model
+- supports both success and expected failure outcomes
 - preserves explicit distinction between:
-  - success review packet
-  - analyst timeout failure review packet
-  - analyst transport failure review packet
-  - reasoning parse failure review packet
-- exposes a small builder/renderer entrypoint that callers can use without knowing packet internals
+  - success
+  - analyst timeout failure
+  - analyst transport failure
+  - reasoning parse failure
+- exposes a small builder entrypoint for callers
 - is covered with deterministic unit tests only
 
 ## Scope allowed
 
 Allowed work in this phase:
 
-- new bounded files under `src/future_system/review_renderers/*`
-- or minimal bounded additions under `src/future_system/review_packets/*` if the repo shape strongly prefers that
-- minimal helper/model additions strictly needed for rendering
+- new bounded files under `src/future_system/review_bundles/*`
+- minimal helper/model additions strictly needed for the bundle surface
 - minimal test additions strictly needed for deterministic coverage
 
 ## Hard constraints
@@ -55,19 +57,17 @@ Do not:
 - add scheduling/orchestration
 - add UI
 - add execution/trading behavior
-- change runtime, policy, or reasoning logic
-- change review packet meaning/structure beyond minimal bounded rendering support
-- collapse failure stages into generic text
-- add speculative reporting/inbox architecture
+- change runtime, policy, reasoning, review packet, or renderer semantics beyond minimal bounded integration support
+- collapse failure stages into generic bundle status
+- add speculative queue/inbox/reporting architecture
 
 ## Desired shape
 
-Prefer a small dedicated rendering surface, for example:
+Prefer a small dedicated bundle surface, for example:
 
-- `src/future_system/review_renderers/__init__.py`
-- `src/future_system/review_renderers/renderer.py`
-
-Optionally add a small models/helpers file only if clearly necessary.
+- `src/future_system/review_bundles/__init__.py`
+- `src/future_system/review_bundles/models.py`
+- `src/future_system/review_bundles/builder.py`
 
 Tests should stay narrow and deterministic.
 
@@ -75,30 +75,31 @@ Tests should stay narrow and deterministic.
 
 The implementation must preserve this contract:
 
-1. Review packets remain the source of truth for operator review content.
-2. Renderer layer is downstream of review packet construction.
-3. Rendering does not re-run reasoning, runtime, or policy logic.
-4. Text and markdown outputs must be deterministic.
-5. Success and failure renderings must remain structurally distinct.
-6. Failure renderings must preserve exact failure-stage identity.
-7. Rendered output must remain operator-safe and based only on real packet contents.
+1. Runtime result remains the source of truth for success/failure outcome.
+2. Review packet remains the structured review representation.
+3. Renderer remains the source of text/markdown rendering.
+4. Review bundle is a pure composition layer downstream of those components.
+5. Review bundle construction does not re-run runtime, reasoning, or policy logic.
+6. Success and failure bundles remain structurally distinct or explicitly typed.
+7. Failure bundles preserve exact failure-stage identity.
+8. Bundle content remains deterministic and operator-safe.
 
-Renderer requirements:
+Review bundle requirements:
 
 - must include `theme_id`
-- must include packet kind/status
-- must include deterministic summary text
+- must include bundle status / kind
+- must include the original runtime result envelope or a bounded reference to it
+- must include the derived review packet
+- must include rendered plain text output
+- must include rendered markdown output
 - must include `run_flags`
-- failure renderings must include explicit failure stage
-- success renderings may include bounded reasoning/policy/result fields already present in the review packet
-- failure renderings must not invent fake reasoning or fake policy content
-- markdown output should be stable and readable, not styled for any UI framework
+- failure bundles must include explicit failure stage
+- success bundles may include bounded success details already present in upstream models
+- failure bundles must not invent fake reasoning or fake policy content
 
 Expose a small entrypoint such as:
 
-- render_review_packet(...)
-- render_review_packet_markdown(...)
-- render_review_packet_text(...)
+- `build_review_bundle(...)`
 
 or a similarly small bounded equivalent.
 
@@ -106,14 +107,15 @@ or a similarly small bounded equivalent.
 
 This phase is complete when:
 
-- callers can render 18Q review packets into deterministic plain text and markdown
-- success and failure renderings are explicit and structurally distinct
-- failure renderings explicitly distinguish:
+- callers can convert an 18P runtime result envelope into a deterministic review bundle
+- the bundle contains runtime result, review packet, text rendering, and markdown rendering
+- success and failure outcomes are preserved cleanly
+- failure bundles explicitly distinguish:
   - `analyst_timeout`
   - `analyst_transport`
   - `reasoning_parse`
-- no filesystem writing or UI work is added
-- tests cover success plus each expected failure stage in at least one rendering format, and confirm stable rendering behavior
+- no filesystem writing, DB work, UI work, or orchestration is added
+- tests cover success plus each expected failure stage
 - `src/polymarket_arb/*` remains untouched
 
 ## Validation
@@ -122,8 +124,8 @@ Run narrow validation only.
 
 At minimum, run the smallest reasonable set covering:
 
-- touched renderer/review packet files
-- touched tests
+- touched `review_bundles` files
+- any touched tests
 
 Use:
 
