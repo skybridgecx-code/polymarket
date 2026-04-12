@@ -1,4 +1,4 @@
-# Phase 18J — Theme-Linked News Evidence Assembly
+# Phase 18K — Opportunity Context Bundle
 
 ## Role
 You are the implementation engine, not the architect.
@@ -18,74 +18,75 @@ Preserve current boundaries.
 - `src/future_system/comparison/*` is the deterministic Polymarket-vs-crypto comparison layer.
 - `src/future_system/candidates/*` is the candidate signal layer.
 - `src/future_system/news_adapter/*` is the normalized news source boundary.
-- This phase adds the missing bridge from theme-linked definitions + normalized news records into a canonical theme-scoped news evidence packet.
-- This phase is deterministic assembly only.
-- Do not add live fetches, scraping, schedulers, reasoning, policy, execution, UI, storage, or mixed-family merger logic.
+- `src/future_system/news_evidence/*` is the theme-linked news evidence layer.
+- This phase adds a deterministic context-bundle layer that packages all canonical upstream packets into one stable operator/reasoning input.
+- This phase is bundling, completeness scoring, and deterministic summary only.
+- Do not add reasoning, prompts, policy, execution, UI, storage, schedulers, or live network logic.
 
 ## Why this phase exists
-The system now knows:
-- what themes are
-- what entities/topics matter to a theme
-- how to parse normalized news records
+The system now has many clean packet types, but they are still separate.
 
-But it still cannot answer:
-- what is the current news evidence for this theme
-- which records matched the theme
-- how fresh and trustworthy that matched news set is
-- whether the theme has decent news coverage or almost none
+That is a problem because:
+- future reasoning should not read seven packet types directly
+- operator review should not require manual stitching
+- logging/export surfaces need one stable artifact
+- later LLM prompts should consume one canonical input, not raw scattered structures
 
-This phase creates that canonical news evidence layer.
+This phase creates that canonical bundle.
 
 ## Phase objective
-Build `src/future_system/news_evidence/` so the system can:
+Build `src/future_system/context_bundle/` so the system can:
 
-1. accept a `ThemeLinkPacket`
-2. accept one or more `NormalizedNewsRecord` inputs
-3. select only the news records relevant to the linked theme entities/topics
-4. compute deterministic freshness / trust / coverage summaries
-5. emit a canonical `ThemeNewsEvidencePacket`
+1. accept canonical upstream packets for one theme:
+   - `ThemeLinkPacket`
+   - `ThemeEvidencePacket`
+   - `ThemeDivergencePacket`
+   - `ThemeCryptoEvidencePacket`
+   - `ThemeComparisonPacket`
+   - `ThemeNewsEvidencePacket`
+   - `CandidateSignalPacket`
+2. validate theme consistency across all inputs
+3. compute deterministic bundle completeness / quality summaries
+4. emit one canonical `OpportunityContextBundle`
+5. emit a short deterministic operator summary string
+6. expose a stable dict/JSON-ready export shape
 
-This phase does not do reasoning.
-This phase does not compare news to Polymarket or crypto yet.
-This phase does not perform contradiction analysis yet.
+This phase does not do LLM reasoning.
+This phase does not make policy decisions.
+This phase does not execute trades.
 
 ## In scope
 
 Create these files if they do not already exist:
 
-- `src/future_system/news_evidence/__init__.py`
-- `src/future_system/news_evidence/models.py`
-- `src/future_system/news_evidence/assembler.py`
-- `src/future_system/news_evidence/scoring.py`
+- `src/future_system/context_bundle/__init__.py`
+- `src/future_system/context_bundle/models.py`
+- `src/future_system/context_bundle/builder.py`
+- `src/future_system/context_bundle/summary.py`
 
 Create tests:
 
-- `tests/future_system/test_news_evidence_models.py`
-- `tests/future_system/test_news_evidence_assembler.py`
-- `tests/future_system/test_news_evidence_scoring.py`
+- `tests/future_system/test_context_bundle_models.py`
+- `tests/future_system/test_context_bundle_builder.py`
+- `tests/future_system/test_context_bundle_summary.py`
 
 Create fixtures:
 
-- `tests/fixtures/future_system/news/theme_news_records.json`
+- `tests/fixtures/future_system/context_bundle/context_bundle_inputs.json`
 
 Follow existing repo style and fixture conventions if they already exist.
 
 ## Out of scope
 Do not build or touch:
 
-- live HTTP/news clients
-- scraping
-- scheduler / polling jobs
-- contradiction engine
-- mixed-family evidence merger
-- Polymarket-vs-news comparison
-- crypto-vs-news comparison
 - reasoning / prompts / LLM logic
 - policy engine
 - execution logic
 - CLI/API surfaces
 - dashboard/UI
 - persistence/database
+- schedulers
+- live network calls
 - repo-wide refactors
 
 ## Do not touch
@@ -100,175 +101,170 @@ If imports require tiny changes elsewhere, keep them minimal and explain them.
 
 Implement strongly typed models using existing repo conventions.
 
-### 1. `MatchedNewsEvidence`
-Represents one matched news record’s theme-scoped evidence.
+### 1. `BundleComponentStatus`
+Use an enum or literal model for:
+- `present`
+- `partial`
+- `missing`
+
+### 2. `BundleQualitySummary`
+Represents deterministic bundle-level quality information.
 
 Suggested fields:
-- `article_id: str`
-- `publisher: str`
-- `source_type: Literal["wire", "official", "newsroom", "analysis", "other"]`
-- `headline: str`
-- `published_at: datetime`
-- `trust_score: float`
+- `completeness_score: float`
 - `freshness_score: float`
-- `match_reasons: list[str]`
-- `entities: list[str]`
-- `topics: list[str]`
+- `confidence_score: float`
+- `conflict_score: float`
+- `component_statuses: dict[str, BundleComponentStatus]`
 - `flags: list[str]`
-- `is_primary: bool = False`
 
-### 2. `ThemeNewsEvidencePacket`
-Canonical news evidence output for one theme.
+All bounded scores must be within `[0.0, 1.0]`.
+
+### 3. `OpportunityContextBundle`
+Canonical bundled context for one theme.
 
 Suggested fields:
 - `theme_id: str`
-- `primary_article_id: str | None`
-- `matched_records: list[MatchedNewsEvidence]`
-- `matched_article_count: int`
-- `freshness_score: float`
-- `trust_score: float`
-- `coverage_score: float`
-- `official_source_present: bool`
+- `title: str | None`
+- `theme_link: ThemeLinkPacket`
+- `polymarket_evidence: ThemeEvidencePacket`
+- `divergence: ThemeDivergencePacket`
+- `crypto_evidence: ThemeCryptoEvidencePacket`
+- `comparison: ThemeComparisonPacket`
+- `news_evidence: ThemeNewsEvidencePacket`
+- `candidate: CandidateSignalPacket`
+- `quality: BundleQualitySummary`
+- `operator_summary: str`
 - `flags: list[str]`
-- `explanation: str`
 
-### 3. `NewsEvidenceAssemblyError`
-Raised when assembly cannot build a valid packet from the provided theme links and normalized news records.
+### 4. `ContextBundleError`
+Raised when the bundle cannot be built from the provided packets.
 
-## Assembly behavior
+## Bundle build behavior
 
-Implement deterministic assembly from:
-- `ThemeLinkPacket`
-- sequence of `NormalizedNewsRecord` or plain mappings that validate into that model
+Implement deterministic bundle construction from the seven canonical packet types listed above.
 
 Rules:
 
-1. Match news records only when they are relevant to the theme.
+1. Theme ids must match across all inputs.
+   - if they do not, raise `ContextBundleError`
 
-Use small explicit matching logic:
-- entity overlap with theme-linked news entities
-- topic overlap with normalized theme title / aliases / primary question tokens if useful
-- optional publisher relevance only if it falls naturally out of the fixture and tests
+2. `title`
+   - may come from the theme-linked packet or another upstream source if available
+   - if unavailable, allow `None`
+   - do not fabricate titles
 
-Keep it deterministic and inspectable.
-No fuzzy semantic matching.
-No embeddings.
-No LLMs.
+3. Component statuses:
+   Determine status for each family at minimum:
+   - `theme_link`
+   - `polymarket_evidence`
+   - `divergence`
+   - `crypto_evidence`
+   - `comparison`
+   - `news_evidence`
+   - `candidate`
 
-2. If no news records match:
-- raise `NewsEvidenceAssemblyError`
-- do not invent a packet
+Use small explicit deterministic rules.
+Examples:
+- `present` when required fields and usable scores exist
+- `partial` when packet exists but is weak/flagged/incomplete
+- `missing` only if a required packet cannot support a usable context state
 
-3. Matching reasons should be explicit and deterministic, such as:
-- `entity_match`
-- `topic_match`
-- `official_source_match`
+Because this phase receives canonical packets, `missing` may be uncommon, but allow it when packet contents are effectively unusable.
 
-4. Only select records that have at least one explicit match reason.
-
-5. Primary record selection should be deterministic:
-- official source wins over non-official
-- then highest trust score
-- then freshest `published_at`
-- final tie-break: `article_id` ascending
-
-6. Freshness score:
-- compute deterministically from `published_at` age relative to an explicit `reference_time` input
-- no hidden current time usage
-
-Suggested buckets:
-- <= 2 hours: 1.00
-- <= 12 hours: 0.80
-- <= 1 day: 0.60
-- <= 3 days: 0.35
-- > 3 days: 0.15 and add stale flag
-
-7. Trust score:
-- packet trust score should be a deterministic aggregation of matched record trust scores
-- keep it simple and explicit
-- mean is acceptable
-
-8. Coverage score:
+4. `completeness_score`
 - bounded in `[0.0, 1.0]`
-- should reflect how well the theme’s linked entities/topics are represented in matched records
-- keep it simple and explicit
+- deterministic function of component statuses
+- higher when more families are present and usable
 
-A reasonable approach:
-- count how many linked news entities are observed across matched records
-- divide by total linked news entities
-- if no linked news entities exist in the theme packet, raise `NewsEvidenceAssemblyError`
+5. `freshness_score`
+- bounded in `[0.0, 1.0]`
+- deterministic aggregation from upstream packet freshness/quality signals
+- keep simple and explicit
 
-9. Official source presence:
-- `True` if any matched record has `is_official_source == True`
+6. `confidence_score`
+- bounded in `[0.0, 1.0]`
+- deterministic aggregation from candidate/comparison/news/polymarket/crypto quality signals
+- keep simple and explicit
 
-10. Flags:
-Surface explicit flags for cases like:
-- `stale_news_evidence`
-- `weak_news_trust`
-- `weak_news_coverage`
-- `official_source_present`
-- `single_source_only`
-- `single_article_match`
+7. `conflict_score`
+- bounded in `[0.0, 1.0]`
+- deterministic aggregation from divergence + comparison conflict + important negative flags
 
-11. Explanation:
-Produce a short deterministic explanation string summarizing:
-- matched article count
-- primary article id
-- freshness / trust / coverage scores
-- official-source presence
-- key flags
+8. Bundle flags:
+Surface explicit packet-level flags for cases like:
+- `context_incomplete`
+- `stale_context`
+- `weak_news_context`
+- `weak_crypto_context`
+- `cross_market_conflict`
+- `high_internal_divergence`
+- `candidate_insufficient`
 
-## Scoring requirements
-Create small pure functions in `scoring.py`.
+Carry forward only important flags.
+Do not dump every upstream flag blindly.
 
-Suggested functions:
-- `compute_news_freshness_score(...)`
-- `compute_news_trust_score(...)`
-- `compute_news_coverage_score(...)`
+9. `operator_summary`
+Produce a short deterministic summary string including:
+- theme id
+- candidate posture
+- comparison alignment
+- key scores
+- top bundle flags
 
-Keep them:
-- deterministic
-- bounded
+This summary is for operators and later prompt input.
+It must remain deterministic and compact.
+
+10. Export shape
+Expose a helper in `builder.py` or `summary.py` that returns a stable dict/JSON-ready representation.
+Keep it explicit and deterministic.
+No custom serializer framework needed.
+
+## Summary behavior
+
+Implement one small deterministic helper that produces a compact summary string from an `OpportunityContextBundle`.
+
+Keep it:
+- stable
 - easy to inspect
 - free of side effects
 
-No randomization.
-No hidden global time.
-No network assumptions.
+No templating engine.
+No LLM use.
 
 ## Test requirements
 
-### `test_news_evidence_models.py`
+### `test_context_bundle_models.py`
 Cover:
-- valid packet models
+- valid bundle models
 - invalid bounded scores rejected
-- required fields enforced
+- invalid component statuses rejected
 
-### `test_news_evidence_assembler.py`
+### `test_context_bundle_builder.py`
 Cover:
-- linked news records selected correctly
-- unmatched records excluded
-- no matches raises `NewsEvidenceAssemblyError`
-- no linked news entities raises `NewsEvidenceAssemblyError`
-- primary record selection deterministic
-- coverage score deterministic
-- stale / weak-coverage / official-source flags surface correctly
-- explanation string deterministic
+- matching theme ids required
+- bundle builds successfully from valid canonical packets
+- completeness/freshness/confidence/conflict scores are bounded
+- component statuses deterministic
+- important flags propagate appropriately
+- export shape deterministic
+- title handling deterministic
 
-### `test_news_evidence_scoring.py`
+### `test_context_bundle_summary.py`
 Cover:
-- freshness score buckets
-- trust score bounded in `[0,1]`
-- coverage score bounded in `[0,1]`
-- deterministic outputs for known inputs
+- operator summary string deterministic
+- summary reflects candidate posture
+- summary reflects comparison alignment
+- summary reflects bundle flags
+- edge cases with weak/incomplete contexts remain deterministic
 
 ## Fixtures
 Create a small deterministic fixture set with at least:
-- one official-source record
-- one wire record
-- one newsroom or analysis record
-- one unrelated record that must be ignored
-- timestamps that allow at least one stale case in tests
+- one strong/complete context
+- one weak/incomplete context
+- one conflicted context
+
+These can be JSON representations of the upstream canonical packets needed to build the bundle.
 
 ## Constraints
 - keep code small
@@ -276,33 +272,34 @@ Create a small deterministic fixture set with at least:
 - do not add new dependencies unless absolutely necessary
 - do not fetch live data
 - do not touch `src/polymarket_arb/*`
-- do not implement contradiction analysis or reasoning in this phase
+- do not implement reasoning/policy/trading in this phase
 
 ## Acceptance criteria
 This phase is complete only if all are true:
 
-1. `src/future_system/news_evidence/*` exists with the files listed above
+1. `src/future_system/context_bundle/*` exists with the files listed above
 2. typed models validate correctly
-3. assembler consumes `ThemeLinkPacket` + normalized news records
-4. only linked news-relevant records are included
-5. deterministic primary record selection works
-6. freshness / trust / coverage scores are deterministic and bounded
-7. explicit flags surface correctly
-8. tests pass
-9. no unrelated modules were modified
-10. `src/polymarket_arb/*` remains untouched
+3. builder consumes the canonical upstream packets
+4. theme consistency is enforced
+5. completeness/freshness/confidence/conflict scores are deterministic and bounded
+6. component statuses are deterministic
+7. operator summary is deterministic
+8. stable export shape exists
+9. tests pass
+10. no unrelated modules were modified
+11. `src/polymarket_arb/*` remains untouched
 
 ## Validation
 Before finishing:
 - inspect repo commands and run the narrowest relevant checks
 - run targeted tests first
 - run narrow ruff check for touched files
-- run narrow mypy check for the new news evidence module if mypy is already in use
+- run narrow mypy check for the new context bundle module if mypy is already in use
 
 At minimum, run:
-- targeted pytest for the new news evidence tests
+- targeted pytest for the new context bundle tests
 - narrow ruff check for touched files
-- narrow mypy check for the new news evidence module
+- narrow mypy check for the new context bundle module
 
 ## Final output format
 Return only:
@@ -318,5 +315,4 @@ Mention earlier failed runs only in section 4 if they occurred.
 
 Do not widen the phase.
 Do not start reasoning or policy.
-Do not start mixed-family comparison updates.
 Complete only this bounded phase.
