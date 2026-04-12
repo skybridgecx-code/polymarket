@@ -1,0 +1,816 @@
+[
+  {
+    "case": "allow",
+    "expected_decision": "allow",
+    "context_bundle": {
+      "theme_id": "theme_ctx_strong",
+      "title": "Crypto Regulation Signal",
+      "theme_link": {
+        "theme_id": "theme_ctx_strong",
+        "matched_polymarket_markets": [
+          {
+            "condition_id": "0xctxstrong1",
+            "market_slug": "crypto-regulation-signal",
+            "event_slug": "regulation-monitoring",
+            "outcome_map": {
+              "Yes": "yes",
+              "No": "no"
+            },
+            "confidence": 0.94,
+            "link_basis": "manual",
+            "notes": "Strong context fixture link."
+          }
+        ],
+        "matched_assets": [
+          {
+            "symbol": "BTC",
+            "asset_type": "spot",
+            "relevance": 0.8,
+            "role": "primary_proxy",
+            "direction_if_theme_up": "up",
+            "link_basis": "manual"
+          }
+        ],
+        "matched_entities": [
+          {
+            "entity_name": "SEC",
+            "entity_type": "institution",
+            "relevance": 0.9,
+            "required": true
+          },
+          {
+            "entity_name": "Federal Reserve",
+            "entity_type": "institution",
+            "relevance": 0.8,
+            "required": true
+          }
+        ],
+        "ambiguity_flags": [],
+        "confidence_score": 0.91,
+        "explanation": "Strong linked theme packet."
+      },
+      "polymarket_evidence": {
+        "theme_id": "theme_ctx_strong",
+        "primary_market_slug": "crypto-regulation-signal",
+        "market_evidence": [
+          {
+            "market_slug": "crypto-regulation-signal",
+            "condition_id": "0xctxstrong1",
+            "implied_yes_probability": 0.66,
+            "spread": 0.03,
+            "liquidity_score": 0.81,
+            "freshness_score": 0.87,
+            "flags": [],
+            "is_primary": true
+          }
+        ],
+        "aggregate_yes_probability": 0.66,
+        "liquidity_score": 0.81,
+        "freshness_score": 0.87,
+        "evidence_score": 0.83,
+        "flags": [],
+        "explanation": "Strong polymarket evidence packet."
+      },
+      "divergence": {
+        "theme_id": "theme_ctx_strong",
+        "primary_market_slug": "crypto-regulation-signal",
+        "aggregate_yes_probability": 0.66,
+        "dispersion_score": 0.16,
+        "quality_penalty": 0.18,
+        "divergence_score": 0.17,
+        "posture": "aligned",
+        "market_disagreements": [
+          {
+            "market_slug": "crypto-regulation-signal",
+            "condition_id": "0xctxstrong1",
+            "implied_yes_probability": 0.66,
+            "distance_from_aggregate": 0.0,
+            "liquidity_score": 0.81,
+            "freshness_score": 0.87,
+            "flags": [],
+            "severity": "low"
+          }
+        ],
+        "flags": [],
+        "explanation": "Low divergence packet."
+      },
+      "crypto_evidence": {
+        "theme_id": "theme_ctx_strong",
+        "primary_symbol": "BTC-PERP",
+        "proxy_evidence": [
+          {
+            "symbol": "BTC-PERP",
+            "market_type": "perp",
+            "exchange": "deribit",
+            "role": "primary_proxy",
+            "direction_if_theme_up": "up",
+            "last_price": 70420.0,
+            "mid_price": 70420.0,
+            "funding_rate": 0.0001,
+            "open_interest": 11500000.0,
+            "liquidity_score": 0.78,
+            "freshness_score": 0.84,
+            "flags": [],
+            "is_primary": true
+          }
+        ],
+        "matched_symbols": [
+          "BTC-PERP"
+        ],
+        "liquidity_score": 0.78,
+        "freshness_score": 0.84,
+        "coverage_score": 0.92,
+        "flags": [],
+        "explanation": "Strong crypto evidence packet."
+      },
+      "comparison": {
+        "theme_id": "theme_ctx_strong",
+        "polymarket_summary": {
+          "family": "polymarket",
+          "direction": "bullish",
+          "strength_score": 0.84,
+          "freshness_score": 0.87,
+          "liquidity_score": 0.81,
+          "coverage_score": null,
+          "flags": []
+        },
+        "crypto_summary": {
+          "family": "crypto",
+          "direction": "bullish",
+          "strength_score": 0.8,
+          "freshness_score": 0.84,
+          "liquidity_score": 0.78,
+          "coverage_score": 0.92,
+          "flags": []
+        },
+        "alignment": "aligned",
+        "agreement_score": 0.9,
+        "confidence_score": 0.83,
+        "flags": [],
+        "explanation": "Aligned comparison packet."
+      },
+      "news_evidence": {
+        "theme_id": "theme_ctx_strong",
+        "primary_article_id": "official-001",
+        "matched_records": [
+          {
+            "article_id": "official-001",
+            "publisher": "sec",
+            "source_type": "official",
+            "headline": "SEC Updates Digital Asset Guidance",
+            "published_at": "2026-04-11T11:30:00Z",
+            "trust_score": 0.92,
+            "freshness_score": 1.0,
+            "match_reasons": [
+              "entity_match",
+              "official_source_match"
+            ],
+            "entities": [
+              "sec",
+              "digital assets"
+            ],
+            "topics": [
+              "regulation",
+              "crypto"
+            ],
+            "flags": [],
+            "is_primary": true
+          },
+          {
+            "article_id": "wire-001",
+            "publisher": "reuters",
+            "source_type": "wire",
+            "headline": "Fed Officials Signal Caution",
+            "published_at": "2026-04-11T07:00:00Z",
+            "trust_score": 0.84,
+            "freshness_score": 0.8,
+            "match_reasons": [
+              "entity_match"
+            ],
+            "entities": [
+              "federal reserve",
+              "jerome powell"
+            ],
+            "topics": [
+              "macro",
+              "rates"
+            ],
+            "flags": [],
+            "is_primary": false
+          }
+        ],
+        "matched_article_count": 2,
+        "freshness_score": 0.9,
+        "trust_score": 0.88,
+        "coverage_score": 0.8,
+        "official_source_present": true,
+        "flags": [
+          "official_source_present"
+        ],
+        "explanation": "Strong theme-linked news evidence packet."
+      },
+      "candidate": {
+        "theme_id": "theme_ctx_strong",
+        "title": "Crypto Regulation Signal",
+        "posture": "candidate",
+        "candidate_score": 0.84,
+        "confidence_score": 0.86,
+        "conflict_score": 0.12,
+        "alignment": "aligned",
+        "primary_market_slug": "crypto-regulation-signal",
+        "primary_symbol": "BTC-PERP",
+        "reason_codes": [
+          "strong_cross_market_alignment"
+        ],
+        "flags": [],
+        "explanation": "Strong candidate signal packet."
+      },
+      "quality": {
+        "completeness_score": 1.0,
+        "freshness_score": 0.87,
+        "confidence_score": 0.859,
+        "conflict_score": 0.127,
+        "component_statuses": {
+          "theme_link": "present",
+          "polymarket_evidence": "present",
+          "divergence": "present",
+          "crypto_evidence": "present",
+          "comparison": "present",
+          "news_evidence": "present",
+          "candidate": "present"
+        },
+        "flags": []
+      },
+      "operator_summary": "theme_id=theme_ctx_strong; posture=candidate; alignment=aligned; completeness=1.000; freshness=0.870; confidence=0.859; conflict=0.127; flags=none.",
+      "flags": []
+    },
+    "reasoning_output": {
+      "theme_id": "theme_ctx_strong",
+      "thesis": "Aligned comparison and high-quality context support advancing this candidate.",
+      "counter_thesis": "Rapid policy headlines could still reverse signal quality.",
+      "key_drivers": [
+        "Strong candidate score with aligned cross-market evidence",
+        "Context quality remains high across completeness and freshness"
+      ],
+      "missing_information": [
+        "Updated regulator statement timing"
+      ],
+      "uncertainty_notes": [
+        "Macro headline sensitivity remains elevated"
+      ],
+      "recommended_posture": "candidate",
+      "confidence_explanation": "High context quality and low conflict support an allow posture.",
+      "analyst_flags": [
+        "monitor_regulatory_calendar"
+      ]
+    }
+  },
+  {
+    "case": "hold",
+    "expected_decision": "hold",
+    "context_bundle": {
+      "theme_id": "theme_ctx_weak",
+      "title": "Weak Context Monitoring Candidate",
+      "theme_link": {
+        "theme_id": "theme_ctx_weak",
+        "matched_polymarket_markets": [
+          {
+            "condition_id": "0xctxweak1",
+            "market_slug": "weak-context-market",
+            "event_slug": "weak-context-event",
+            "outcome_map": {
+              "Yes": "yes",
+              "No": "no"
+            },
+            "confidence": 0.55,
+            "link_basis": "rule",
+            "notes": "Weak context fixture link."
+          }
+        ],
+        "matched_assets": [],
+        "matched_entities": [
+          {
+            "entity_name": "Bank of Japan",
+            "entity_type": "institution",
+            "relevance": 0.7,
+            "required": true
+          }
+        ],
+        "ambiguity_flags": [
+          "multiple_strong_matches:theme_ctx_weak,theme_adjacent"
+        ],
+        "confidence_score": 0.42,
+        "explanation": "Weak linked theme packet."
+      },
+      "polymarket_evidence": {
+        "theme_id": "theme_ctx_weak",
+        "primary_market_slug": "weak-context-market",
+        "market_evidence": [
+          {
+            "market_slug": "weak-context-market",
+            "condition_id": "0xctxweak1",
+            "implied_yes_probability": null,
+            "spread": null,
+            "liquidity_score": 0.36,
+            "freshness_score": 0.42,
+            "flags": [
+              "missing_implied_probability",
+              "stale_snapshot"
+            ],
+            "is_primary": true
+          }
+        ],
+        "aggregate_yes_probability": null,
+        "liquidity_score": 0.36,
+        "freshness_score": 0.42,
+        "evidence_score": 0.36,
+        "flags": [
+          "missing_probability_inputs",
+          "stale_snapshot"
+        ],
+        "explanation": "Weak polymarket evidence packet."
+      },
+      "divergence": {
+        "theme_id": "theme_ctx_weak",
+        "primary_market_slug": "weak-context-market",
+        "aggregate_yes_probability": null,
+        "dispersion_score": 0.41,
+        "quality_penalty": 0.66,
+        "divergence_score": 0.58,
+        "posture": "insufficient",
+        "market_disagreements": [
+          {
+            "market_slug": "weak-context-market",
+            "condition_id": "0xctxweak1",
+            "implied_yes_probability": null,
+            "distance_from_aggregate": null,
+            "liquidity_score": 0.36,
+            "freshness_score": 0.42,
+            "flags": [
+              "missing_implied_probability"
+            ],
+            "severity": "unknown"
+          }
+        ],
+        "flags": [
+          "no_aggregate_probability",
+          "missing_probability_inputs"
+        ],
+        "explanation": "Insufficient divergence packet."
+      },
+      "crypto_evidence": {
+        "theme_id": "theme_ctx_weak",
+        "primary_symbol": "JPY-USD",
+        "proxy_evidence": [
+          {
+            "symbol": "JPY-USD",
+            "market_type": "spot",
+            "exchange": "coinbase",
+            "role": "primary_proxy",
+            "direction_if_theme_up": "unknown",
+            "last_price": null,
+            "mid_price": null,
+            "funding_rate": null,
+            "open_interest": null,
+            "liquidity_score": 0.41,
+            "freshness_score": 0.44,
+            "flags": [
+              "missing_price_data",
+              "stale_snapshot"
+            ],
+            "is_primary": true
+          }
+        ],
+        "matched_symbols": [
+          "JPY-USD"
+        ],
+        "liquidity_score": 0.41,
+        "freshness_score": 0.44,
+        "coverage_score": 0.33,
+        "flags": [
+          "missing_price_data",
+          "stale_snapshot",
+          "weak_crypto_coverage"
+        ],
+        "explanation": "Weak crypto evidence packet."
+      },
+      "comparison": {
+        "theme_id": "theme_ctx_weak",
+        "polymarket_summary": {
+          "family": "polymarket",
+          "direction": "unknown",
+          "strength_score": 0.33,
+          "freshness_score": 0.42,
+          "liquidity_score": 0.36,
+          "coverage_score": null,
+          "flags": [
+            "missing_probability_inputs"
+          ]
+        },
+        "crypto_summary": {
+          "family": "crypto",
+          "direction": "unknown",
+          "strength_score": 0.35,
+          "freshness_score": 0.44,
+          "liquidity_score": 0.41,
+          "coverage_score": 0.33,
+          "flags": [
+            "missing_price_data"
+          ]
+        },
+        "alignment": "weakly_aligned",
+        "agreement_score": 0.54,
+        "confidence_score": 0.58,
+        "flags": [
+          "stale_polymarket_evidence"
+        ],
+        "explanation": "Weakly aligned but incomplete cross-market setup."
+      },
+      "news_evidence": {
+        "theme_id": "theme_ctx_weak",
+        "primary_article_id": "weak-news-001",
+        "matched_records": [
+          {
+            "article_id": "weak-news-001",
+            "publisher": "regional desk",
+            "source_type": "analysis",
+            "headline": "Macro Team Notes Uncertain Direction",
+            "published_at": "2026-04-05T08:00:00Z",
+            "trust_score": 0.52,
+            "freshness_score": 0.15,
+            "match_reasons": [
+              "topic_match"
+            ],
+            "entities": [
+              "bank of japan"
+            ],
+            "topics": [
+              "macro"
+            ],
+            "flags": [
+              "stale_news_record"
+            ],
+            "is_primary": true
+          }
+        ],
+        "matched_article_count": 1,
+        "freshness_score": 0.15,
+        "trust_score": 0.52,
+        "coverage_score": 0.3,
+        "official_source_present": false,
+        "flags": [
+          "stale_news_evidence",
+          "weak_news_coverage",
+          "single_source_only",
+          "single_article_match"
+        ],
+        "explanation": "Weak theme-linked news evidence packet."
+      },
+      "candidate": {
+        "theme_id": "theme_ctx_weak",
+        "title": null,
+        "posture": "watch",
+        "candidate_score": 0.6,
+        "confidence_score": 0.6,
+        "conflict_score": 0.45,
+        "alignment": "weakly_aligned",
+        "primary_market_slug": "weak-context-market",
+        "primary_symbol": "JPY-USD",
+        "reason_codes": [
+          "weak_cross_market_alignment",
+          "stale_evidence"
+        ],
+        "flags": [
+          "stale_evidence"
+        ],
+        "explanation": "Candidate is usable for monitoring but not execution-ready."
+      },
+      "quality": {
+        "completeness_score": 0.58,
+        "freshness_score": 0.46,
+        "confidence_score": 0.6,
+        "conflict_score": 0.42,
+        "component_statuses": {
+          "theme_link": "partial",
+          "polymarket_evidence": "partial",
+          "divergence": "partial",
+          "crypto_evidence": "partial",
+          "comparison": "partial",
+          "news_evidence": "partial",
+          "candidate": "partial"
+        },
+        "flags": [
+          "context_incomplete",
+          "stale_context",
+          "weak_news_context"
+        ]
+      },
+      "operator_summary": "Context remains incomplete and stale, but conflict is moderate enough to hold for follow-up evidence.",
+      "flags": [
+        "context_incomplete",
+        "stale_context",
+        "weak_news_context",
+        "non_critical_flag"
+      ]
+    },
+    "reasoning_output": {
+      "theme_id": "theme_ctx_weak",
+      "thesis": "The setup is directionally coherent but still too incomplete for forward allowance.",
+      "counter_thesis": "Stale and missing context can hide emerging conflict.",
+      "key_drivers": [
+        "Partial context quality with moderate candidate score",
+        "Weakly aligned comparison without strong confirmation"
+      ],
+      "missing_information": [
+        "Fresh official-source confirmation",
+        "Updated probability inputs for primary market"
+      ],
+      "uncertainty_notes": [
+        "Signal may shift after next macro release",
+        "Current news sample may not represent full narrative"
+      ],
+      "recommended_posture": "watch",
+      "confidence_explanation": "Hold is preferred while context gaps are resolved.",
+      "analyst_flags": [
+        "follow_up_evidence",
+        "non_actionable_note"
+      ]
+    }
+  },
+  {
+    "case": "deny",
+    "expected_decision": "deny",
+    "context_bundle": {
+      "theme_id": "theme_ctx_conflicted",
+      "title": "Election Shock Risk",
+      "theme_link": {
+        "theme_id": "theme_ctx_conflicted",
+        "matched_polymarket_markets": [
+          {
+            "condition_id": "0xctxconflict1",
+            "market_slug": "election-shock-risk",
+            "event_slug": "election-volatility",
+            "outcome_map": {
+              "Yes": "yes",
+              "No": "no"
+            },
+            "confidence": 0.9,
+            "link_basis": "manual",
+            "notes": "Conflicted context fixture link."
+          }
+        ],
+        "matched_assets": [
+          {
+            "symbol": "BTC",
+            "asset_type": "perp",
+            "relevance": 0.76,
+            "role": "primary_proxy",
+            "direction_if_theme_up": "down",
+            "link_basis": "historical"
+          }
+        ],
+        "matched_entities": [
+          {
+            "entity_name": "Federal Reserve",
+            "entity_type": "institution",
+            "relevance": 0.8,
+            "required": true
+          }
+        ],
+        "ambiguity_flags": [],
+        "confidence_score": 0.86,
+        "explanation": "Conflicted linked theme packet."
+      },
+      "polymarket_evidence": {
+        "theme_id": "theme_ctx_conflicted",
+        "primary_market_slug": "election-shock-risk",
+        "market_evidence": [
+          {
+            "market_slug": "election-shock-risk",
+            "condition_id": "0xctxconflict1",
+            "implied_yes_probability": 0.72,
+            "spread": 0.03,
+            "liquidity_score": 0.8,
+            "freshness_score": 0.82,
+            "flags": [],
+            "is_primary": true
+          }
+        ],
+        "aggregate_yes_probability": 0.72,
+        "liquidity_score": 0.8,
+        "freshness_score": 0.82,
+        "evidence_score": 0.79,
+        "flags": [],
+        "explanation": "Conflicted polymarket evidence packet."
+      },
+      "divergence": {
+        "theme_id": "theme_ctx_conflicted",
+        "primary_market_slug": "election-shock-risk",
+        "aggregate_yes_probability": 0.72,
+        "dispersion_score": 0.79,
+        "quality_penalty": 0.31,
+        "divergence_score": 0.78,
+        "posture": "conflicted",
+        "market_disagreements": [
+          {
+            "market_slug": "election-shock-risk",
+            "condition_id": "0xctxconflict1",
+            "implied_yes_probability": 0.72,
+            "distance_from_aggregate": 0.0,
+            "liquidity_score": 0.8,
+            "freshness_score": 0.82,
+            "flags": [],
+            "severity": "high"
+          }
+        ],
+        "flags": [
+          "high_internal_dispersion"
+        ],
+        "explanation": "Conflicted divergence packet."
+      },
+      "crypto_evidence": {
+        "theme_id": "theme_ctx_conflicted",
+        "primary_symbol": "BTC-PERP",
+        "proxy_evidence": [
+          {
+            "symbol": "BTC-PERP",
+            "market_type": "perp",
+            "exchange": "deribit",
+            "role": "primary_proxy",
+            "direction_if_theme_up": "down",
+            "last_price": 70110.0,
+            "mid_price": 70110.0,
+            "funding_rate": -0.0002,
+            "open_interest": 10400000.0,
+            "liquidity_score": 0.76,
+            "freshness_score": 0.78,
+            "flags": [],
+            "is_primary": true
+          }
+        ],
+        "matched_symbols": [
+          "BTC-PERP"
+        ],
+        "liquidity_score": 0.76,
+        "freshness_score": 0.78,
+        "coverage_score": 0.85,
+        "flags": [],
+        "explanation": "Conflicted crypto evidence packet."
+      },
+      "comparison": {
+        "theme_id": "theme_ctx_conflicted",
+        "polymarket_summary": {
+          "family": "polymarket",
+          "direction": "bullish",
+          "strength_score": 0.8,
+          "freshness_score": 0.82,
+          "liquidity_score": 0.8,
+          "coverage_score": null,
+          "flags": []
+        },
+        "crypto_summary": {
+          "family": "crypto",
+          "direction": "bearish",
+          "strength_score": 0.77,
+          "freshness_score": 0.78,
+          "liquidity_score": 0.76,
+          "coverage_score": 0.85,
+          "flags": []
+        },
+        "alignment": "conflicted",
+        "agreement_score": 0.18,
+        "confidence_score": 0.74,
+        "flags": [
+          "cross_market_conflict"
+        ],
+        "explanation": "Conflicted comparison packet."
+      },
+      "news_evidence": {
+        "theme_id": "theme_ctx_conflicted",
+        "primary_article_id": "wire-900",
+        "matched_records": [
+          {
+            "article_id": "wire-900",
+            "publisher": "reuters",
+            "source_type": "wire",
+            "headline": "Fed Signals Split Scenario",
+            "published_at": "2026-04-11T10:30:00Z",
+            "trust_score": 0.82,
+            "freshness_score": 1.0,
+            "match_reasons": [
+              "entity_match"
+            ],
+            "entities": [
+              "federal reserve"
+            ],
+            "topics": [
+              "macro"
+            ],
+            "flags": [],
+            "is_primary": true
+          },
+          {
+            "article_id": "official-901",
+            "publisher": "treasury",
+            "source_type": "official",
+            "headline": "Treasury Statement on Market Stability",
+            "published_at": "2026-04-10T20:00:00Z",
+            "trust_score": 0.76,
+            "freshness_score": 0.8,
+            "match_reasons": [
+              "topic_match",
+              "official_source_match"
+            ],
+            "entities": [
+              "us treasury"
+            ],
+            "topics": [
+              "policy",
+              "macro"
+            ],
+            "flags": [],
+            "is_primary": false
+          }
+        ],
+        "matched_article_count": 2,
+        "freshness_score": 0.9,
+        "trust_score": 0.79,
+        "coverage_score": 0.67,
+        "official_source_present": true,
+        "flags": [
+          "official_source_present"
+        ],
+        "explanation": "Conflicted context news evidence packet."
+      },
+      "candidate": {
+        "theme_id": "theme_ctx_conflicted",
+        "title": "Election Shock Risk",
+        "posture": "high_conflict",
+        "candidate_score": 0.44,
+        "confidence_score": 0.61,
+        "conflict_score": 0.82,
+        "alignment": "conflicted",
+        "primary_market_slug": "election-shock-risk",
+        "primary_symbol": "BTC-PERP",
+        "reason_codes": [
+          "cross_market_conflict",
+          "high_internal_divergence"
+        ],
+        "flags": [
+          "cross_market_conflict",
+          "high_internal_divergence"
+        ],
+        "explanation": "High-conflict candidate signal packet."
+      },
+      "quality": {
+        "completeness_score": 1.0,
+        "freshness_score": 0.833,
+        "confidence_score": 0.723,
+        "conflict_score": 1.0,
+        "component_statuses": {
+          "theme_link": "present",
+          "polymarket_evidence": "present",
+          "divergence": "present",
+          "crypto_evidence": "present",
+          "comparison": "present",
+          "news_evidence": "present",
+          "candidate": "present"
+        },
+        "flags": [
+          "cross_market_conflict",
+          "high_internal_divergence"
+        ]
+      },
+      "operator_summary": "theme_id=theme_ctx_conflicted; posture=high_conflict; alignment=conflicted; completeness=1.000; freshness=0.833; confidence=0.723; conflict=1.000; flags=cross_market_conflict,high_internal_divergence.",
+      "flags": [
+        "cross_market_conflict",
+        "high_internal_divergence"
+      ]
+    },
+    "reasoning_output": {
+      "theme_id": "theme_ctx_conflicted",
+      "thesis": "Cross-market conflict is too high to proceed safely.",
+      "counter_thesis": "Headline support exists but does not offset structural conflict signals.",
+      "key_drivers": [
+        "Comparison remains conflicted with high internal divergence",
+        "Risk penalty remains elevated despite complete context"
+      ],
+      "missing_information": [
+        "Resolved directional confirmation from primary proxy",
+        "Updated order-flow confirmation for conflicting markets",
+        "Independent confirmation from a second official source"
+      ],
+      "uncertainty_notes": [
+        "Directional disagreement may persist through the next cycle",
+        "Market response could remain unstable under policy headlines"
+      ],
+      "recommended_posture": "deny",
+      "confidence_explanation": "Deny posture is required due to explicit conflict and policy risk.",
+      "analyst_flags": [
+        "policy_blocker",
+        "reasoning_posture_deny",
+        "non_actionable_note"
+      ]
+    }
+  }
+]
