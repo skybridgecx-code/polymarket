@@ -1,13 +1,13 @@
-# Phase 18P — Runtime Result Surface
+# Phase 18Q — Review Packet Surface
 
 ## Goal
 
-Add a bounded operator-safe result layer for the dry-run analysis runtime so the system can return deterministic success/failure packets without forcing callers to infer meaning from exceptions alone.
+Add a bounded operator-review packet surface that converts the structured runtime result envelope from 18P into deterministic review packets suitable for human inspection and later export/artifact work.
 
-This phase is about the runtime result boundary only.
+This phase is about review-packet construction only.
 
-18O added a live analyst transport boundary and explicit timeout / transport / parser-failure handling.
-18P should convert those runtime outcomes into stable, structured result packets suitable for operator review and later artifact/export work.
+18P introduced structured success/failure runtime results.
+18Q should transform those results into stable, operator-safe review packet models/builders without adding filesystem export, UI, or orchestration.
 
 ## Read first
 
@@ -18,102 +18,98 @@ Before changing code, read the existing implementations for:
 - `src/future_system/reasoning_contracts/*`
 - `src/future_system/policy_engine/*`
 
-Also read the directly relevant runtime and live-analyst tests before implementing.
+Also read any existing review/packet patterns in the repo that are directly relevant, but do not widen scope or pull `src/polymarket_arb/*` into this phase.
+
+Read the directly relevant runtime tests before implementing.
 
 ## Required deliverable
 
-Build a bounded runtime result surface that:
+Build a bounded review-packet layer that:
 
-- preserves the existing successful `AnalysisRunPacket` path
-- introduces explicit structured failure packet/model(s) for runtime failures
-- introduces a top-level result envelope / union that can represent either success or failure deterministically
-- adds a wrapper entrypoint that returns the structured result envelope instead of raising for expected runtime-stage failures
+- accepts the structured runtime result envelope from 18P
+- produces deterministic operator-review packet model(s) for both success and failure outcomes
 - preserves explicit distinction between:
-  - analyst timeout
+  - successful analysis result
+  - analyst timeout failure
   - analyst transport failure
-  - reasoning parse/validation failure
-- emits deterministic operator-safe summary text/fields for both success and failure cases
+  - reasoning parse failure
+- exposes a builder/helper entrypoint that converts runtime result -> review packet
+- emits deterministic operator-safe summary fields/content suitable for later export/rendering work
 - is covered with deterministic unit tests only
 
 ## Scope allowed
 
 Allowed work in this phase:
 
-- minimal additions under `src/future_system/runtime/*`
-- new runtime result/failure models if needed
-- minimal summary/helper additions strictly needed for this result surface
-- minimal test fixture additions strictly needed for deterministic tests
+- new bounded files under `src/future_system/review_packets/*` if needed
+- or minimal bounded additions under `src/future_system/runtime/*` if the repo shape strongly prefers that
+- new review packet models/builders/helpers strictly needed for this surface
+- minimal test fixtures/additions strictly needed for deterministic tests
 
 ## Hard constraints
 
 Do not:
 
 - modify anything under `src/polymarket_arb/*`
-- add persistence, database, or filesystem artifact writing
-- add scheduling
+- add filesystem writing or artifact export
+- add database or persistence work
+- add scheduling/orchestration
 - add execution or order placement behavior
-- add retries/backoff loops
 - add UI
-- change policy scoring logic
+- change policy logic
 - change reasoning schema contracts
-- blur failure-stage distinctions into a generic error bucket
-- remove the existing exception-raising pipeline if other code already depends on it
-- introduce speculative orchestration architecture
+- collapse failure stages into a generic bucket
+- add speculative “reporting platform” architecture
+- add transport/retry logic here
 
 ## Desired shape
 
-Prefer extending the existing runtime package rather than creating a broad new subsystem.
+Prefer a small dedicated review packet surface, for example:
 
-Likely shape:
+- `src/future_system/review_packets/__init__.py`
+- `src/future_system/review_packets/models.py`
+- `src/future_system/review_packets/builder.py`
 
-- extend `src/future_system/runtime/models.py`
-- minimally update `src/future_system/runtime/runner.py`
-- minimally update `src/future_system/runtime/summary.py`
-- add tests in `tests/future_system/test_runtime_runner.py`
-- add a dedicated runtime result test file only if clearly needed
+Or a minimal equivalent if the repo’s existing patterns strongly suggest a smaller shape.
+
+Tests should stay narrow and deterministic.
 
 ## Behavioral requirements
 
 The implementation must preserve this contract:
 
-1. Existing success path still yields `AnalysisRunPacket`.
-2. Existing strict pipeline logic remains intact.
-3. New wrapper/result entrypoint returns a deterministic structured result envelope.
-4. Expected runtime-stage failures become structured failure packets in that wrapper/result entrypoint.
-5. Failure packets preserve exact stage identity and run flags.
-6. Success and failure summaries remain operator-readable and deterministic.
+1. Runtime remains the source of truth for analysis success/failure.
+2. Review packet layer is downstream of runtime result construction.
+3. Review packet construction does not re-run policy or reasoning logic.
+4. Success review packets may include validated reasoning/policy/result summaries.
+5. Failure review packets must not invent fake reasoning output or fake policy output.
+6. Failure review packets must preserve exact failure stage identity.
+7. Review packet content remains deterministic and operator-safe.
 
-Failure packet/result requirements:
+Review packet requirements:
 
 - must include `theme_id`
-- must include `status`
-- must include explicit `failure_stage`
+- must include explicit packet/result status
+- must include packet kind/type that distinguishes success vs failure review packets
+- must include explicit failure stage on failure packets
+- must include deterministic summary text
 - must include `run_flags`
-- must include a deterministic summary string
-- must not include fake reasoning output or fake policy output
-- must distinguish expected runtime-stage failures from unexpected programming errors
+- success packets should include the bounded success details already available from runtime output
+- failure packets should include only safe, real failure details already available from runtime failure output
 
-Error handling requirements:
-
-- expected runtime-stage failures:
-  - analyst timeout
-  - analyst transport failure
-  - reasoning parse failure
-  should map to structured failure results in the new wrapper/result entrypoint
-
-- unexpected exceptions should remain explicit and should not be silently converted into a normal-looking success or generic safe placeholder
+The builder/entrypoint should make it easy for later phases to consume review packets without needing to know runtime exception details.
 
 ## Acceptance criteria
 
 This phase is complete when:
 
-- callers can use a new runtime result entrypoint and receive either a success packet or a structured failure packet deterministically
-- success packets preserve the existing `AnalysisRunPacket`
-- failure packets explicitly distinguish:
+- callers can convert the 18P runtime result envelope into deterministic review packets
+- success and failure review packets are explicit and structurally distinct
+- failure review packets explicitly distinguish:
   - `analyst_timeout`
   - `analyst_transport`
   - `reasoning_parse`
-- summaries for both success and failure are deterministic and operator-safe
+- no fake reasoning/policy output is introduced on failures
 - tests cover success plus each expected failure stage
 - `src/polymarket_arb/*` remains untouched
 
@@ -123,8 +119,8 @@ Run narrow validation only.
 
 At minimum, run the smallest reasonable set covering:
 
-- touched `runtime` files
-- any touched tests
+- touched `review_packets` and/or `runtime` files
+- touched tests
 
 Use:
 
