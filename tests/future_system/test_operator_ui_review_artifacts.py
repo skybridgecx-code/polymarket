@@ -73,6 +73,132 @@ def test_operator_ui_detail_shows_markdown_and_json_content(tmp_path: Path) -> N
     assert "JSON Content" in body
 
 
+def test_operator_ui_artifact_without_review_metadata_renders_normally(tmp_path: Path) -> None:
+    run_id = _write_success_run(tmp_path)
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    list_response = client.get("/")
+    detail_response = client.get(f"/runs/{run_id}")
+
+    assert list_response.status_code == 200
+    assert run_id in list_response.text
+    assert "no-review-metadata" in list_response.text
+
+    assert detail_response.status_code == 200
+    assert "Operator Review Metadata" in detail_response.text
+    assert "no-review-metadata" in detail_response.text
+    assert "FAILED" not in detail_response.text
+
+
+def test_operator_ui_shows_pending_review_metadata_in_list_and_detail(tmp_path: Path) -> None:
+    run_id = _write_success_run(tmp_path)
+    _write_operator_review_metadata(
+        tmp_path,
+        run_id=run_id,
+        status="success",
+        review_status="pending",
+    )
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    list_response = client.get("/")
+    detail_response = client.get(f"/runs/{run_id}")
+
+    assert list_response.status_code == 200
+    assert run_id in list_response.text
+    assert "pending" in list_response.text
+
+    assert detail_response.status_code == 200
+    assert "Operator Review Metadata" in detail_response.text
+    assert "Review Status</dt><dd>pending" in detail_response.text
+    assert "Operator Decision</dt><dd>none" in detail_response.text
+
+
+def test_operator_ui_shows_decided_review_metadata_in_list_and_detail(tmp_path: Path) -> None:
+    run_id = _write_failure_run(tmp_path, failure_stage="reasoning_parse")
+    _write_operator_review_metadata(
+        tmp_path,
+        run_id=run_id,
+        status="failed",
+        failure_stage="reasoning_parse",
+        review_status="decided",
+        operator_decision="needs_follow_up",
+        review_notes_summary="Escalate for analyst prompt quality review.",
+        reviewer_identity="operator_b",
+        decided_at_epoch_ns=1_900_000_000_000_000_000,
+        updated_at_epoch_ns=1_900_000_000_000_000_001,
+    )
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    list_response = client.get("/")
+    detail_response = client.get(f"/runs/{run_id}")
+
+    assert list_response.status_code == 200
+    assert "decided" in list_response.text
+
+    assert detail_response.status_code == 200
+    assert "FAILED (reasoning_parse)" in detail_response.text
+    assert "Review Status</dt><dd>decided" in detail_response.text
+    assert "Operator Decision</dt><dd>needs_follow_up" in detail_response.text
+    assert (
+        "Review Notes Summary</dt><dd>Escalate for analyst prompt quality review."
+        in detail_response.text
+    )
+    assert "Reviewer Identity</dt><dd>operator_b" in detail_response.text
+    assert "Decided At (epoch ns)</dt><dd>1900000000000000000" in detail_response.text
+    assert "Updated At (epoch ns)</dt><dd>1900000000000000001" in detail_response.text
+
+
+def test_operator_ui_bounds_malformed_review_metadata_without_breaking_artifact_display(
+    tmp_path: Path,
+) -> None:
+    run_id = _write_success_run(tmp_path)
+    (tmp_path / f"{run_id}.operator_review.json").write_text("{malformed", encoding="utf-8")
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    list_response = client.get("/")
+    detail_response = client.get(f"/runs/{run_id}")
+
+    assert list_response.status_code == 200
+    assert run_id in list_response.text
+    assert "operator_review_metadata_invalid" in list_response.text
+    assert "no-review-metadata" in list_response.text
+    assert "Run Issues" in list_response.text
+
+    assert detail_response.status_code == 200
+    assert "Operator Review Metadata" in detail_response.text
+    assert "no-review-metadata" in detail_response.text
+    assert "operator_review_metadata_invalid" in detail_response.text
+
+
+def test_operator_ui_does_not_read_review_metadata_outside_configured_root(
+    tmp_path: Path,
+) -> None:
+    run_id = _write_success_run(tmp_path)
+    outside_path = tmp_path.parent / "outside.operator_review.json"
+    _write_operator_review_metadata(
+        tmp_path.parent,
+        run_id="outside",
+        status="success",
+        review_status="pending",
+        target_filename=outside_path.name,
+    )
+    (tmp_path / f"{run_id}.operator_review.json").symlink_to(outside_path)
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    list_response = client.get("/")
+    detail_response = client.get(f"/runs/{run_id}")
+
+    assert list_response.status_code == 200
+    assert run_id in list_response.text
+    assert "operator_review_metadata_invalid" in list_response.text
+    assert "resolves outside artifacts root" in list_response.text
+
+    assert detail_response.status_code == 200
+    assert "Operator Review Metadata" in detail_response.text
+    assert "operator_review_metadata_invalid" in detail_response.text
+    assert "resolves outside artifacts root" in detail_response.text
+
+
 def test_operator_ui_detail_fails_safely_when_markdown_is_missing(tmp_path: Path) -> None:
     run_id = "theme_ctx_strong.analysis_failure_export.analyst_timeout"
     _write_json_only_failure_run(tmp_path, run_id=run_id, failure_stage="analyst_timeout")
@@ -470,6 +596,49 @@ def _write_json_only_failure_run(root: Path, *, run_id: str, failure_stage: str)
     }
     (root / f"{run_id}.json").write_text(
         json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_operator_review_metadata(
+    root: Path,
+    *,
+    run_id: str,
+    status: str,
+    review_status: str,
+    target_filename: str | None = None,
+    failure_stage: str | None = None,
+    operator_decision: str | None = None,
+    review_notes_summary: str | None = None,
+    reviewer_identity: str | None = None,
+    decided_at_epoch_ns: int | None = None,
+    updated_at_epoch_ns: int | None = None,
+) -> None:
+    metadata_payload = {
+        "record_kind": "operator_review_decision_record",
+        "record_version": 1,
+        "artifact": {
+            "run_id": run_id,
+            "theme_id": "theme_ctx_strong",
+            "status": status,
+            "export_kind": (
+                "analysis_failure_export" if status == "failed" else "analysis_success_export"
+            ),
+            "failure_stage": failure_stage,
+            "json_file_path": None,
+            "markdown_file_path": None,
+        },
+        "review_status": review_status,
+        "operator_decision": operator_decision,
+        "review_notes_summary": review_notes_summary,
+        "reviewer_identity": reviewer_identity,
+        "decided_at_epoch_ns": decided_at_epoch_ns,
+        "updated_at_epoch_ns": updated_at_epoch_ns,
+        "run_flags_snapshot": [],
+    }
+    filename = target_filename or f"{run_id}.operator_review.json"
+    (root / filename).write_text(
+        json.dumps(metadata_payload, sort_keys=True, separators=(",", ":")) + "\n",
         encoding="utf-8",
     )
 

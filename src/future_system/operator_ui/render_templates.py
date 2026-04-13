@@ -90,11 +90,12 @@ def render_list_page(
             f"<td>{html.escape(run.theme_id)}</td>"
             f"<td>{status_badge}</td>"
             f"<td>{html.escape(failure_stage)}</td>"
+            f"<td>{html.escape(run.review_status_label)}</td>"
             f"<td>{html.escape(run.updated_at_label)}</td>"
             "</tr>"
         )
 
-    table_rows = "".join(rows) if rows else "<tr><td colspan=\"5\">No runs found.</td></tr>"
+    table_rows = "".join(rows) if rows else "<tr><td colspan=\"6\">No runs found.</td></tr>"
     error_block = ""
     if trigger_error is not None:
         error_block = (
@@ -196,7 +197,8 @@ def render_list_page(
         f"{error_block}"
         "<h2>Runs</h2>"
         "<table><thead><tr>"
-        "<th>Run</th><th>Theme ID</th><th>Status</th><th>Failure Stage</th><th>Updated</th>"
+        "<th>Run</th><th>Theme ID</th><th>Status</th><th>Failure Stage</th>"
+        "<th>Review Status</th><th>Updated</th>"
         f"</tr></thead><tbody>{table_rows}</tbody></table>"
         f"{issues_block}"
         "</body></html>"
@@ -249,6 +251,7 @@ def render_detail_page(
             "<p class=\"truncate\">JSON content display truncated for safety: "
             f"showing first {DETAIL_JSON_MAX_CHARS} of {json_total_chars} characters.</p>"
         )
+    operator_review_metadata_block = _render_operator_review_metadata_section(detail=detail)
     created_block = ""
     if created_via_trigger:
         created_block = (
@@ -293,9 +296,11 @@ def render_detail_page(
         f"<dt>Theme ID</dt><dd>{html.escape(detail.run.theme_id)}</dd>"
         f"<dt>Status</dt><dd>{status_badge}</dd>"
         f"<dt>Failure Stage</dt><dd>{html.escape(failure_stage)}</dd>"
+        f"<dt>Review Status</dt><dd>{html.escape(detail.run.review_status_label)}</dd>"
         f"<dt>Updated</dt><dd>{html.escape(detail.run.updated_at_label)}</dd>"
         "</dl>"
         "</section>"
+        f"{operator_review_metadata_block}"
         "<section class=\"section\">"
         "<h2>Artifact Paths</h2>"
         "<dl class=\"meta-grid\">"
@@ -303,6 +308,8 @@ def render_detail_page(
         f"<dt>Artifact Directory</dt><dd>{html.escape(artifact_directory)}</dd>"
         f"<dt>Markdown Path</dt><dd>{html.escape(detail.run.markdown_path)}</dd>"
         f"<dt>JSON Path</dt><dd>{html.escape(detail.run.json_path)}</dd>"
+        "<dt>Decision Metadata Path</dt>"
+        f"<dd>{html.escape(detail.run.operator_review_json_path)}</dd>"
         f"<dt>Markdown Size</dt><dd>{len(detail.markdown_content)} chars</dd>"
         f"<dt>JSON Size</dt><dd>{len(json_pretty)} chars</dd>"
         "</dl>"
@@ -359,6 +366,53 @@ def _bounded_display_text(value: str, *, max_chars: int) -> tuple[str, bool, int
     if total_chars <= max_chars:
         return value, False, total_chars
     return value[:max_chars], True, total_chars
+
+
+def _render_operator_review_metadata_section(*, detail: ArtifactRunDetail) -> str:
+    record = detail.operator_review_decision
+    if record is None:
+        issue_block = ""
+        if detail.operator_review_issue is not None:
+            issue_block = f"<p>{html.escape(detail.operator_review_issue)}</p>"
+        return (
+            "<section class=\"section\">"
+            "<h2>Operator Review Metadata</h2>"
+            "<dl class=\"meta-grid\">"
+            f"<dt>Review Status</dt><dd>{html.escape(detail.run.review_status_label)}</dd>"
+            "<dt>Operator Decision</dt><dd>none</dd>"
+            "<dt>Review Notes Summary</dt><dd>none</dd>"
+            "<dt>Reviewer Identity</dt><dd>none</dd>"
+            "<dt>Decided At (epoch ns)</dt><dd>none</dd>"
+            "<dt>Updated At (epoch ns)</dt><dd>none</dd>"
+            "</dl>"
+            f"{issue_block}"
+            "</section>"
+        )
+
+    operator_decision = record.operator_decision if record.operator_decision is not None else "none"
+    review_notes_summary = (
+        record.review_notes_summary if record.review_notes_summary is not None else "none"
+    )
+    reviewer_identity = record.reviewer_identity if record.reviewer_identity is not None else "none"
+    decided_at_epoch_ns = (
+        str(record.decided_at_epoch_ns) if record.decided_at_epoch_ns is not None else "none"
+    )
+    updated_at_epoch_ns = (
+        str(record.updated_at_epoch_ns) if record.updated_at_epoch_ns is not None else "none"
+    )
+    return (
+        "<section class=\"section\">"
+        "<h2>Operator Review Metadata</h2>"
+        "<dl class=\"meta-grid\">"
+        f"<dt>Review Status</dt><dd>{html.escape(record.review_status)}</dd>"
+        f"<dt>Operator Decision</dt><dd>{html.escape(operator_decision)}</dd>"
+        f"<dt>Review Notes Summary</dt><dd>{html.escape(review_notes_summary)}</dd>"
+        f"<dt>Reviewer Identity</dt><dd>{html.escape(reviewer_identity)}</dd>"
+        f"<dt>Decided At (epoch ns)</dt><dd>{html.escape(decided_at_epoch_ns)}</dd>"
+        f"<dt>Updated At (epoch ns)</dt><dd>{html.escape(updated_at_epoch_ns)}</dd>"
+        "</dl>"
+        "</section>"
+    )
 
 
 def _failure_stage_description(

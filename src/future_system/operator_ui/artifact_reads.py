@@ -8,13 +8,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ValidationError, field_validator
 
+from future_system.operator_review_models import OperatorReviewDecisionRecord
 from future_system.runtime.models import AnalysisRunFailureStage
 
 from .root_status import resolve_artifacts_root
 
 _RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+_OPERATOR_REVIEW_DECISION_SUFFIX = ".operator_review.json"
 
 
 class ArtifactRunListItem(BaseModel):
@@ -29,6 +31,8 @@ class ArtifactRunListItem(BaseModel):
     updated_at_label: str
     markdown_path: str
     json_path: str
+    operator_review_json_path: str
+    review_status_label: Literal["pending", "decided", "no-review-metadata"]
 
     @field_validator(
         "run_id",
@@ -37,6 +41,8 @@ class ArtifactRunListItem(BaseModel):
         "updated_at_label",
         "markdown_path",
         "json_path",
+        "operator_review_json_path",
+        "review_status_label",
         mode="before",
     )
     @classmethod
@@ -67,6 +73,7 @@ class ArtifactRunIssue(BaseModel):
         "json_invalid",
         "json_fields_invalid",
         "markdown_missing",
+        "operator_review_metadata_invalid",
     ]
     issue_message: str
     json_path: str
@@ -96,6 +103,20 @@ class ArtifactRunDetail(BaseModel):
     run: ArtifactRunListItem
     markdown_content: str
     json_content: dict[str, object]
+    operator_review_decision: OperatorReviewDecisionRecord | None = None
+    operator_review_issue: str | None = None
+
+    @field_validator("operator_review_issue", mode="before")
+    @classmethod
+    def _normalize_operator_review_issue(cls, value: Any) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("operator_review_issue must be a string when provided.")
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("operator_review_issue must be a non-empty string when provided.")
+        return normalized
 
 
 def discover_review_artifact_runs(*, artifacts_root: Path) -> list[ArtifactRunListItem]:
@@ -112,7 +133,11 @@ def discover_review_artifact_history(*, artifacts_root: Path) -> ArtifactRunHist
     issues: list[ArtifactRunIssue] = []
 
     json_paths = sorted(
-        root.glob("*.json"),
+        (
+            path
+            for path in root.glob("*.json")
+            if not path.name.endswith(_OPERATOR_REVIEW_DECISION_SUFFIX)
+        ),
         key=lambda path: (-path.stat().st_mtime_ns, path.name),
     )
 
@@ -171,6 +196,24 @@ def discover_review_artifact_history(*, artifacts_root: Path) -> ArtifactRunHist
                 )
             )
 
+        operator_review_json_path = _operator_review_json_path(root=root, run_id=run_id)
+        operator_review_decision, operator_review_issue = (
+            _read_optional_operator_review_decision_record(
+                root=root,
+                run_id=run_id,
+            )
+        )
+        if operator_review_issue is not None:
+            issues.append(
+                ArtifactRunIssue(
+                    run_id=run_id,
+                    issue_kind="operator_review_metadata_invalid",
+                    issue_message=operator_review_issue,
+                    json_path=str(operator_review_json_path),
+                    markdown_path=str(markdown_path),
+                )
+            )
+
         run_status_label = status_label(status=status, failure_stage=failure_stage)
         updated_at_epoch_ns = json_path.stat().st_mtime_ns
         runs.append(
@@ -184,6 +227,8 @@ def discover_review_artifact_history(*, artifacts_root: Path) -> ArtifactRunHist
                 updated_at_label=_format_timestamp_ns(updated_at_epoch_ns),
                 markdown_path=str(markdown_path),
                 json_path=str(json_path),
+                operator_review_json_path=str(operator_review_json_path),
+                review_status_label=_review_status_label(operator_review_decision),
             )
         )
 
@@ -207,6 +252,13 @@ def read_review_artifact_run_detail(*, artifacts_root: Path, run_id: str) -> Art
     payload = _read_export_json(json_path=json_path)
     status = _require_status(payload.get("status"))
     failure_stage = _optional_failure_stage(payload)
+    operator_review_json_path = _operator_review_json_path(root=root, run_id=normalized_run_id)
+    operator_review_decision, operator_review_issue = (
+        _read_optional_operator_review_decision_record(
+            root=root,
+            run_id=normalized_run_id,
+        )
+    )
     updated_at_epoch_ns = json_path.stat().st_mtime_ns
     run = ArtifactRunListItem(
         run_id=normalized_run_id,
@@ -218,6 +270,8 @@ def read_review_artifact_run_detail(*, artifacts_root: Path, run_id: str) -> Art
         updated_at_label=_format_timestamp_ns(updated_at_epoch_ns),
         markdown_path=str(markdown_path),
         json_path=str(json_path),
+        operator_review_json_path=str(operator_review_json_path),
+        review_status_label=_review_status_label(operator_review_decision),
     )
 
     markdown_content = markdown_path.read_text(encoding="utf-8")
@@ -225,6 +279,8 @@ def read_review_artifact_run_detail(*, artifacts_root: Path, run_id: str) -> Art
         run=run,
         markdown_content=markdown_content,
         json_content=payload,
+        operator_review_decision=operator_review_decision,
+        operator_review_issue=operator_review_issue,
     )
 
 
@@ -262,6 +318,57 @@ def _bounded_run_path(*, root: Path, run_id: str, suffix: str) -> Path:
     return path
 
 
+def _operator_review_json_path(*, root: Path, run_id: str) -> Path:
+    return root / f"{run_id}{_OPERATOR_REVIEW_DECISION_SUFFIX}"
+
+
+def _review_status_label(
+    decision_record: OperatorReviewDecisionRecord | None,
+) -> Literal["pending", "decided", "no-review-metadata"]:
+    if decision_record is None:
+        return "no-review-metadata"
+    return decision_record.review_status
+
+
+def _read_optional_operator_review_decision_record(
+    *,
+    root: Path,
+    run_id: str,
+) -> tuple[OperatorReviewDecisionRecord | None, str | None]:
+    try:
+        decision_path = _bounded_run_path(
+            root=root,
+            run_id=run_id,
+            suffix=_OPERATOR_REVIEW_DECISION_SUFFIX,
+        )
+    except ValueError:
+        return (
+            None,
+            "operator_review_metadata_invalid: metadata path resolves outside artifacts root.",
+        )
+
+    if not decision_path.exists():
+        return None, None
+    if not decision_path.is_file():
+        return (
+            None,
+            "operator_review_metadata_invalid: metadata path exists but is not a file.",
+        )
+
+    try:
+        raw_payload = _read_operator_review_json(json_path=decision_path)
+        decision_record = OperatorReviewDecisionRecord.model_validate(raw_payload)
+    except (ValidationError, ValueError) as exc:
+        return None, f"operator_review_metadata_invalid: {exc}"
+
+    if decision_record.artifact.run_id != run_id:
+        return (
+            None,
+            "operator_review_metadata_invalid: artifact.run_id does not match run id.",
+        )
+    return decision_record, None
+
+
 def _read_export_json(*, json_path: Path) -> dict[str, object]:
     try:
         parsed = json.loads(json_path.read_text(encoding="utf-8"))
@@ -273,6 +380,21 @@ def _read_export_json(*, json_path: Path) -> dict[str, object]:
     for key, value in parsed.items():
         if not isinstance(key, str):
             raise ValueError("artifact_json_invalid: object keys must be strings.")
+        normalized[key] = value
+    return normalized
+
+
+def _read_operator_review_json(*, json_path: Path) -> dict[str, object]:
+    try:
+        parsed = json.loads(json_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError("malformed JSON content.") from exc
+    if not isinstance(parsed, dict):
+        raise ValueError("top-level metadata payload must be an object.")
+    normalized: dict[str, object] = {}
+    for key, value in parsed.items():
+        if not isinstance(key, str):
+            raise ValueError("metadata object keys must be strings.")
         normalized[key] = value
     return normalized
 

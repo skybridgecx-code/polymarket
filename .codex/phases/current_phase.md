@@ -1,63 +1,70 @@
-# Phase 20B — Operator Review Decision Metadata Contracts
+# Phase 20C — Operator UI Decision/Status Rendering Surface
 
 ## Goal
 
-Define a bounded, deterministic contract for operator review decision/status metadata that can live alongside existing review artifacts as file-based local data.
+Surface existing operator review decision/status metadata in local operator UI list/detail views
+when companion decision metadata files exist.
 
-This phase should prioritize models/contracts/docs/tests with no runtime behavior expansion.
+This phase is read-only rendering/discovery only.
 
 ## Read first
 
 - `.codex/phases/current_phase.md`
 - `docs/PHASE_20A_FUTURE_SYSTEM_NEXT_TRACK_SCOPE_LOCK.md`
-- `docs/PHASE_19Q_OPERATOR_UI_TRACK_CLOSEOUT.md`
-- `src/future_system/review_exports/*`
-- `src/future_system/review_file_writers/*`
-- `src/future_system/operator_ui/*`
+- `docs/PHASE_20B_OPERATOR_REVIEW_DECISION_METADATA_CONTRACTS.md`
+- `src/future_system/operator_review_models/*`
+- `src/future_system/operator_ui/artifact_reads.py`
+- `src/future_system/operator_ui/render_templates.py`
+- `src/future_system/operator_ui/route_handlers.py`
+- `tests/future_system/test_operator_ui_review_artifacts.py`
 - `tests/future_system/test_operator_ui_integration_flows.py`
-- relevant future_system models/tests for export payload and artifact-read semantics
 
 ## Required deliverable
 
-Build a scoped contract surface for operator review decision/status metadata, for example under:
+Add bounded read-only companion metadata discovery/loading and UI rendering support:
 
-- `src/future_system/operator_review_models/*`
+- for artifact run id `X`, read companion file `X.operator_review.json` when present
+- missing companion metadata file must be optional
+- malformed companion metadata must be bounded and must not break existing artifact rendering
 
-The contract should cover deterministic artifact-file-based concepts such as:
+Render in operator UI:
 
-- review status
-- operator decision
-- optional review notes summary
-- local-safe identity/timestamp fields only when explicitly provided
-- backward-safe relationship to existing artifact payloads
+- list row review state: `pending` / `decided` / `no-review-metadata`
+- detail view review metadata:
+  - review status
+  - operator decision
+  - review notes summary
+  - reviewer identity
+  - decided/updated timestamps (if present)
 
-Add focused deterministic tests for:
-
-- valid statuses/decisions
-- serialization shape
-- backward-safe optional behavior
-- no DB/network/runtime execution coupling
-
-Optional but encouraged:
-
-- short phase doc summarizing the contract
+Preserve current success/failure-stage outcome rendering and local artifact-file behavior.
 
 ## Hard constraints
 
 Do not:
 
 - touch `src/polymarket_arb/*`
-- introduce DB/queues/background jobs/scheduling/delivery/inbox/execution/trading logic
-- widen scope into mutable workflow machinery or UI editing
-- claim final operator workflow completion in this phase
+- add DB/queues/background jobs/scheduling/delivery/inbox/execution/trading logic
+- add UI editing/write flow (read-only only)
+- widen scope beyond local artifact-file discovery + rendering
+
+## Tests required
+
+Add deterministic tests for:
+
+- artifact with no decision metadata renders normally
+- valid pending metadata appears in list/detail
+- valid decided metadata appears in list/detail
+- malformed decision metadata is bounded and does not break artifact display
+- no reads outside configured root
 
 ## Validation
 
-Run narrow validation on touched surfaces:
+Run:
 
-- `pytest` on touched future_system tests
-- `ruff check` on touched files
-- `mypy` on touched future_system modules
+- `pytest tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_integration_flows.py tests/future_system/test_operator_review_models.py`
+- `ruff check src/future_system/operator_ui src/future_system/operator_review_models tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_integration_flows.py tests/future_system/test_operator_review_models.py`
+- `mypy src/future_system/operator_ui src/future_system/operator_review_models`
 
 ## Required Codex return format
 
