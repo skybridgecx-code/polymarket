@@ -90,6 +90,12 @@ Open:
 
 - `http://127.0.0.1:8000/`
 
+Primary routes:
+
+- `GET /`
+- `POST /runs/trigger`
+- `GET /runs/{run_id}`
+
 ## Mount The Operator UI Into Another FastAPI App
 
 Primary mount helper:
@@ -127,6 +133,12 @@ Operator guidance:
 
 - to inspect CLI-generated runs in list view, set UI artifacts root to the same directory where CLI wrote files
 - if artifacts are stored in nested subdirectories, they are not discovered by list view unless you explicitly navigate using a run link that includes `target_subdirectory`
+
+Important current behavior:
+
+- UI trigger defaults `target_subdirectory` to `operator_runs`
+- triggered runs are redirected to detail immediately
+- those runs are not included in the top-level run list unless artifacts are written directly at the configured root
 
 ## UI Trigger Flow (Synchronous, Local)
 
@@ -172,6 +184,11 @@ If trigger returns `Invalid trigger input`:
 
 - verify `context_source` exists, is a file, ends with `.json`, and validates as `OpportunityContextBundle`
 - verify `target_subdirectory` is relative and contains only safe segments
+
+If app startup fails with multipart/form-data error:
+
+- install `python-multipart` in the active environment
+- retry app startup after dependency installation
 
 If list shows `Run Issues`:
 

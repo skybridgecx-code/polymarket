@@ -1,105 +1,75 @@
-# Phase 19N — Operator UI Local Runbook and Docs
+# Phase 19O — Operator UI Manual Verification and Checkpoint Docs Polish
 
 ## Goal
 
-Document the local operator UI setup and usage flow so operators can reliably launch, configure, and inspect artifacts without changing code behavior.
+Manually verify that the local `future_system` operator UI artifact workflow docs are accurate and operator-usable, then polish docs/checkpoint notes without changing runtime behavior.
 
-This phase is about documentation only.
-
-18X established CLI artifact generation.
-18Y–19M established the local operator UI read/trigger/detail surface and cleaned its internal structure.
-
-19N should produce a bounded local runbook/doc update for the operator UI and its surrounding local workflow.
+This phase is primarily manual verification and documentation polish.
 
 ## Read first
 
-Before changing docs, read the existing implementations for:
+Before changing docs, read:
 
-- `src/future_system/operator_ui/*`
-- `src/future_system/cli/*`
-- any existing docs/runbooks/README files already covering local usage
-- directly relevant tests only as needed to confirm the documented flow
+- `docs/FUTURE_SYSTEM_OPERATOR_UI_LOCAL_RUNBOOK.md`
+- `src/future_system/operator_ui/app_entry.py`
+- `src/future_system/operator_ui/review_artifacts.py`
+- `src/future_system/cli/review_artifacts.py`
+- relevant operator UI tests
 
 ## Required deliverable
 
-Build a bounded documentation pass that:
+Build a bounded manual-verification/docs pass that:
 
-- explains how to launch the operator UI locally
-- explains the local artifacts root assumption/configuration
-- explains how CLI-generated artifacts and UI-inspected artifacts relate
-- explains the existing UI trigger flow at a high level
-- explains expected local success/failure states and safe troubleshooting steps
-- keeps documentation grounded in shipped behavior only
-- does not change code behavior
+- confirms runbook launch instructions match shipped public entrypoints
+- confirms CLI flags/examples match shipped CLI behavior
+- confirms artifacts-root behavior docs match root handling and route behavior
+- confirms UI read/trigger routes and troubleshooting states are accurately documented
+- polishes docs where wording is unclear or incomplete
+- optionally adds a concise checkpoint document
 
 ## Scope allowed
 
 Allowed work in this phase:
 
-- minimal bounded documentation additions/updates
-- one or more docs files/runbook updates if clearly justified
-- minimal README updates if appropriate
+- minimal bounded updates to operator-UI local docs
+- small checkpoint doc addition under `docs/` if useful
+- no runtime behavior changes unless fixing a clear docs/test mismatch
 
 ## Hard constraints
 
 Do not:
 
 - modify anything under `src/polymarket_arb/*`
-- change runtime behavior
-- add new features
-- add speculative future architecture as if it already exists
-- document workflows that are not actually supported
-- widen scope beyond local operator UI / artifact workflow docs
-
-## Desired shape
-
-Prefer the smallest possible bounded doc update.
-
-A good result is:
-
-- one clear local runbook doc for operator UI usage
-- or one focused README/doc section update if the repo already has the right place
-- explicit launch/config/usage/troubleshooting sections
-- wording grounded in current code truth
-
-## Behavioral requirements
-
-The documentation must preserve this contract:
-
-1. Existing artifact files remain the source of truth.
-2. UI remains downstream of the existing generation flow.
-3. UI trigger flow remains synchronous/local.
-4. Reads/writes remain bounded to the configured/local artifacts root.
-5. Success and failure states are described accurately and conservatively.
+- add DB/persistence/queues/background jobs/scheduling/delivery/inbox/execution/trading logic
+- introduce speculative workflows not currently shipped
+- widen scope beyond local operator UI manual verification docs
 
 ## Acceptance criteria
 
 This phase is complete when:
 
-- a local operator can read the docs and understand how to:
-  - launch the operator UI
-  - configure the artifacts root
-  - generate artifacts locally
-  - inspect them in the UI
-- the docs describe valid and invalid root/artifact states clearly
-- the docs do not claim unsupported behavior
+- docs are accurate for local launch/config/generation/inspection flow
+- troubleshooting language matches actual operator UI and CLI behavior
+- validation is run with the specified narrow commands
+- docs/checkpoint updates are bounded and operator-focused
 - `src/polymarket_arb/*` remains untouched
 
 ## Validation
 
-Run narrow validation only.
+Run:
 
-At minimum:
-- validate any touched markdown/docs formatting if there is an existing lightweight doc check
-- otherwise just report exact files changed and confirm no code paths changed
+- `git diff --stat`
+- `git diff --name-only`
+- `pytest tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_app_wiring.py tests/future_system/test_operator_ui_package_exports.py tests/future_system/test_operator_ui_app_entry.py`
+- `ruff check src/future_system/operator_ui tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_app_wiring.py tests/future_system/test_operator_ui_package_exports.py tests/future_system/test_operator_ui_app_entry.py`
+- `mypy src/future_system/operator_ui`
 
 ## Required Codex return format
 
-Return only:
+Return:
 
 1. concise summary
-2. exact files created/modified
-3. exact validation commands run
-4. exact validation results
-5. deviations from spec
-6. explicit note whether `src/polymarket_arb/*` was untouched
+2. exact files changed
+3. validation output
+4. any risks/deferred items
+5. explicit note: do not commit unless asked
