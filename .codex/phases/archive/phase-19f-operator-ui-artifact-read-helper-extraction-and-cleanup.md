@@ -1,29 +1,29 @@
-# Phase 19G — Operator UI Template/Component Extraction
+# Phase 19F — Operator UI Artifact-Read Helper Extraction and Cleanup
 
 ## Goal
 
-Extract the growing HTML/rendering blocks out of the operator UI route/module so the UI surface is easier to maintain without changing behavior.
+Extract the growing artifact-read and root-status logic out of the operator UI route/module so the UI surface is easier to maintain without changing behavior.
 
-This phase is about bounded rendering refactor/cleanup only.
+This phase is about bounded refactor/cleanup only.
 
-18Y–19F established the operator UI read, trigger, history, detail, root-status, and helper extraction flows.
-19G should improve rendering structure and maintainability while preserving current operator-visible behavior.
+18Y–19E established the operator UI read, trigger, history, detail, and root-status flows.
+19F should improve code structure and maintainability while preserving current operator-visible behavior.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
 - `src/future_system/operator_ui/*`
-- any rendering/template logic currently embedded in `review_artifacts.py`
+- any helper/read logic already embedded in the current operator UI module
 - directly relevant tests for the current UI list/detail/trigger surface
 
 ## Required deliverable
 
 Build a bounded cleanup pass that:
 
-- extracts repeated or large HTML/rendering blocks into bounded helper(s)
-- extracts repeated status/badge/section rendering where appropriate
-- keeps route handlers focused on request/response flow instead of large inline rendering blocks
+- extracts artifact-root status logic into bounded helper(s)
+- extracts run listing / run detail read logic into bounded helper(s) where appropriate
+- extracts any growing formatting/state-construction logic out of the main route/module where appropriate
 - preserves existing list/detail/trigger behavior
 - preserves current success/failure and failure-stage rendering behavior
 - keeps reads/writes bounded to the configured/local artifacts root
@@ -34,7 +34,7 @@ Build a bounded cleanup pass that:
 Allowed work in this phase:
 
 - minimal bounded additions/modifications under `src/future_system/operator_ui/*`
-- creation of small rendering helper modules/files if clearly justified
+- creation of small helper modules/files if clearly justified
 - minimal test updates strictly needed to preserve and verify unchanged behavior
 
 ## Hard constraints
@@ -58,7 +58,7 @@ Prefer the smallest possible bounded refactor.
 A good result is:
 
 - smaller/more focused `review_artifacts.py`
-- one or more small helper modules for HTML/rendering sections
+- one or more small helper modules for artifact root validation, run discovery, or detail-state construction
 - unchanged route behavior
 - deterministic tests proving behavior stayed intact
 
@@ -86,7 +86,7 @@ UI/cleanup requirements:
 
 This phase is complete when:
 
-- the operator UI rendering logic is cleaner and more modular
+- the operator UI artifact-read/root-status logic is cleaner and more modular
 - current UI behavior remains intact for valid and invalid root/artifact states
 - success and failure outputs still clearly distinguish:
   - `analyst_timeout`
