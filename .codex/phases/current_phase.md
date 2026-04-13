@@ -1,102 +1,97 @@
-# Phase 19M — Operator UI Launch/Mount Surface Cleanup
+# Phase 19N — Operator UI Local Runbook and Docs
 
 ## Goal
 
-Clean up the operator UI launch/mount surface so local startup and mounting usage is easier for callers without changing behavior.
+Document the local operator UI setup and usage flow so operators can reliably launch, configure, and inspect artifacts without changing code behavior.
 
-This phase is about bounded launch/mount cleanup only.
+This phase is about documentation only.
 
-18Y–19L established the operator UI read, trigger, detail, helper extraction, template extraction, styling cleanup, route cleanup, app-wiring cleanup, package/export cleanup, and app-entry cleanup flows.
-19M should improve launch/mount ergonomics while preserving current operator-visible behavior.
+18X established CLI artifact generation.
+18Y–19M established the local operator UI read/trigger/detail surface and cleaned its internal structure.
+
+19N should produce a bounded local runbook/doc update for the operator UI and its surrounding local workflow.
 
 ## Read first
 
-Before changing code, read the existing implementations for:
+Before changing docs, read the existing implementations for:
 
 - `src/future_system/operator_ui/*`
-- current public app entry exports and any local startup/mount usage patterns
-- directly relevant tests for the current UI surface
+- `src/future_system/cli/*`
+- any existing docs/runbooks/README files already covering local usage
+- directly relevant tests only as needed to confirm the documented flow
 
 ## Required deliverable
 
-Build a bounded cleanup pass that:
+Build a bounded documentation pass that:
 
-- makes local operator UI launch/mount usage clearer where appropriate
-- reduces awkward startup/import patterns where appropriate
-- centralizes the primary launch/mount entrypoint where appropriate
-- preserves existing list/detail/trigger behavior
-- preserves current success/failure and failure-stage rendering behavior
-- keeps reads/writes bounded to the configured/local artifacts root
-- is covered with deterministic tests only
+- explains how to launch the operator UI locally
+- explains the local artifacts root assumption/configuration
+- explains how CLI-generated artifacts and UI-inspected artifacts relate
+- explains the existing UI trigger flow at a high level
+- explains expected local success/failure states and safe troubleshooting steps
+- keeps documentation grounded in shipped behavior only
+- does not change code behavior
 
 ## Scope allowed
 
 Allowed work in this phase:
 
-- minimal bounded additions/modifications under `src/future_system/operator_ui/*`
-- small launch/mount helper adjustments if clearly justified
-- minimal test updates strictly needed to preserve and verify unchanged behavior
+- minimal bounded documentation additions/updates
+- one or more docs files/runbook updates if clearly justified
+- minimal README updates if appropriate
 
 ## Hard constraints
 
 Do not:
 
 - modify anything under `src/polymarket_arb/*`
-- add database/persistence backends
-- add background jobs, queues, or scheduling
-- add delivery/inbox/notification systems
-- add execution/trading behavior
-- change the underlying generation pipeline
-- widen scope into UI redesign or new features
-- allow reads/writes outside the configured/local artifacts root
+- change runtime behavior
+- add new features
+- add speculative future architecture as if it already exists
+- document workflows that are not actually supported
+- widen scope beyond local operator UI / artifact workflow docs
 
 ## Desired shape
 
-Use the repo’s existing package pattern.
-Prefer the smallest possible bounded refactor.
+Prefer the smallest possible bounded doc update.
 
 A good result is:
 
-- a clearer single launch/mount surface for callers
-- cleaner local startup ergonomics
-- unchanged route behavior
-- deterministic tests proving behavior stayed intact
+- one clear local runbook doc for operator UI usage
+- or one focused README/doc section update if the repo already has the right place
+- explicit launch/config/usage/troubleshooting sections
+- wording grounded in current code truth
 
 ## Behavioral requirements
 
-The implementation must preserve this contract:
+The documentation must preserve this contract:
 
 1. Existing artifact files remain the source of truth.
 2. UI remains downstream of the existing generation flow.
-3. UI does not regenerate or mutate artifacts outside the existing trigger flow.
-4. Success and failure results remain clearly distinct.
-5. Failure-stage identity remains exact.
-6. Reads/writes remain bounded to the configured/local artifacts root.
-7. Operator-visible behavior remains materially unchanged except for safe cleanup side effects.
+3. UI trigger flow remains synchronous/local.
+4. Reads/writes remain bounded to the configured/local artifacts root.
+5. Success and failure states are described accurately and conservatively.
 
 ## Acceptance criteria
 
 This phase is complete when:
 
-- the operator UI launch/mount surface is cleaner and easier for callers to consume
-- current UI behavior remains intact for valid and invalid root/artifact states
-- success and failure outputs still clearly distinguish:
-  - `analyst_timeout`
-  - `analyst_transport`
-  - `reasoning_parse`
-- tests cover unchanged behavior after the cleanup
+- a local operator can read the docs and understand how to:
+  - launch the operator UI
+  - configure the artifacts root
+  - generate artifacts locally
+  - inspect them in the UI
+- the docs describe valid and invalid root/artifact states clearly
+- the docs do not claim unsupported behavior
 - `src/polymarket_arb/*` remains untouched
 
 ## Validation
 
 Run narrow validation only.
 
-At minimum, run the smallest reasonable set covering:
-
-- touched operator UI files
-- touched tests
-
-Use the repo’s normal validation commands for the touched UI surface, plus targeted tests.
+At minimum:
+- validate any touched markdown/docs formatting if there is an existing lightweight doc check
+- otherwise just report exact files changed and confirm no code paths changed
 
 ## Required Codex return format
 
