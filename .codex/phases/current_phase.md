@@ -1,57 +1,63 @@
-# Phase 20A — Future System Next-Track Scope Lock
+# Phase 20B — Operator Review Decision Metadata Contracts
 
 ## Goal
 
-Define a strict scope lock for the next `future_system` track after the completed local operator UI/review artifact checkpoint.
+Define a bounded, deterministic contract for operator review decision/status metadata that can live alongside existing review artifacts as file-based local data.
 
-This phase is docs-only.
+This phase should prioritize models/contracts/docs/tests with no runtime behavior expansion.
 
 ## Read first
 
 - `.codex/phases/current_phase.md`
+- `docs/PHASE_20A_FUTURE_SYSTEM_NEXT_TRACK_SCOPE_LOCK.md`
 - `docs/PHASE_19Q_OPERATOR_UI_TRACK_CLOSEOUT.md`
-- `docs/FUTURE_SYSTEM_OPERATOR_UI_LOCAL_RUNBOOK.md`
-- `docs/PHASE_19O_OPERATOR_UI_MANUAL_VERIFICATION_CHECKPOINT.md`
+- `src/future_system/review_exports/*`
+- `src/future_system/review_file_writers/*`
+- `src/future_system/operator_ui/*`
+- `tests/future_system/test_operator_ui_integration_flows.py`
+- relevant future_system models/tests for export payload and artifact-read semantics
 
 ## Required deliverable
 
-Add:
+Build a scoped contract surface for operator review decision/status metadata, for example under:
 
-- `docs/PHASE_20A_FUTURE_SYSTEM_NEXT_TRACK_SCOPE_LOCK.md`
+- `src/future_system/operator_review_models/*`
 
-The scope-lock doc must define:
+The contract should cover deterministic artifact-file-based concepts such as:
 
-- current repository checkpoint context
-- what Phase 18O–19Q completed
-- what the next track should focus on
-- recommended next track name
-- allowed work
-- forbidden work
-- acceptance criteria
-- validation expectations
-- first 3–5 candidate phases after 20A
+- review status
+- operator decision
+- optional review notes summary
+- local-safe identity/timestamp fields only when explicitly provided
+- backward-safe relationship to existing artifact payloads
 
-Recommended next-track direction:
+Add focused deterministic tests for:
 
-- `future_system operator decision/review workflow hardening`
+- valid statuses/decisions
+- serialization shape
+- backward-safe optional behavior
+- no DB/network/runtime execution coupling
+
+Optional but encouraged:
+
+- short phase doc summarizing the contract
 
 ## Hard constraints
 
 Do not:
 
 - touch `src/polymarket_arb/*`
-- touch `src/future_system/*`
-- touch `tests/*`
-- add features
-- add DB/jobs/queues/scheduling/delivery/inbox/execution/trading logic
-- claim production readiness
+- introduce DB/queues/background jobs/scheduling/delivery/inbox/execution/trading logic
+- widen scope into mutable workflow machinery or UI editing
+- claim final operator workflow completion in this phase
 
 ## Validation
 
-Run:
+Run narrow validation on touched surfaces:
 
-- `git diff --stat`
-- `git diff --name-only`
+- `pytest` on touched future_system tests
+- `ruff check` on touched files
+- `mypy` on touched future_system modules
 
 ## Required Codex return format
 
