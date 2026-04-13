@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, cast
+from urllib.parse import quote
 
 from fastapi import FastAPI, Form, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -33,6 +34,8 @@ _TRIGGER_ANALYST_MODE_CHOICES = (
 )
 _DETAIL_MARKDOWN_MAX_CHARS = 16_000
 _DETAIL_JSON_MAX_CHARS = 24_000
+_DEFAULT_TRIGGER_TARGET_SUBDIRECTORY = "operator_runs"
+_TARGET_SUBDIRECTORY_SEGMENT_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 
 
 @dataclass(frozen=True)
@@ -135,6 +138,14 @@ class ArtifactRunDetail(BaseModel):
     json_content: dict[str, object]
 
 
+@dataclass(frozen=True)
+class TriggerRunResult:
+    """Bounded trigger outcome metadata needed for deterministic UI handoff."""
+
+    run_id: str
+    target_subdirectory: str
+
+
 def create_review_artifacts_operator_app(
     *,
     artifacts_root: str | Path | None = None,
@@ -154,12 +165,14 @@ def create_review_artifacts_operator_app(
             trigger_error=None,
             last_context_source="",
             last_analyst_mode="stub",
+            last_target_subdirectory=_DEFAULT_TRIGGER_TARGET_SUBDIRECTORY,
         )
 
     @app.post("/runs/trigger")
     async def trigger_run(
         context_source: str = Form(...),
         analyst_mode: str = Form("stub"),
+        target_subdirectory: str = Form(_DEFAULT_TRIGGER_TARGET_SUBDIRECTORY),
     ) -> Response:
         if not root_status.is_usable or root_status.resolved_root is None:
             history = _discover_history_for_root_status(root_status=root_status)
@@ -173,15 +186,17 @@ def create_review_artifacts_operator_app(
                     ),
                     last_context_source=context_source,
                     last_analyst_mode=analyst_mode,
+                    last_target_subdirectory=target_subdirectory,
                 ),
                 status_code=422,
             )
 
         try:
-            run_id = trigger_review_artifact_run(
+            run_result = trigger_review_artifact_run(
                 artifacts_root=root_status.resolved_root,
                 context_source=context_source,
                 analyst_mode=analyst_mode,
+                target_subdirectory=target_subdirectory,
             )
         except ValueError as exc:
             history = _discover_history_for_root_status(root_status=root_status)
@@ -189,16 +204,25 @@ def create_review_artifacts_operator_app(
                 content=_render_list_page(
                     history=history,
                     root_status=root_status,
-                    trigger_error=str(exc),
+                    trigger_error=f"Invalid trigger input: {exc}",
                     last_context_source=context_source,
                     last_analyst_mode=analyst_mode,
+                    last_target_subdirectory=target_subdirectory,
                 ),
                 status_code=422,
             )
-        return RedirectResponse(url=f"/runs/{run_id}?created=1", status_code=303)
+        encoded_subdirectory = quote(run_result.target_subdirectory, safe="")
+        return RedirectResponse(
+            url=f"/runs/{run_result.run_id}?created=1&target_subdirectory={encoded_subdirectory}",
+            status_code=303,
+        )
 
     @app.get("/runs/{run_id}", response_class=HTMLResponse)
-    async def view_run(run_id: str, created: int | None = None) -> Response:
+    async def view_run(
+        run_id: str,
+        created: int | None = None,
+        target_subdirectory: str | None = None,
+    ) -> Response:
         if not root_status.is_usable or root_status.resolved_root is None:
             return HTMLResponse(
                 content=_render_error_page(
@@ -213,9 +237,29 @@ def create_review_artifacts_operator_app(
                 status_code=422,
             )
 
+        detail_root = root_status.resolved_root
+        normalized_target_subdirectory: str | None = None
+        if target_subdirectory is not None:
+            try:
+                detail_root, normalized_target_subdirectory = _resolve_target_subdirectory(
+                    artifacts_root=root_status.resolved_root,
+                    target_subdirectory=target_subdirectory,
+                    create=False,
+                )
+            except ValueError as exc:
+                return HTMLResponse(
+                    content=_render_error_page(
+                        title="Run Read Error",
+                        message=str(exc),
+                        back_href="/",
+                        back_label="Back to runs",
+                    ),
+                    status_code=422,
+                )
+
         try:
             detail = read_review_artifact_run_detail(
-                artifacts_root=root_status.resolved_root,
+                artifacts_root=detail_root,
                 run_id=run_id,
             )
         except ValueError as exc:
@@ -234,6 +278,7 @@ def create_review_artifacts_operator_app(
             content=_render_detail_page(
                 detail=detail,
                 created_via_trigger=(created == 1),
+                target_subdirectory=normalized_target_subdirectory,
             )
         )
 
@@ -337,21 +382,30 @@ def trigger_review_artifact_run(
     artifacts_root: Path,
     context_source: str,
     analyst_mode: str = "stub",
-) -> str:
+    target_subdirectory: str = _DEFAULT_TRIGGER_TARGET_SUBDIRECTORY,
+) -> TriggerRunResult:
     """Run one synchronous artifact-generation invocation and return the resulting run id."""
 
     root = _resolve_artifacts_root(artifacts_root)
+    target_directory, normalized_target_subdirectory = _resolve_target_subdirectory(
+        artifacts_root=root,
+        target_subdirectory=target_subdirectory,
+        create=True,
+    )
     context_bundle = _load_context_bundle_from_source(context_source=context_source)
     analyst = _build_trigger_analyst(mode=analyst_mode)
     entry_result = run_analysis_and_write_review_artifacts(
         context_bundle=context_bundle,
         analyst=analyst,
-        target_directory=root,
+        target_directory=target_directory,
     )
     run_json_path = Path(
         entry_result.entry_result.artifact_flow.flow_result.file_write_result.json_file_path
     )
-    return _normalize_run_id(run_json_path.stem)
+    return TriggerRunResult(
+        run_id=_normalize_run_id(run_json_path.stem),
+        target_subdirectory=normalized_target_subdirectory,
+    )
 
 
 def read_review_artifact_run_detail(*, artifacts_root: Path, run_id: str) -> ArtifactRunDetail:
@@ -497,16 +551,64 @@ def _artifacts_root_unavailable_message(*, root_status: ArtifactsRootStatus) -> 
     return "artifacts_root must reference a readable and writable directory."
 
 
+def _resolve_target_subdirectory(
+    *,
+    artifacts_root: Path,
+    target_subdirectory: str,
+    create: bool,
+) -> tuple[Path, str]:
+    normalized_raw = target_subdirectory.strip()
+    normalized = normalized_raw or _DEFAULT_TRIGGER_TARGET_SUBDIRECTORY
+    subdirectory_path = Path(normalized)
+
+    if subdirectory_path.is_absolute():
+        raise ValueError("target_subdirectory must be a relative path under artifacts root.")
+
+    safe_parts: list[str] = []
+    for part in subdirectory_path.parts:
+        if part in {"", ".", ".."}:
+            raise ValueError(
+                "target_subdirectory must not contain empty, '.' , or '..' path segments."
+            )
+        if not _TARGET_SUBDIRECTORY_SEGMENT_PATTERN.fullmatch(part):
+            raise ValueError(
+                "target_subdirectory segments may only include letters, numbers, '.', '_' , or '-'."
+            )
+        safe_parts.append(part)
+
+    if not safe_parts:
+        raise ValueError("target_subdirectory must contain at least one safe path segment.")
+
+    normalized_subdirectory = "/".join(safe_parts)
+    target_directory = (artifacts_root / normalized_subdirectory).resolve()
+    try:
+        target_directory.relative_to(artifacts_root)
+    except ValueError as exc:
+        raise ValueError("target_subdirectory must stay within artifacts root.") from exc
+
+    if create:
+        try:
+            target_directory.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            raise ValueError(
+                "target_subdirectory could not be created under artifacts root."
+            ) from exc
+
+    return target_directory, normalized_subdirectory
+
+
 def _load_context_bundle_from_source(*, context_source: str) -> OpportunityContextBundle:
     normalized_source = context_source.strip()
     if not normalized_source:
-        raise ValueError("context_source must be a non-empty path string.")
+        raise ValueError("context_source is required and must point to a JSON file.")
 
     source_path = Path(normalized_source)
+    if source_path.suffix.lower() != ".json":
+        raise ValueError("context_source must reference a .json file path.")
     if not source_path.exists():
-        raise ValueError("context_source must reference an existing file.")
+        raise ValueError("context_source file does not exist.")
     if not source_path.is_file():
-        raise ValueError("context_source must reference a file.")
+        raise ValueError("context_source must reference a file path.")
 
     try:
         payload = json.loads(source_path.read_text(encoding="utf-8"))
@@ -624,6 +726,7 @@ def _render_list_page(
     trigger_error: str | None,
     last_context_source: str,
     last_analyst_mode: str,
+    last_target_subdirectory: str,
 ) -> str:
     rows: list[str] = []
     for run in history.runs:
@@ -701,6 +804,8 @@ def _render_list_page(
             "Triggering is unavailable until artifacts root configuration is fixed."
             "</p>"
         )
+    context_source_input = html.escape(last_context_source)
+    target_subdirectory_input = html.escape(last_target_subdirectory.strip())
 
     return (
         "<!doctype html>"
@@ -718,18 +823,42 @@ def _render_list_page(
         ".root-ok{border-color:#86efac;background:#f0fdf4;}"
         ".root-problem{border-color:#fca5a5;background:#fef2f2;}"
         "input,select,button{font:inherit;padding:6px;border:1px solid #d1d5db;border-radius:4px;}"
-        "form{display:grid;grid-template-columns:1fr auto auto;gap:8px;max-width:900px;}"
+        "label{font-weight:600;display:block;margin-bottom:4px;}"
+        ".help{font-size:12px;color:#4b5563;margin-top:4px;}"
+        ".form-grid{display:grid;grid-template-columns:2fr 1fr;gap:12px;max-width:920px;}"
+        ".form-field{background:#fff;border:1px solid #d1d5db;padding:10px;}"
+        ".form-actions{margin-top:10px;}"
         "</style></head><body>"
         "<h1>Review Artifacts</h1>"
         f"{root_block}"
         "<h2>Trigger Run</h2>"
         "<form action=\"/runs/trigger\" method=\"post\">"
-        "<input type=\"text\" name=\"context_source\" placeholder=\"/path/to/context_bundle.json\" "
-        f"value=\"{html.escape(last_context_source)}\" required{disable_trigger_attr}>"
-        f"<select name=\"analyst_mode\"{disable_trigger_attr}>"
-        f"{mode_options_html}"
-        "</select>"
-        f"<button type=\"submit\"{disable_trigger_attr}>Run</button>"
+        "<div class=\"form-grid\">"
+        "<div class=\"form-field\">"
+        "<label for=\"context_source\">Context Source JSON Path</label>"
+        "<input id=\"context_source\" type=\"text\" name=\"context_source\" "
+        "placeholder=\"/absolute/path/context_bundle.json\" "
+        f"value=\"{context_source_input}\" required{disable_trigger_attr}>"
+        "<p class=\"help\">Provide an existing OpportunityContextBundle JSON file path.</p>"
+        "</div>"
+        "<div class=\"form-field\">"
+        "<label for=\"target_subdirectory\">Target Subdirectory</label>"
+        "<input id=\"target_subdirectory\" type=\"text\" name=\"target_subdirectory\" "
+        f"value=\"{target_subdirectory_input}\" required{disable_trigger_attr}>"
+        "<p class=\"help\">Relative subdirectory under artifacts root; "
+        "safe default isolates UI-triggered runs.</p>"
+        "</div>"
+        "<div class=\"form-field\">"
+        "<label for=\"analyst_mode\">Analyst Mode</label>"
+        f"<select id=\"analyst_mode\" name=\"analyst_mode\"{disable_trigger_attr}>"
+        f"{mode_options_html}</select>"
+        "<p class=\"help\">Use `stub` for normal deterministic success or choose "
+        "a failure mode.</p>"
+        "</div>"
+        "</div>"
+        "<div class=\"form-actions\">"
+        f"<button type=\"submit\"{disable_trigger_attr}>Run Analysis</button>"
+        "</div>"
         "</form>"
         f"{trigger_disabled_block}"
         f"{error_block}"
@@ -762,7 +891,12 @@ def _render_status_badge(
     return f"<span class=\"badge {class_name}\">{html.escape(label)}</span>"
 
 
-def _render_detail_page(*, detail: ArtifactRunDetail, created_via_trigger: bool) -> str:
+def _render_detail_page(
+    *,
+    detail: ArtifactRunDetail,
+    created_via_trigger: bool,
+    target_subdirectory: str | None,
+) -> str:
     failure_stage = detail.run.failure_stage if detail.run.failure_stage is not None else "none"
     status_badge = _render_status_badge(
         status=detail.run.status,
@@ -793,9 +927,22 @@ def _render_detail_page(*, detail: ArtifactRunDetail, created_via_trigger: bool)
         )
     created_block = ""
     if created_via_trigger:
+        target_subdirectory_line = (
+            f"<dt>Target Subdirectory</dt><dd>{html.escape(target_subdirectory)}</dd>"
+            if target_subdirectory is not None
+            else ""
+        )
         created_block = (
-            "<p style=\"color:#065f46;font-weight:600;\">Run created via trigger and loaded."
-            "</p>"
+            "<section class=\"section\" style=\"border-color:#86efac;background:#f0fdf4;\">"
+            "<h2>Trigger Result</h2>"
+            "<p style=\"color:#065f46;font-weight:600;\">Run created via trigger and loaded.</p>"
+            "<dl class=\"meta-grid\">"
+            f"<dt>Theme ID</dt><dd>{html.escape(detail.run.theme_id)}</dd>"
+            f"<dt>Status</dt><dd>{status_badge}</dd>"
+            f"<dt>Failure Stage</dt><dd>{html.escape(failure_stage)}</dd>"
+            f"{target_subdirectory_line}"
+            "</dl>"
+            "</section>"
         )
 
     return (

@@ -24,6 +24,7 @@ _CONTEXT_FIXTURE_PATH = Path(
     "tests/fixtures/future_system/context_bundle/context_bundle_inputs.json"
 )
 _ARTIFACTS_ROOT_ENV = "FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT"
+_DEFAULT_TRIGGER_TARGET_SUBDIRECTORY = "operator_runs"
 
 
 def test_operator_ui_lists_success_and_failure_runs_with_stage_context(tmp_path: Path) -> None:
@@ -142,20 +143,30 @@ def test_operator_ui_trigger_success_redirects_to_run_detail_and_writes_inside_r
 
     assert response.status_code == 303
     location = response.headers["location"]
-    assert location == "/runs/theme_ctx_strong.analysis_success_export?created=1"
+    assert (
+        location
+        == "/runs/theme_ctx_strong.analysis_success_export"
+        f"?created=1&target_subdirectory={_DEFAULT_TRIGGER_TARGET_SUBDIRECTORY}"
+    )
 
     detail = client.get(location)
     assert detail.status_code == 200
     assert "Review Artifact Detail" in detail.text
+    assert "Trigger Result" in detail.text
     assert "Run created via trigger and loaded." in detail.text
+    assert "Target Subdirectory" in detail.text
+    assert _DEFAULT_TRIGGER_TARGET_SUBDIRECTORY in detail.text
     assert "status" in detail.text
 
-    markdown_path = tmp_path / "theme_ctx_strong.analysis_success_export.md"
-    json_path = tmp_path / "theme_ctx_strong.analysis_success_export.json"
+    target_root = tmp_path / _DEFAULT_TRIGGER_TARGET_SUBDIRECTORY
+    markdown_path = target_root / "theme_ctx_strong.analysis_success_export.md"
+    json_path = target_root / "theme_ctx_strong.analysis_success_export.json"
     assert markdown_path.exists()
     assert json_path.exists()
-    assert markdown_path.resolve().parent == tmp_path.resolve()
-    assert json_path.resolve().parent == tmp_path.resolve()
+    assert markdown_path.resolve().parent == target_root.resolve()
+    assert json_path.resolve().parent == target_root.resolve()
+    assert markdown_path.resolve().parent != tmp_path.resolve()
+    assert json_path.resolve().parent != tmp_path.resolve()
 
 
 @pytest.mark.parametrize(
@@ -184,7 +195,8 @@ def test_operator_ui_trigger_failure_preserves_stage_and_handoff(
     location = response.headers["location"]
     assert (
         location
-        == f"/runs/theme_ctx_strong.analysis_failure_export.{expected_failure_stage}?created=1"
+        == "/runs/theme_ctx_strong.analysis_failure_export."
+        f"{expected_failure_stage}?created=1&target_subdirectory={_DEFAULT_TRIGGER_TARGET_SUBDIRECTORY}"
     )
 
     detail = client.get(location)
@@ -205,7 +217,8 @@ def test_operator_ui_trigger_fails_safely_for_invalid_context_input(tmp_path: Pa
 
     assert response.status_code == 422
     assert "Trigger Error" in response.text
-    assert "context_source must reference an existing file." in response.text
+    assert "Invalid trigger input:" in response.text
+    assert "context_source file does not exist." in response.text
     assert "Review Artifacts" in response.text
 
 
@@ -219,6 +232,71 @@ def test_operator_ui_reports_configured_readable_root_status(tmp_path: Path) -> 
     assert "Artifacts Root Status" in response.text
     assert "configured and readable" in response.text
     assert str(tmp_path.resolve()) in response.text
+
+
+def test_operator_ui_run_form_shows_labels_and_help_text(tmp_path: Path) -> None:
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    body = response.text
+    assert "Context Source JSON Path" in body
+    assert "Target Subdirectory" in body
+    assert "Analyst Mode" in body
+    assert "safe default isolates UI-triggered runs" in body
+    assert f"value=\"{_DEFAULT_TRIGGER_TARGET_SUBDIRECTORY}\"" in body
+
+
+def test_operator_ui_trigger_supports_explicit_target_subdirectory(tmp_path: Path) -> None:
+    context_source = _write_context_source(tmp_path)
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.post(
+        "/runs/trigger",
+        data={
+            "context_source": str(context_source),
+            "analyst_mode": "stub",
+            "target_subdirectory": "manual/session_one",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    location = response.headers["location"]
+    assert location == (
+        "/runs/theme_ctx_strong.analysis_success_export"
+        "?created=1&target_subdirectory=manual%2Fsession_one"
+    )
+
+    detail = client.get(location)
+    assert detail.status_code == 200
+    assert "Target Subdirectory" in detail.text
+    assert "manual/session_one" in detail.text
+
+    target_root = tmp_path / "manual" / "session_one"
+    assert (target_root / "theme_ctx_strong.analysis_success_export.md").exists()
+    assert (target_root / "theme_ctx_strong.analysis_success_export.json").exists()
+
+
+def test_operator_ui_trigger_rejects_invalid_target_subdirectory(tmp_path: Path) -> None:
+    context_source = _write_context_source(tmp_path)
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.post(
+        "/runs/trigger",
+        data={
+            "context_source": str(context_source),
+            "analyst_mode": "stub",
+            "target_subdirectory": "../escape",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 422
+    assert "Trigger Error" in response.text
+    assert "Invalid trigger input:" in response.text
+    assert "target_subdirectory" in response.text
 
 
 def test_operator_ui_handles_not_configured_root_state(

@@ -1,14 +1,15 @@
-# Phase 19C — Operator UI Configuration and Root-Path Hardening
+# Phase 19D — Operator UI Run-Input UX Polish
 
 ## Goal
 
-Harden the operator UI around artifacts-root configuration so the operator can clearly understand whether the local artifact root is configured and readable, and the system fails safely when it is not.
+Polish the operator UI run-input surface so it is clearer, safer, and easier to use without changing the underlying generation pipeline.
 
-This phase is about configuration visibility and local root-path safety only.
+This phase is about run-input UX only.
 
-19A improved run history and navigation.
-19B improved artifact content presentation.
-19C should improve the operator UI’s handling of the configured/local artifacts root without changing the generation pipeline.
+18Z introduced synchronous run triggering from the UI.
+19A/19B/19C improved navigation, artifact presentation, and artifacts-root safety.
+
+19D should improve the operator-facing run form and submit experience while preserving the existing bounded generation flow.
 
 ## Read first
 
@@ -16,22 +17,22 @@ Before changing code, read the existing implementations for:
 
 - `src/future_system/operator_ui/*`
 - any helper/read logic used by the operator UI
-- any existing configuration/env handling already used for the artifacts root
-- directly relevant tests for the current UI surface
+- directly relevant tests for the current UI trigger surface
 
 ## Required deliverable
 
-Build a bounded UI/config hardening pass that:
+Build a bounded UI polish pass that:
 
-- makes configured artifacts-root status clearer
-- clearly distinguishes:
-  - configured and readable
-  - configured but missing
-  - configured but unreadable/invalid
-  - not configured
-- keeps file reads/writes bounded to the configured/local artifacts root
-- provides safe, operator-readable UI messaging for invalid/missing/unreadable root states
-- preserves existing run list/detail/trigger behavior when the root is valid
+- improves run form labels and help text
+- improves invalid-input messaging
+- introduces safer default target-subdirectory behavior under the bounded artifacts root
+- makes submit/result handoff clearer after a run is triggered
+- preserves explicit success vs failure clarity
+- preserves explicit failure-stage clarity where applicable:
+  - analyst_timeout
+  - analyst_transport
+  - reasoning_parse
+- remains bounded to the configured/local artifacts root
 - is covered with deterministic tests only
 
 ## Scope allowed
@@ -39,8 +40,8 @@ Build a bounded UI/config hardening pass that:
 Allowed work in this phase:
 
 - minimal bounded additions/modifications under `src/future_system/operator_ui/*`
-- minimal helper additions strictly needed for root-path validation and safe status reporting
-- minimal route/page/component adjustments strictly needed for configuration-status rendering
+- minimal helper additions strictly needed for safer target-subdirectory derivation and clearer form messaging
+- minimal route/page/component adjustments strictly needed for trigger-form UX
 - minimal tests strictly needed for deterministic coverage
 
 ## Hard constraints
@@ -53,51 +54,57 @@ Do not:
 - add delivery/inbox/notification systems
 - add execution/trading behavior
 - reimplement generation logic in the UI layer
-- add speculative config/platform architecture beyond this bounded hardening pass
+- add speculative product/platform architecture beyond this bounded UX pass
 - allow reads/writes outside the configured/local artifacts root
 
 ## Desired shape
 
 Use the repo’s existing UI/app pattern.
-Prefer the smallest possible bounded refinement of the current operator UI surface.
+Prefer the smallest possible bounded refinement of the current operator UI trigger surface.
 
 A good result is:
 
-- a clear configuration-status section/banner
-- explicit safe UI states for missing/invalid/unreadable root
-- preserved normal behavior when the root is valid
-- deterministic tests for configured/unconfigured/invalid root behavior
+- clearer context-source and target-directory inputs
+- safer default target-subdirectory behavior
+- better inline error/help text
+- clearer success/failure handoff after submit
+- deterministic tests for valid submit, invalid submit, default-subdirectory behavior, and handoff rendering
 
 ## Behavioral requirements
 
 The implementation must preserve this contract:
 
-1. Existing artifact files remain the source of truth.
-2. UI remains downstream of the existing generation flow.
-3. UI does not regenerate or mutate artifacts outside the existing trigger flow.
-4. Success and failure runs remain clearly distinct.
+1. Existing top-level generation flow remains the source of truth.
+2. UI remains a bounded synchronous invocation surface.
+3. UI does not reimplement generation logic.
+4. Success and failure results remain clearly distinct.
 5. Failure-stage identity remains exact.
 6. Reads/writes remain bounded to the configured/local artifacts root.
 7. UI output remains operator-safe and deterministic.
-8. Configuration problems are surfaced clearly and safely.
 
-UI/config requirements:
+UI requirements:
 
-- must make the current artifacts-root state visible
-- must provide explicit and safe messaging for missing/invalid/unreadable root states
-- must preserve normal list/detail/trigger behavior when the root is valid
-- must fail explicitly and safely on invalid root usage
+- must accept explicit context source input
+- must provide safer target-subdirectory behavior under the bounded root
+- must make invalid input errors clearer
+- must surface `theme_id`
+- must surface status / failure-stage context clearly after submit
+- must provide a clear way to inspect the resulting run
 - must not invent fake reasoning or fake policy content
 
 ## Acceptance criteria
 
 This phase is complete when:
 
-- an operator can tell whether the artifacts root is configured and usable
-- invalid/missing/unreadable root states are handled safely and clearly
-- normal UI behavior remains intact when the root is valid
-- reads/writes stay bounded to the configured/local artifacts root
-- tests cover configured, missing, invalid, and unreadable-root behavior
+- an operator can trigger runs more safely and clearly from the UI
+- invalid inputs are handled with clearer messages
+- default target-subdirectory behavior is safer and bounded
+- success and failure handoff after submit is clearer
+- failure outputs explicitly distinguish:
+  - `analyst_timeout`
+  - `analyst_transport`
+  - `reasoning_parse`
+- tests cover input/help/error/default/handoff behavior
 - `src/polymarket_arb/*` remains untouched
 
 ## Validation
