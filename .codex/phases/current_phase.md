@@ -1,70 +1,57 @@
-# Phase 19Q — Operator UI Track Closeout
+# Phase 20A — Future System Next-Track Scope Lock
 
 ## Goal
 
-Produce a factual closeout/readiness checkpoint document for the `future_system` operator UI + review-artifact track.
+Define a strict scope lock for the next `future_system` track after the completed local operator UI/review artifact checkpoint.
 
-This phase is docs-only closeout.
+This phase is docs-only.
 
 ## Read first
 
-Before writing closeout docs, read:
-
 - `.codex/phases/current_phase.md`
+- `docs/PHASE_19Q_OPERATOR_UI_TRACK_CLOSEOUT.md`
 - `docs/FUTURE_SYSTEM_OPERATOR_UI_LOCAL_RUNBOOK.md`
 - `docs/PHASE_19O_OPERATOR_UI_MANUAL_VERIFICATION_CHECKPOINT.md`
-- `tests/future_system/test_operator_ui_integration_flows.py`
-- `src/future_system/operator_ui/app_entry.py`
-- `src/future_system/operator_ui/review_artifacts.py`
-- `src/future_system/cli/review_artifacts.py`
 
 ## Required deliverable
 
-Add one closeout document:
+Add:
 
-- `docs/PHASE_19Q_OPERATOR_UI_TRACK_CLOSEOUT.md`
+- `docs/PHASE_20A_FUTURE_SYSTEM_NEXT_TRACK_SCOPE_LOCK.md`
 
-The closeout must include:
+The scope-lock doc must define:
 
-- repo/branch/phase context
-- what the full Phase 18O–19Q track delivered
-- current operator workflow coverage:
-  - CLI artifact generation
-  - UI read/list/detail
-  - UI synchronous trigger
-  - mounted app support
-  - local runbook
-  - integration-flow tests
-- explicit out-of-scope items that remain out:
-  - production trading/execution
-  - background jobs/scheduling
-  - DB persistence
-  - notification/delivery
-  - broader `src/polymarket_arb` integration
-- safety boundaries that must remain true
-- validation commands to run before merge/handoff
-- recommended next decision:
-  - stop/merge checkpoint, or
-  - start a new bounded track
+- current repository checkpoint context
+- what Phase 18O–19Q completed
+- what the next track should focus on
+- recommended next track name
+- allowed work
+- forbidden work
+- acceptance criteria
+- validation expectations
+- first 3–5 candidate phases after 20A
+
+Recommended next-track direction:
+
+- `future_system operator decision/review workflow hardening`
 
 ## Hard constraints
 
 Do not:
 
-- modify anything under `src/polymarket_arb/*`
-- change production/runtime/operator UI behavior
-- add features or infrastructure (DB/jobs/queues/scheduling/delivery/inbox/execution/trading logic)
-- claim live production readiness
+- touch `src/polymarket_arb/*`
+- touch `src/future_system/*`
+- touch `tests/*`
+- add features
+- add DB/jobs/queues/scheduling/delivery/inbox/execution/trading logic
+- claim production readiness
 
 ## Validation
 
-Run exactly:
+Run:
 
 - `git diff --stat`
 - `git diff --name-only`
-- `pytest tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_app_wiring.py tests/future_system/test_operator_ui_package_exports.py tests/future_system/test_operator_ui_app_entry.py tests/future_system/test_operator_ui_integration_flows.py`
-- `ruff check src/future_system/operator_ui tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_app_wiring.py tests/future_system/test_operator_ui_package_exports.py tests/future_system/test_operator_ui_app_entry.py tests/future_system/test_operator_ui_integration_flows.py`
-- `mypy src/future_system/operator_ui`
 
 ## Required Codex return format
 
@@ -73,5 +60,5 @@ Return:
 1. concise summary
 2. exact files changed
 3. validation output
-4. any risks/deferred items
+4. risks/deferred items
 5. do not commit unless asked
