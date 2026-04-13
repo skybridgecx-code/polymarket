@@ -1,48 +1,47 @@
-# Phase 18T — Review Bundle Export Surface
+# Phase 18U — Review Bundle File Writer Boundary
 
 ## Goal
 
-Add a bounded export surface that converts the 18S in-memory review bundle into deterministic export payloads suitable for later file-writing, delivery, or API response work.
+Add a bounded file-writer layer that takes the 18T review export payloads and writes deterministic local files to a controlled output target.
 
-This phase is about export payload construction only.
+This phase is about filesystem writing only.
 
-18S introduced a deterministic in-memory review bundle.
-18T should transform that bundle into stable exportable payloads without adding filesystem writing, persistence, UI, or orchestration.
+18T introduced deterministic export payloads.
+18U should add a small local file-writing boundary without introducing delivery, persistence backends, UI, or orchestration.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
+- `src/future_system/review_exports/*`
 - `src/future_system/review_bundles/*`
-- `src/future_system/review_packets/*`
-- `src/future_system/review_renderers/*`
-- any directly relevant runtime/result models that flow into the bundle
+- any directly relevant existing local artifact/file-writing helpers already present in the repo, if any
 
-Also read the directly relevant tests for those layers before implementing.
+Also read the directly relevant tests for the export layer before implementing.
 
 ## Required deliverable
 
-Build a bounded export layer that:
+Build a bounded file-writer layer that:
 
-- accepts the 18S review bundle
-- produces deterministic export payload models for at least:
-  - structured JSON-ready payload
-  - markdown document payload
+- accepts the 18T export payload package
+- writes deterministic local files for at least:
+  - markdown output
+  - JSON output
+- writes only into an explicitly provided target directory
+- returns a structured file-write result/model describing what was written
 - preserves explicit distinction between:
-  - success
-  - analyst timeout failure
-  - analyst transport failure
-  - reasoning parse failure
-- exposes a small builder/entrypoint for callers
-- returns payloads only, without writing them anywhere
+  - success exports
+  - analyst timeout failure exports
+  - analyst transport failure exports
+  - reasoning parse failure exports
 - is covered with deterministic unit tests only
 
 ## Scope allowed
 
 Allowed work in this phase:
 
-- new bounded files under `src/future_system/review_exports/*`
-- minimal helper/model additions strictly needed for export payload construction
+- new bounded files under `src/future_system/review_file_writers/*`
+- minimal helper/model additions strictly needed for local file writing
 - minimal test additions strictly needed for deterministic coverage
 
 ## Hard constraints
@@ -50,74 +49,75 @@ Allowed work in this phase:
 Do not:
 
 - modify anything under `src/polymarket_arb/*`
-- add filesystem writing
-- add database/persistence work
+- add database/persistence backends
+- add network delivery, email, notifications, or inbox/reporting systems
 - add scheduling/orchestration
 - add UI
 - add execution/trading behavior
-- change runtime, review packet, renderer, or review bundle semantics beyond minimal bounded export support
-- collapse failure stages into generic export status
-- add speculative notification/inbox/reporting infrastructure
+- change review export semantics beyond minimal bounded writer support
+- write outside the caller-provided target directory
+- introduce unsafe path behavior or implicit global output locations
+- add speculative artifact registry architecture
 
 ## Desired shape
 
-Prefer a small dedicated export surface, for example:
+Prefer a small dedicated file-writer surface, for example:
 
-- `src/future_system/review_exports/__init__.py`
-- `src/future_system/review_exports/models.py`
-- `src/future_system/review_exports/builder.py`
+- `src/future_system/review_file_writers/__init__.py`
+- `src/future_system/review_file_writers/models.py`
+- `src/future_system/review_file_writers/writer.py`
 
-Tests should stay narrow and deterministic.
+Tests should stay narrow and deterministic and should use temp directories only.
 
 ## Behavioral requirements
 
 The implementation must preserve this contract:
 
-1. Review bundle remains the source of truth for export construction.
-2. Export layer is downstream of review bundle construction.
-3. Export construction does not re-run runtime, reasoning, policy, review packet, or rendering logic.
-4. Export payloads must be deterministic and operator-safe.
-5. Success and failure exports must remain structurally distinct or explicitly typed.
-6. Failure exports must preserve exact failure-stage identity.
-7. Export layer returns payloads only, not side effects.
+1. Review export payloads remain the source of truth for written content.
+2. File-writer layer is downstream of export payload construction.
+3. File writing does not re-run runtime, reasoning, policy, review packet, rendering, bundle, or export logic.
+4. Files written must be deterministic in content and naming.
+5. Writer must operate only inside an explicitly provided target directory.
+6. Writer result must clearly describe what files were written.
+7. The writer must remain local-only and side-effect-bounded.
 
-Export payload requirements:
+File-writer requirements:
 
-- must include `theme_id`
-- must include export kind/type
-- must include bundle status / packet kind context
-- must include deterministic plain text and/or markdown content where appropriate
-- must include a structured JSON-ready representation
-- must include `run_flags`
-- failure exports must include explicit failure stage
-- success exports may include bounded success details already present in upstream bundle content
-- failure exports must not invent fake reasoning or fake policy content
+- must write at least one markdown file and one JSON file
+- must include `theme_id` in deterministic filenames or directory layout
+- must produce stable naming for success vs failure outputs
+- must preserve explicit failure-stage identity in the written content and/or metadata when applicable
+- must return structured metadata describing paths written
+- must not invent fake reasoning or fake policy content
+- must fail explicitly on invalid target directory inputs rather than silently choosing another location
 
 Expose a small entrypoint such as:
 
-- `build_review_export_payloads(...)`
+- `write_review_export_files(...)`
 
 or a similarly small bounded equivalent.
 
-A good outcome is a model that contains, at minimum:
+A good result model may include, at minimum:
 
-- a JSON-ready export payload
-- a markdown export payload
-- minimal metadata describing the export package
+- target directory
+- written markdown file path
+- written JSON file path
+- theme_id
+- export status / failure stage context
 
 ## Acceptance criteria
 
 This phase is complete when:
 
-- callers can convert an 18S review bundle into deterministic export payloads
-- exports include a JSON-ready structured payload and a markdown payload
-- success and failure outcomes are preserved cleanly
-- failure exports explicitly distinguish:
+- callers can pass an 18T export payload package and a target directory and receive deterministic written local files
+- markdown and JSON files are both written
+- success and failure exports are preserved cleanly
+- failure outputs explicitly distinguish:
   - `analyst_timeout`
   - `analyst_transport`
   - `reasoning_parse`
-- no filesystem writing, DB work, UI work, or orchestration is added
-- tests cover success plus each expected failure stage
+- writer stays bounded to caller-provided local filesystem targets only
+- tests cover success plus each expected failure stage, using temp directories
 - `src/polymarket_arb/*` remains untouched
 
 ## Validation
@@ -126,7 +126,7 @@ Run narrow validation only.
 
 At minimum, run the smallest reasonable set covering:
 
-- touched `review_exports` files
+- touched `review_file_writers` files
 - any touched tests
 
 Use:
