@@ -13,10 +13,53 @@ from future_system.operator_ui.artifact_reads import (
     status_label,
 )
 from future_system.operator_ui.root_status import ARTIFACTS_ROOT_ENV, ArtifactsRootStatus
+from future_system.operator_ui.style_tokens import (
+    BADGE_CSS,
+    BASE_PAGE_CSS,
+    DETAIL_SECTION_CSS,
+    ERROR_CSS,
+    FORM_CSS,
+    OUTCOME_CSS,
+    PRE_CSS,
+    ROOT_STATUS_CSS,
+    TABLE_CSS,
+    TERM_CSS,
+    TRIGGER_DISABLED_INLINE_STYLE,
+    TRIGGER_ERROR_INLINE_STYLE,
+    TRIGGER_RESULT_HEADING_INLINE_STYLE,
+    TRIGGER_RESULT_NOTE_INLINE_STYLE,
+    TRIGGER_RESULT_SECTION_INLINE_STYLE,
+    TRUNCATE_CSS,
+    compose_css,
+    outcome_label,
+    outcome_section_class,
+    root_status_class,
+    status_badge_class,
+)
 from future_system.runtime.models import AnalysisRunFailureStage
 
 DETAIL_MARKDOWN_MAX_CHARS = 16_000
 DETAIL_JSON_MAX_CHARS = 24_000
+LIST_PAGE_CSS = compose_css(
+    BASE_PAGE_CSS,
+    TABLE_CSS,
+    BADGE_CSS,
+    ROOT_STATUS_CSS,
+    FORM_CSS,
+)
+DETAIL_PAGE_CSS = compose_css(
+    BASE_PAGE_CSS,
+    BADGE_CSS,
+    DETAIL_SECTION_CSS,
+    OUTCOME_CSS,
+    PRE_CSS,
+    TERM_CSS,
+    TRUNCATE_CSS,
+)
+ERROR_PAGE_CSS = compose_css(
+    BASE_PAGE_CSS,
+    ERROR_CSS,
+)
 FAILURE_STAGE_DESCRIPTIONS: dict[AnalysisRunFailureStage, str] = {
     "analyst_timeout": "Analyst timed out before producing a complete response.",
     "analyst_transport": "Analyst transport call failed before a usable response was returned.",
@@ -54,7 +97,7 @@ def render_list_page(
     error_block = ""
     if trigger_error is not None:
         error_block = (
-            "<p style=\"color:#b91c1c;font-weight:600;\">Trigger Error: "
+            f"<p style=\"{TRIGGER_ERROR_INLINE_STYLE}\">Trigger Error: "
             f"{html.escape(trigger_error)}</p>"
         )
     issue_rows: list[str] = []
@@ -87,7 +130,7 @@ def render_list_page(
         )
     mode_options_html = "".join(mode_options)
     root_status_label = _render_artifacts_root_state_label(root_status=root_status)
-    root_status_class = "root-ok" if root_status.is_usable else "root-problem"
+    root_status_css_class = root_status_class(is_usable=root_status.is_usable)
     configured_value = (
         html.escape(root_status.configured_value)
         if root_status.configured_value is not None
@@ -96,7 +139,7 @@ def render_list_page(
     root_message_html = html.escape(root_status.message)
     root_block = (
         "<h2>Artifacts Root Status</h2>"
-        f"<div class=\"root-status {root_status_class}\">"
+        f"<div class=\"root-status {root_status_css_class}\">"
         f"<p><strong>Status:</strong> {html.escape(root_status_label)}</p>"
         f"<p><strong>Configured Value:</strong> <code>{configured_value}</code></p>"
         f"<p>{root_message_html}</p>"
@@ -106,7 +149,7 @@ def render_list_page(
     trigger_disabled_block = ""
     if not root_status.is_usable:
         trigger_disabled_block = (
-            "<p style=\"color:#991b1b;font-weight:600;\">"
+            f"<p style=\"{TRIGGER_DISABLED_INLINE_STYLE}\">"
             "Triggering is unavailable until artifacts root configuration is fixed."
             "</p>"
         )
@@ -116,25 +159,7 @@ def render_list_page(
     return (
         "<!doctype html>"
         "<html><head><meta charset=\"utf-8\"><title>Review Artifacts</title>"
-        "<style>"
-        "body{font-family:ui-sans-serif,system-ui;padding:20px;background:#f8fafc;color:#111827;}"
-        "table{border-collapse:collapse;width:100%;background:#fff;}"
-        "th,td{border:1px solid #d1d5db;padding:8px;text-align:left;}"
-        "th{background:#eef2ff;}"
-        "a{color:#1d4ed8;text-decoration:none;}"
-        ".badge{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:600;}"
-        ".badge-success{background:#dcfce7;color:#166534;}"
-        ".badge-failed{background:#fee2e2;color:#991b1b;}"
-        ".root-status{border:1px solid #d1d5db;padding:12px;background:#fff;margin-bottom:8px;}"
-        ".root-ok{border-color:#86efac;background:#f0fdf4;}"
-        ".root-problem{border-color:#fca5a5;background:#fef2f2;}"
-        "input,select,button{font:inherit;padding:6px;border:1px solid #d1d5db;border-radius:4px;}"
-        "label{font-weight:600;display:block;margin-bottom:4px;}"
-        ".help{font-size:12px;color:#4b5563;margin-top:4px;}"
-        ".form-grid{display:grid;grid-template-columns:2fr 1fr;gap:12px;max-width:920px;}"
-        ".form-field{background:#fff;border:1px solid #d1d5db;padding:10px;}"
-        ".form-actions{margin-top:10px;}"
-        "</style></head><body>"
+        f"<style>{LIST_PAGE_CSS}</style></head><body>"
         "<h1>Review Artifacts</h1>"
         f"{root_block}"
         "<h2>Trigger Run</h2>"
@@ -190,8 +215,8 @@ def render_detail_page(
         status=detail.run.status,
         failure_stage=detail.run.failure_stage,
     )
-    outcome_label = "SUCCESS" if detail.run.status == "success" else "FAILED"
-    outcome_tone_class = "outcome-success" if detail.run.status == "success" else "outcome-failed"
+    outcome_label_text = outcome_label(detail.run.status)
+    outcome_tone_class = outcome_section_class(detail.run.status)
     failure_stage_description = _failure_stage_description(
         status=detail.run.status,
         failure_stage=detail.run.failure_stage,
@@ -226,9 +251,10 @@ def render_detail_page(
     created_block = ""
     if created_via_trigger:
         created_block = (
-            "<section class=\"section\" style=\"border-color:#86efac;background:#f0fdf4;\">"
+            f"<section class=\"section\" style=\"{TRIGGER_RESULT_SECTION_INLINE_STYLE}\">"
             "<h2>Trigger Result Summary</h2>"
-            "<p style=\"color:#065f46;font-weight:600;\">Run created via trigger and loaded.</p>"
+            f"<p style=\"{TRIGGER_RESULT_HEADING_INLINE_STYLE}\">"
+            "Run created via trigger and loaded.</p>"
             "<dl class=\"meta-grid\">"
             f"<dt>Run ID</dt><dd>{html.escape(detail.run.run_id)}</dd>"
             f"<dt>Theme ID</dt><dd>{html.escape(detail.run.theme_id)}</dd>"
@@ -237,7 +263,8 @@ def render_detail_page(
             f"<dt>Target Subdirectory</dt><dd>{html.escape(target_subdirectory_display)}</dd>"
             f"<dt>Artifact Directory</dt><dd>{html.escape(artifact_directory)}</dd>"
             "</dl>"
-            "<p style=\"margin-top:8px;color:#065f46;\">Inspect outcome and artifact content "
+            f"<p style=\"{TRIGGER_RESULT_NOTE_INLINE_STYLE}\">"
+            "Inspect outcome and artifact content "
             "sections below for full details.</p>"
             "</section>"
         )
@@ -245,29 +272,13 @@ def render_detail_page(
     return (
         "<!doctype html>"
         "<html><head><meta charset=\"utf-8\"><title>Review Artifact Detail</title>"
-        "<style>"
-        "body{font-family:ui-sans-serif,system-ui;padding:20px;background:#f8fafc;color:#111827;}"
-        ".badge{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:600;}"
-        ".badge-success{background:#dcfce7;color:#166534;}"
-        ".badge-failed{background:#fee2e2;color:#991b1b;}"
-        ".section{margin-top:18px;background:#fff;border:1px solid #d1d5db;padding:12px;}"
-        ".meta-grid{display:grid;grid-template-columns:140px 1fr;gap:6px 10px;}"
-        ".outcome{border-width:2px;}"
-        ".outcome-success{border-color:#86efac;background:#f0fdf4;}"
-        ".outcome-failed{border-color:#fca5a5;background:#fef2f2;}"
-        ".outcome-label{font-size:24px;font-weight:700;margin:0 0 8px 0;}"
-        "pre{white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #d1d5db;"
-        "padding:12px;max-height:540px;overflow:auto;}"
-        "dt{font-weight:600;}"
-        ".truncate{background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:8px;}"
-        "a{color:#1d4ed8;text-decoration:none;}"
-        "</style></head><body>"
+        f"<style>{DETAIL_PAGE_CSS}</style></head><body>"
         "<p><a href=\"/\">Back to runs</a></p>"
         f"{created_block}"
         "<h1>Review Artifact Detail</h1>"
         f"<section class=\"section outcome {outcome_tone_class}\">"
         "<h2>Outcome Summary</h2>"
-        f"<p class=\"outcome-label\">{html.escape(outcome_label)}</p>"
+        f"<p class=\"outcome-label\">{html.escape(outcome_label_text)}</p>"
         "<dl class=\"meta-grid\">"
         f"<dt>Status Label</dt><dd>{html.escape(detail.run.status_label)}</dd>"
         f"<dt>Failure Stage</dt><dd>{html.escape(failure_stage)}</dd>"
@@ -314,11 +325,7 @@ def render_error_page(*, title: str, message: str, back_href: str, back_label: s
     return (
         "<!doctype html>"
         f"<html><head><meta charset=\"utf-8\"><title>{html.escape(title)}</title>"
-        "<style>"
-        "body{font-family:ui-sans-serif,system-ui;padding:20px;background:#f8fafc;color:#111827;}"
-        "a{color:#1d4ed8;text-decoration:none;}"
-        ".error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:12px;}"
-        "</style></head><body>"
+        f"<style>{ERROR_PAGE_CSS}</style></head><body>"
         f"<p><a href=\"{html.escape(back_href)}\">{html.escape(back_label)}</a></p>"
         f"<h1>{html.escape(title)}</h1>"
         f"<div class=\"error\">{html.escape(message)}</div>"
@@ -342,7 +349,7 @@ def _render_status_badge(
     failure_stage: AnalysisRunFailureStage | None,
 ) -> str:
     label = status_label(status=status, failure_stage=failure_stage)
-    class_name = "badge-success" if status == "success" else "badge-failed"
+    class_name = status_badge_class(status)
     return f"<span class=\"badge {class_name}\">{html.escape(label)}</span>"
 
 

@@ -1,29 +1,29 @@
-# Phase 19H — Operator UI Styling and Token Cleanup
+# Phase 19G — Operator UI Template/Component Extraction
 
 ## Goal
 
-Clean up the operator UI styling structure so repeated inline style fragments and status/badge styling are easier to maintain without changing behavior.
+Extract the growing HTML/rendering blocks out of the operator UI route/module so the UI surface is easier to maintain without changing behavior.
 
-This phase is about bounded styling/token cleanup only.
+This phase is about bounded rendering refactor/cleanup only.
 
-18Y–19G established the operator UI read, trigger, history, detail, helper extraction, and template extraction flows.
-19H should improve styling maintainability while preserving current operator-visible behavior.
+18Y–19F established the operator UI read, trigger, history, detail, root-status, and helper extraction flows.
+19G should improve rendering structure and maintainability while preserving current operator-visible behavior.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
 - `src/future_system/operator_ui/*`
-- any repeated inline style fragments currently embedded in render helpers/templates
+- any rendering/template logic currently embedded in `review_artifacts.py`
 - directly relevant tests for the current UI list/detail/trigger surface
 
 ## Required deliverable
 
 Build a bounded cleanup pass that:
 
-- extracts repeated inline style fragments into bounded styling helpers/constants where appropriate
-- centralizes success/failure/failure-stage badge/status styling where appropriate
-- reduces duplication across list/detail/trigger rendering
+- extracts repeated or large HTML/rendering blocks into bounded helper(s)
+- extracts repeated status/badge/section rendering where appropriate
+- keeps route handlers focused on request/response flow instead of large inline rendering blocks
 - preserves existing list/detail/trigger behavior
 - preserves current success/failure and failure-stage rendering behavior
 - keeps reads/writes bounded to the configured/local artifacts root
@@ -34,7 +34,7 @@ Build a bounded cleanup pass that:
 Allowed work in this phase:
 
 - minimal bounded additions/modifications under `src/future_system/operator_ui/*`
-- creation of small styling helper modules/files if clearly justified
+- creation of small rendering helper modules/files if clearly justified
 - minimal test updates strictly needed to preserve and verify unchanged behavior
 
 ## Hard constraints
@@ -57,8 +57,8 @@ Prefer the smallest possible bounded refactor.
 
 A good result is:
 
-- smaller/more focused render helpers/templates
-- one or more small styling/token helpers for repeated visual fragments
+- smaller/more focused `review_artifacts.py`
+- one or more small helper modules for HTML/rendering sections
 - unchanged route behavior
 - deterministic tests proving behavior stayed intact
 
@@ -86,13 +86,13 @@ UI/cleanup requirements:
 
 This phase is complete when:
 
-- the operator UI styling logic is cleaner and more modular
+- the operator UI rendering logic is cleaner and more modular
 - current UI behavior remains intact for valid and invalid root/artifact states
 - success and failure outputs still clearly distinguish:
   - `analyst_timeout`
   - `analyst_transport`
   - `reasoning_parse`
-- tests cover unchanged list/detail/trigger/root-state behavior after the cleanup
+- tests cover unchanged list/detail/trigger/root-state behavior after the refactor
 - `src/polymarket_arb/*` remains untouched
 
 ## Validation
