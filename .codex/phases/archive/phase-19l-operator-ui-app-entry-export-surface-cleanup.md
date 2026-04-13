@@ -1,29 +1,30 @@
-# Phase 19M — Operator UI Launch/Mount Surface Cleanup
+# Phase 19L — Operator UI App Entry/Export Surface Cleanup
 
 ## Goal
 
-Clean up the operator UI launch/mount surface so local startup and mounting usage is easier for callers without changing behavior.
+Clean up the operator UI app entry/export surface so external callers can construct and import the operator UI app more cleanly without changing behavior.
 
-This phase is about bounded launch/mount cleanup only.
+This phase is about bounded app-entry/export cleanup only.
 
-18Y–19L established the operator UI read, trigger, detail, helper extraction, template extraction, styling cleanup, route cleanup, app-wiring cleanup, package/export cleanup, and app-entry cleanup flows.
-19M should improve launch/mount ergonomics while preserving current operator-visible behavior.
+18Y–19K established the operator UI read, trigger, detail, helper extraction, template extraction, styling cleanup, route cleanup, app-wiring cleanup, and package/export cleanup flows.
+19L should improve app entry ergonomics while preserving current operator-visible behavior.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
 - `src/future_system/operator_ui/*`
-- current public app entry exports and any local startup/mount usage patterns
+- current public operator UI exports in `__init__.py`
+- current app factory / app wiring usage patterns
 - directly relevant tests for the current UI surface
 
 ## Required deliverable
 
 Build a bounded cleanup pass that:
 
-- makes local operator UI launch/mount usage clearer where appropriate
-- reduces awkward startup/import patterns where appropriate
-- centralizes the primary launch/mount entrypoint where appropriate
+- makes the public operator UI app factory/export surface clearer where appropriate
+- reduces awkward external import/use paths where appropriate
+- centralizes the primary app-construction entrypoint where appropriate
 - preserves existing list/detail/trigger behavior
 - preserves current success/failure and failure-stage rendering behavior
 - keeps reads/writes bounded to the configured/local artifacts root
@@ -34,7 +35,7 @@ Build a bounded cleanup pass that:
 Allowed work in this phase:
 
 - minimal bounded additions/modifications under `src/future_system/operator_ui/*`
-- small launch/mount helper adjustments if clearly justified
+- small app-entry/export helper adjustments if clearly justified
 - minimal test updates strictly needed to preserve and verify unchanged behavior
 
 ## Hard constraints
@@ -57,8 +58,8 @@ Prefer the smallest possible bounded refactor.
 
 A good result is:
 
-- a clearer single launch/mount surface for callers
-- cleaner local startup ergonomics
+- a clearer single public app-construction/export surface
+- cleaner external import ergonomics
 - unchanged route behavior
 - deterministic tests proving behavior stayed intact
 
@@ -78,7 +79,7 @@ The implementation must preserve this contract:
 
 This phase is complete when:
 
-- the operator UI launch/mount surface is cleaner and easier for callers to consume
+- the operator UI app entry/export surface is cleaner and easier for callers to consume
 - current UI behavior remains intact for valid and invalid root/artifact states
 - success and failure outputs still clearly distinguish:
   - `analyst_timeout`
