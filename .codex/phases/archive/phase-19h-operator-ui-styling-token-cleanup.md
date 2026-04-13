@@ -1,28 +1,29 @@
-# Phase 19I — Operator UI Route/Module Split Cleanup
+# Phase 19H — Operator UI Styling and Token Cleanup
 
 ## Goal
 
-Split the growing operator UI route/module into smaller route-focused pieces so the UI surface is easier to maintain without changing behavior.
+Clean up the operator UI styling structure so repeated inline style fragments and status/badge styling are easier to maintain without changing behavior.
 
-This phase is about bounded route/module cleanup only.
+This phase is about bounded styling/token cleanup only.
 
-18Y–19H established the operator UI read, trigger, history, detail, helper extraction, template extraction, and styling cleanup flows.
-19I should improve route/module structure and maintainability while preserving current operator-visible behavior.
+18Y–19G established the operator UI read, trigger, history, detail, helper extraction, and template extraction flows.
+19H should improve styling maintainability while preserving current operator-visible behavior.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
 - `src/future_system/operator_ui/*`
-- the current route/request handling logic in `review_artifacts.py`
-- directly relevant tests for the current UI list/detail/trigger/root-state surface
+- any repeated inline style fragments currently embedded in render helpers/templates
+- directly relevant tests for the current UI list/detail/trigger surface
 
 ## Required deliverable
 
 Build a bounded cleanup pass that:
 
-- splits route/request handling into smaller focused helpers or modules where appropriate
-- keeps route handlers focused on request/response flow
+- extracts repeated inline style fragments into bounded styling helpers/constants where appropriate
+- centralizes success/failure/failure-stage badge/status styling where appropriate
+- reduces duplication across list/detail/trigger rendering
 - preserves existing list/detail/trigger behavior
 - preserves current success/failure and failure-stage rendering behavior
 - keeps reads/writes bounded to the configured/local artifacts root
@@ -33,7 +34,7 @@ Build a bounded cleanup pass that:
 Allowed work in this phase:
 
 - minimal bounded additions/modifications under `src/future_system/operator_ui/*`
-- creation of small route/helper modules/files if clearly justified
+- creation of small styling helper modules/files if clearly justified
 - minimal test updates strictly needed to preserve and verify unchanged behavior
 
 ## Hard constraints
@@ -56,8 +57,8 @@ Prefer the smallest possible bounded refactor.
 
 A good result is:
 
-- smaller/more focused `review_artifacts.py`
-- one or more small route/helper modules for list/detail/trigger handling
+- smaller/more focused render helpers/templates
+- one or more small styling/token helpers for repeated visual fragments
 - unchanged route behavior
 - deterministic tests proving behavior stayed intact
 
@@ -85,7 +86,7 @@ UI/cleanup requirements:
 
 This phase is complete when:
 
-- the operator UI route/module structure is cleaner and more modular
+- the operator UI styling logic is cleaner and more modular
 - current UI behavior remains intact for valid and invalid root/artifact states
 - success and failure outputs still clearly distinguish:
   - `analyst_timeout`

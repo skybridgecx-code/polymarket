@@ -6,10 +6,9 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.parse import quote
 
 from fastapi import FastAPI, Form, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 
 from future_system.context_bundle.models import OpportunityContextBundle
 from future_system.live_analyst.errors import LiveAnalystTimeoutError, LiveAnalystTransportError
@@ -28,20 +27,18 @@ from future_system.operator_ui.artifact_reads import (
 from future_system.operator_ui.artifact_reads import (
     read_review_artifact_run_detail as _read_review_artifact_run_detail,
 )
-from future_system.operator_ui.render_templates import (
-    render_detail_page as _render_detail_page,
-)
-from future_system.operator_ui.render_templates import (
-    render_error_page as _render_error_page,
-)
-from future_system.operator_ui.render_templates import (
-    render_list_page as _render_list_page,
-)
 from future_system.operator_ui.root_status import (
-    ArtifactsRootStatus,
-    artifacts_root_unavailable_message,
     resolve_artifacts_root,
     resolve_artifacts_root_status,
+)
+from future_system.operator_ui.route_handlers import (
+    handle_list_runs_request as _handle_list_runs_request,
+)
+from future_system.operator_ui.route_handlers import (
+    handle_trigger_run_request as _handle_trigger_run_request,
+)
+from future_system.operator_ui.route_handlers import (
+    handle_view_run_request as _handle_view_run_request,
 )
 from future_system.reasoning_contracts.models import ReasoningInputPacket, RenderedPromptPacket
 from future_system.review_entrypoints.entry import run_analysis_and_write_review_artifacts
@@ -78,10 +75,9 @@ def create_review_artifacts_operator_app(
 
     @app.get("/", response_class=HTMLResponse)
     async def list_runs() -> str:
-        history = _discover_history_for_root_status(root_status=root_status)
-        return _render_list_page(
-            history=history,
+        return _handle_list_runs_request(
             root_status=root_status,
+            discover_review_artifact_history_fn=discover_review_artifact_history,
             trigger_error=None,
             last_context_source="",
             last_analyst_mode="stub",
@@ -95,49 +91,14 @@ def create_review_artifacts_operator_app(
         analyst_mode: str = Form("stub"),
         target_subdirectory: str = Form(_DEFAULT_TRIGGER_TARGET_SUBDIRECTORY),
     ) -> Response:
-        if not root_status.is_usable or root_status.resolved_root is None:
-            history = _discover_history_for_root_status(root_status=root_status)
-            return HTMLResponse(
-                content=_render_list_page(
-                    history=history,
-                    root_status=root_status,
-                    trigger_error=(
-                        "artifacts_root_unavailable: "
-                        f"{artifacts_root_unavailable_message(root_status=root_status)}"
-                    ),
-                    last_context_source=context_source,
-                    last_analyst_mode=analyst_mode,
-                    last_target_subdirectory=target_subdirectory,
-                    trigger_analyst_mode_choices=_TRIGGER_ANALYST_MODE_CHOICES,
-                ),
-                status_code=422,
-            )
-
-        try:
-            run_result = trigger_review_artifact_run(
-                artifacts_root=root_status.resolved_root,
-                context_source=context_source,
-                analyst_mode=analyst_mode,
-                target_subdirectory=target_subdirectory,
-            )
-        except ValueError as exc:
-            history = _discover_history_for_root_status(root_status=root_status)
-            return HTMLResponse(
-                content=_render_list_page(
-                    history=history,
-                    root_status=root_status,
-                    trigger_error=f"Invalid trigger input: {exc}",
-                    last_context_source=context_source,
-                    last_analyst_mode=analyst_mode,
-                    last_target_subdirectory=target_subdirectory,
-                    trigger_analyst_mode_choices=_TRIGGER_ANALYST_MODE_CHOICES,
-                ),
-                status_code=422,
-            )
-        encoded_subdirectory = quote(run_result.target_subdirectory, safe="")
-        return RedirectResponse(
-            url=f"/runs/{run_result.run_id}?created=1&target_subdirectory={encoded_subdirectory}",
-            status_code=303,
+        return _handle_trigger_run_request(
+            root_status=root_status,
+            context_source=context_source,
+            analyst_mode=analyst_mode,
+            target_subdirectory=target_subdirectory,
+            trigger_analyst_mode_choices=_TRIGGER_ANALYST_MODE_CHOICES,
+            trigger_review_artifact_run_fn=trigger_review_artifact_run,
+            discover_review_artifact_history_fn=discover_review_artifact_history,
         )
 
     @app.get("/runs/{run_id}", response_class=HTMLResponse)
@@ -146,91 +107,13 @@ def create_review_artifacts_operator_app(
         created: int | None = None,
         target_subdirectory: str | None = None,
     ) -> Response:
-        if not root_status.is_usable or root_status.resolved_root is None:
-            return HTMLResponse(
-                content=_render_error_page(
-                    title="Run Read Error",
-                    message=(
-                        "artifacts_root_unavailable: "
-                        f"{artifacts_root_unavailable_message(root_status=root_status)}"
-                    ),
-                    back_href="/",
-                    back_label="Back to runs",
-                ),
-                status_code=422,
-            )
-
-        detail_root = root_status.resolved_root
-        normalized_target_subdirectory: str | None = None
-        if target_subdirectory is not None:
-            try:
-                detail_root, normalized_target_subdirectory = _resolve_target_subdirectory(
-                    artifacts_root=root_status.resolved_root,
-                    target_subdirectory=target_subdirectory,
-                    create=False,
-                )
-            except ValueError as exc:
-                if created == 1:
-                    return HTMLResponse(
-                        content=_render_error_page(
-                            title="Trigger Result Unavailable",
-                            message=_build_trigger_result_unavailable_message(
-                                run_id=run_id,
-                                target_subdirectory=target_subdirectory,
-                                detail_error=str(exc),
-                            ),
-                            back_href="/",
-                            back_label="Back to runs",
-                        ),
-                        status_code=422,
-                    )
-                return HTMLResponse(
-                    content=_render_error_page(
-                        title="Run Read Error",
-                        message=str(exc),
-                        back_href="/",
-                        back_label="Back to runs",
-                    ),
-                    status_code=422,
-                )
-
-        try:
-            detail = read_review_artifact_run_detail(
-                artifacts_root=detail_root,
-                run_id=run_id,
-            )
-        except ValueError as exc:
-            if created == 1:
-                return HTMLResponse(
-                    content=_render_error_page(
-                        title="Trigger Result Unavailable",
-                        message=_build_trigger_result_unavailable_message(
-                            run_id=run_id,
-                            target_subdirectory=normalized_target_subdirectory,
-                            detail_error=str(exc),
-                        ),
-                        back_href="/",
-                        back_label="Back to runs",
-                    ),
-                    status_code=422,
-                )
-            status_code = 404 if str(exc).startswith("artifact_run_not_found") else 422
-            return HTMLResponse(
-                content=_render_error_page(
-                    title="Run Read Error",
-                    message=str(exc),
-                    back_href="/",
-                    back_label="Back to runs",
-                ),
-                status_code=status_code,
-            )
-
-        return HTMLResponse(
-            content=_render_detail_page(
-                detail=detail,
-                created_via_trigger=(created == 1),
-                target_subdirectory=normalized_target_subdirectory,
-            )
+        return _handle_view_run_request(
+            root_status=root_status,
+            run_id=run_id,
+            created=created,
+            target_subdirectory=target_subdirectory,
+            read_review_artifact_run_detail_fn=read_review_artifact_run_detail,
+            resolve_target_subdirectory_fn=_resolve_target_subdirectory,
         )
 
     return app
@@ -288,12 +171,6 @@ def read_review_artifact_run_detail(*, artifacts_root: Path, run_id: str) -> Art
     )
 
 
-def _discover_history_for_root_status(*, root_status: ArtifactsRootStatus) -> ArtifactRunHistory:
-    if not root_status.is_usable or root_status.resolved_root is None:
-        return ArtifactRunHistory(runs=[], issues=[])
-    return discover_review_artifact_history(artifacts_root=root_status.resolved_root)
-
-
 def _resolve_target_subdirectory(
     *,
     artifacts_root: Path,
@@ -338,19 +215,6 @@ def _resolve_target_subdirectory(
             ) from exc
 
     return target_directory, normalized_subdirectory
-
-
-def _build_trigger_result_unavailable_message(
-    *,
-    run_id: str,
-    target_subdirectory: str | None,
-    detail_error: str,
-) -> str:
-    target_context = target_subdirectory if target_subdirectory is not None else "(not provided)"
-    return (
-        "trigger_result_unavailable: newly triggered run is missing or partially readable. "
-        f"run_id={run_id}; target_subdirectory={target_context}; detail_error={detail_error}"
-    )
 
 
 def _load_context_bundle_from_source(*, context_source: str) -> OpportunityContextBundle:
