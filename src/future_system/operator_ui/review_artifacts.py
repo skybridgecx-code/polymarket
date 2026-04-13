@@ -1,4 +1,4 @@
-"""Read-only FastAPI operator UI for listing and inspecting review artifact runs."""
+"""FastAPI operator UI for listing, triggering, and inspecting review artifact runs."""
 
 from __future__ import annotations
 
@@ -9,14 +9,26 @@ import re
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Form, HTTPException, Response
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, field_validator
 
+from future_system.context_bundle.models import OpportunityContextBundle
+from future_system.live_analyst.errors import LiveAnalystTimeoutError, LiveAnalystTransportError
+from future_system.reasoning_contracts.models import ReasoningInputPacket, RenderedPromptPacket
+from future_system.review_entrypoints.entry import run_analysis_and_write_review_artifacts
 from future_system.runtime.models import AnalysisRunFailureStage
+from future_system.runtime.protocol import AnalystProtocol, AnalystResponsePayload
+from future_system.runtime.stub_analyst import DeterministicStubAnalyst
 
 _ARTIFACTS_ROOT_ENV = "FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT"
 _RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+_TRIGGER_ANALYST_MODE_CHOICES = (
+    "stub",
+    "analyst_timeout",
+    "analyst_transport",
+    "reasoning_parse",
+)
 
 
 class ArtifactRunListItem(BaseModel):
@@ -61,7 +73,38 @@ def create_review_artifacts_operator_app(
     @app.get("/", response_class=HTMLResponse)
     async def list_runs() -> str:
         runs = discover_review_artifact_runs(artifacts_root=resolved_root)
-        return _render_list_page(runs=runs, artifacts_root=resolved_root)
+        return _render_list_page(
+            runs=runs,
+            artifacts_root=resolved_root,
+            trigger_error=None,
+            last_context_source="",
+            last_analyst_mode="stub",
+        )
+
+    @app.post("/runs/trigger")
+    async def trigger_run(
+        context_source: str = Form(...),
+        analyst_mode: str = Form("stub"),
+    ) -> Response:
+        try:
+            run_id = trigger_review_artifact_run(
+                artifacts_root=resolved_root,
+                context_source=context_source,
+                analyst_mode=analyst_mode,
+            )
+        except ValueError as exc:
+            runs = discover_review_artifact_runs(artifacts_root=resolved_root)
+            return HTMLResponse(
+                content=_render_list_page(
+                    runs=runs,
+                    artifacts_root=resolved_root,
+                    trigger_error=str(exc),
+                    last_context_source=context_source,
+                    last_analyst_mode=analyst_mode,
+                ),
+                status_code=422,
+            )
+        return RedirectResponse(url=f"/runs/{run_id}", status_code=303)
 
     @app.get("/runs/{run_id}", response_class=HTMLResponse)
     async def view_run(run_id: str) -> str:
@@ -105,6 +148,28 @@ def discover_review_artifact_runs(*, artifacts_root: Path) -> list[ArtifactRunLi
         )
 
     return runs
+
+
+def trigger_review_artifact_run(
+    *,
+    artifacts_root: Path,
+    context_source: str,
+    analyst_mode: str = "stub",
+) -> str:
+    """Run one synchronous artifact-generation invocation and return the resulting run id."""
+
+    root = _resolve_artifacts_root(artifacts_root)
+    context_bundle = _load_context_bundle_from_source(context_source=context_source)
+    analyst = _build_trigger_analyst(mode=analyst_mode)
+    entry_result = run_analysis_and_write_review_artifacts(
+        context_bundle=context_bundle,
+        analyst=analyst,
+        target_directory=root,
+    )
+    run_json_path = Path(
+        entry_result.entry_result.artifact_flow.flow_result.file_write_result.json_file_path
+    )
+    return _normalize_run_id(run_json_path.stem)
 
 
 def read_review_artifact_run_detail(*, artifacts_root: Path, run_id: str) -> ArtifactRunDetail:
@@ -163,6 +228,43 @@ def _resolve_artifacts_root(artifacts_root: str | Path | None) -> Path:
     if not candidate.is_dir():
         raise ValueError("artifacts_root must reference a directory.")
     return candidate.resolve()
+
+
+def _load_context_bundle_from_source(*, context_source: str) -> OpportunityContextBundle:
+    normalized_source = context_source.strip()
+    if not normalized_source:
+        raise ValueError("context_source must be a non-empty path string.")
+
+    source_path = Path(normalized_source)
+    if not source_path.exists():
+        raise ValueError("context_source must reference an existing file.")
+    if not source_path.is_file():
+        raise ValueError("context_source must reference a file.")
+
+    try:
+        payload = json.loads(source_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError("context_source must contain valid JSON.") from exc
+
+    try:
+        return OpportunityContextBundle.model_validate(payload)
+    except ValueError as exc:
+        raise ValueError("context_source JSON must validate as OpportunityContextBundle.") from exc
+
+
+def _build_trigger_analyst(*, mode: str) -> AnalystProtocol:
+    if mode == "stub":
+        return DeterministicStubAnalyst()
+    if mode == "analyst_timeout":
+        return _TimeoutAnalyst()
+    if mode == "analyst_transport":
+        return _TransportAnalyst()
+    if mode == "reasoning_parse":
+        return _MalformedAnalyst()
+    raise ValueError(
+        "analyst_mode must be one of "
+        "stub/analyst_timeout/analyst_transport/reasoning_parse."
+    )
 
 
 def _normalize_run_id(run_id: str) -> str:
@@ -230,7 +332,14 @@ def _optional_failure_stage(payload: dict[str, object]) -> AnalysisRunFailureSta
     return cast(AnalysisRunFailureStage, failure_stage)
 
 
-def _render_list_page(*, runs: list[ArtifactRunListItem], artifacts_root: Path) -> str:
+def _render_list_page(
+    *,
+    runs: list[ArtifactRunListItem],
+    artifacts_root: Path,
+    trigger_error: str | None,
+    last_context_source: str,
+    last_analyst_mode: str,
+) -> str:
     rows: list[str] = []
     for run in runs:
         failure_stage = run.failure_stage if run.failure_stage is not None else "none"
@@ -244,6 +353,24 @@ def _render_list_page(*, runs: list[ArtifactRunListItem], artifacts_root: Path) 
         )
 
     table_rows = "".join(rows) if rows else "<tr><td colspan=\"4\">No runs found.</td></tr>"
+    error_block = ""
+    if trigger_error is not None:
+        error_block = (
+            "<p style=\"color:#b91c1c;font-weight:600;\">Trigger Error: "
+            f"{html.escape(trigger_error)}</p>"
+        )
+
+    selected_mode = (
+        last_analyst_mode if last_analyst_mode in _TRIGGER_ANALYST_MODE_CHOICES else "stub"
+    )
+    mode_options: list[str] = []
+    for mode in _TRIGGER_ANALYST_MODE_CHOICES:
+        selected_attr = " selected" if mode == selected_mode else ""
+        mode_options.append(
+            f"<option value=\"{html.escape(mode)}\"{selected_attr}>{html.escape(mode)}</option>"
+        )
+    mode_options_html = "".join(mode_options)
+
     return (
         "<!doctype html>"
         "<html><head><meta charset=\"utf-8\"><title>Review Artifacts</title>"
@@ -253,9 +380,22 @@ def _render_list_page(*, runs: list[ArtifactRunListItem], artifacts_root: Path) 
         "th,td{border:1px solid #d1d5db;padding:8px;text-align:left;}"
         "th{background:#eef2ff;}"
         "a{color:#1d4ed8;text-decoration:none;}"
+        "input,select,button{font:inherit;padding:6px;border:1px solid #d1d5db;border-radius:4px;}"
+        "form{display:grid;grid-template-columns:1fr auto auto;gap:8px;max-width:900px;}"
         "</style></head><body>"
         "<h1>Review Artifacts</h1>"
         f"<p>Artifacts root: <code>{html.escape(str(artifacts_root))}</code></p>"
+        "<h2>Trigger Run</h2>"
+        "<form action=\"/runs/trigger\" method=\"post\">"
+        "<input type=\"text\" name=\"context_source\" placeholder=\"/path/to/context_bundle.json\" "
+        f"value=\"{html.escape(last_context_source)}\" required>"
+        "<select name=\"analyst_mode\">"
+        f"{mode_options_html}"
+        "</select>"
+        "<button type=\"submit\">Run</button>"
+        "</form>"
+        f"{error_block}"
+        "<h2>Runs</h2>"
         "<table><thead><tr><th>Run</th><th>Theme ID</th><th>Status</th><th>Failure Stage</th>"
         f"</tr></thead><tbody>{table_rows}</tbody></table>"
         "</body></html>"
@@ -294,3 +434,42 @@ def _render_detail_page(*, detail: ArtifactRunDetail) -> str:
         f"<pre>{json_block}</pre>"
         "</body></html>"
     )
+
+
+class _TimeoutAnalyst(AnalystProtocol):
+    is_stub = False
+
+    def analyze(
+        self,
+        *,
+        reasoning_input: ReasoningInputPacket,
+        rendered_prompt: RenderedPromptPacket,
+    ) -> AnalystResponsePayload:
+        del reasoning_input, rendered_prompt
+        raise LiveAnalystTimeoutError("operator_ui_simulated_timeout")
+
+
+class _TransportAnalyst(AnalystProtocol):
+    is_stub = False
+
+    def analyze(
+        self,
+        *,
+        reasoning_input: ReasoningInputPacket,
+        rendered_prompt: RenderedPromptPacket,
+    ) -> AnalystResponsePayload:
+        del reasoning_input, rendered_prompt
+        raise LiveAnalystTransportError("operator_ui_simulated_transport_failure")
+
+
+class _MalformedAnalyst(AnalystProtocol):
+    is_stub = False
+
+    def analyze(
+        self,
+        *,
+        reasoning_input: ReasoningInputPacket,
+        rendered_prompt: RenderedPromptPacket,
+    ) -> AnalystResponsePayload:
+        del reasoning_input, rendered_prompt
+        return '{"invalid_json_payload":'

@@ -4,9 +4,24 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
+from future_system.candidates.models import CandidateSignalPacket
+from future_system.comparison.models import ThemeComparisonPacket
+from future_system.context_bundle.builder import build_opportunity_context_bundle
+from future_system.crypto_evidence.models import ThemeCryptoEvidencePacket
+from future_system.divergence.models import ThemeDivergencePacket
+from future_system.evidence.models import ThemeEvidencePacket
+from future_system.news_evidence.models import ThemeNewsEvidencePacket
 from future_system.operator_ui.review_artifacts import create_review_artifacts_operator_app
+from future_system.runtime.models import AnalysisRunFailureStage
+from future_system.theme_graph.models import ThemeLinkPacket
+
+_CONTEXT_FIXTURE_PATH = Path(
+    "tests/fixtures/future_system/context_bundle/context_bundle_inputs.json"
+)
 
 
 def test_operator_ui_lists_success_and_failure_runs_with_stage_context(tmp_path: Path) -> None:
@@ -63,6 +78,85 @@ def test_operator_ui_detail_fails_safely_for_invalid_json(tmp_path: Path) -> Non
 
     assert response.status_code == 422
     assert response.json()["detail"] == "artifact_json_invalid: malformed JSON content."
+
+
+def test_operator_ui_trigger_success_redirects_to_run_detail_and_writes_inside_root(
+    tmp_path: Path,
+) -> None:
+    context_source = _write_context_source(tmp_path)
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.post(
+        "/runs/trigger",
+        data={"context_source": str(context_source), "analyst_mode": "stub"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    location = response.headers["location"]
+    assert location == "/runs/theme_ctx_strong.analysis_success_export"
+
+    detail = client.get(location)
+    assert detail.status_code == 200
+    assert "Review Artifact Detail" in detail.text
+    assert "status" in detail.text
+
+    markdown_path = tmp_path / "theme_ctx_strong.analysis_success_export.md"
+    json_path = tmp_path / "theme_ctx_strong.analysis_success_export.json"
+    assert markdown_path.exists()
+    assert json_path.exists()
+    assert markdown_path.resolve().parent == tmp_path.resolve()
+    assert json_path.resolve().parent == tmp_path.resolve()
+
+
+@pytest.mark.parametrize(
+    ("analyst_mode", "expected_failure_stage"),
+    [
+        ("analyst_timeout", "analyst_timeout"),
+        ("analyst_transport", "analyst_transport"),
+        ("reasoning_parse", "reasoning_parse"),
+    ],
+)
+def test_operator_ui_trigger_failure_preserves_stage_and_handoff(
+    tmp_path: Path,
+    analyst_mode: str,
+    expected_failure_stage: AnalysisRunFailureStage,
+) -> None:
+    context_source = _write_context_source(tmp_path)
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.post(
+        "/runs/trigger",
+        data={"context_source": str(context_source), "analyst_mode": analyst_mode},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    location = response.headers["location"]
+    assert (
+        location
+        == f"/runs/theme_ctx_strong.analysis_failure_export.{expected_failure_stage}"
+    )
+
+    detail = client.get(location)
+    assert detail.status_code == 200
+    assert expected_failure_stage in detail.text
+    assert "failed" in detail.text
+
+
+def test_operator_ui_trigger_fails_safely_for_invalid_context_input(tmp_path: Path) -> None:
+    missing_context_source = tmp_path / "missing.json"
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.post(
+        "/runs/trigger",
+        data={"context_source": str(missing_context_source), "analyst_mode": "stub"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 422
+    assert "Trigger Error" in response.text
+    assert "context_source must reference an existing file." in response.text
 
 
 def _write_success_run(root: Path) -> str:
@@ -130,3 +224,42 @@ def _write_json_only_failure_run(root: Path, *, run_id: str, failure_stage: str)
         json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n",
         encoding="utf-8",
     )
+
+
+def _write_context_source(tmp_path: Path) -> Path:
+    payload = _bundle("strong_complete").model_dump(mode="json")
+    context_source = tmp_path / "context_bundle.json"
+    context_source.write_text(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    return context_source
+
+
+def _bundle(case_name: str) -> Any:
+    case = _context_cases()[case_name]
+    return build_opportunity_context_bundle(
+        theme_link_packet=case["theme_link"],
+        polymarket_evidence_packet=case["polymarket_evidence"],
+        divergence_packet=case["divergence"],
+        crypto_evidence_packet=case["crypto_evidence"],
+        comparison_packet=case["comparison"],
+        news_evidence_packet=case["news_evidence"],
+        candidate_packet=case["candidate"],
+    )
+
+
+def _context_cases() -> dict[str, dict[str, Any]]:
+    payload = json.loads(_CONTEXT_FIXTURE_PATH.read_text(encoding="utf-8"))
+    return {
+        entry["case"]: {
+            "theme_link": ThemeLinkPacket.model_validate(entry["theme_link"]),
+            "polymarket_evidence": ThemeEvidencePacket.model_validate(entry["polymarket_evidence"]),
+            "divergence": ThemeDivergencePacket.model_validate(entry["divergence"]),
+            "crypto_evidence": ThemeCryptoEvidencePacket.model_validate(entry["crypto_evidence"]),
+            "comparison": ThemeComparisonPacket.model_validate(entry["comparison"]),
+            "news_evidence": ThemeNewsEvidencePacket.model_validate(entry["news_evidence"]),
+            "candidate": CandidateSignalPacket.model_validate(entry["candidate"]),
+        }
+        for entry in payload
+    }

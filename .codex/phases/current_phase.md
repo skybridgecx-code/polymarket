@@ -1,50 +1,51 @@
-# Phase 18Y — Operator UI Read Surface
+# Phase 18Z — Operator UI Run Trigger Surface
 
 ## Goal
 
-Add a bounded read-only operator UI surface for inspecting generated review artifacts.
+Add a bounded operator UI trigger surface that lets an operator start the existing review-artifact generation flow from the UI and then inspect the resulting run.
 
-This phase is about read-only UI inspection only.
+This phase is about synchronous UI-triggered run invocation only.
 
-18X introduced a bounded CLI entry that can generate review artifacts locally.
-18Y should introduce a minimal operator-facing UI that reads existing artifact outputs from a caller-provided/local configured artifacts root and renders them for inspection.
+18Y introduced a read-only operator UI for existing artifact runs.
+18W/18X already provide bounded top-level generation entrypoints.
+
+18Z should connect those so the operator can start a run from the UI without adding background jobs, scheduling, or broader application infrastructure.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
-- `src/future_system/review_artifacts/*`
-- `src/future_system/review_file_writers/*`
-- `src/future_system/review_exports/*`
-- any existing UI/app/operator surface already present in the repo that is the correct place for a bounded future_system operator screen
-- any existing local file-reading helpers or route patterns that are directly relevant
+- `src/future_system/operator_ui/*`
+- `src/future_system/review_entrypoints/*`
+- `src/future_system/cli/*` if directly relevant
+- any existing route/form handling patterns already used by the repo’s UI surface
 
 Also read the directly relevant tests before implementing.
 
 ## Required deliverable
 
-Build a bounded read-only operator UI surface that:
+Build a bounded operator UI trigger surface that:
 
-- lists generated review artifact runs from a local artifacts root
-- lets the operator open/select a run
-- shows key metadata for the run
-- shows success vs failure clearly
-- shows explicit failure stage where applicable:
-  - analyst_timeout
-  - analyst_transport
-  - reasoning_parse
-- shows markdown output
-- shows JSON output or a bounded structured view of it
-- is read-only
+- presents a small run form/input surface
+- accepts a caller-provided context source
+- accepts or derives a bounded target directory under the configured/local artifacts root
+- invokes the existing top-level review artifact flow synchronously
+- surfaces deterministic operator-safe run result feedback
+- lets the operator open or land on the resulting run detail view
+- preserves explicit distinction between:
+  - success
+  - analyst timeout failure
+  - analyst transport failure
+  - reasoning parse failure
 - is covered with deterministic tests only
 
 ## Scope allowed
 
 Allowed work in this phase:
 
-- minimal UI/app files strictly needed for a read-only operator surface
-- minimal bounded server/read helpers strictly needed to enumerate and read locally written artifact files
-- minimal route/page/component additions strictly needed for this screen
+- minimal bounded additions under `src/future_system/operator_ui/*`
+- minimal helper additions strictly needed for safe target-directory derivation and synchronous invocation
+- minimal route/page/component additions strictly needed for this run-trigger screen/flow
 - minimal tests strictly needed for deterministic coverage
 
 ## Hard constraints
@@ -52,62 +53,62 @@ Allowed work in this phase:
 Do not:
 
 - modify anything under `src/polymarket_arb/*`
-- add run-triggering from the UI
-- add scheduling/orchestration
+- add background jobs, workers, queues, or scheduling
 - add database/persistence backends
-- add network delivery, notifications, inboxes, or queue systems
+- add delivery/inbox/notification systems
 - add execution/trading behavior
-- re-run runtime/review generation logic from the UI
-- add speculative app shell/platform architecture beyond this bounded screen
-- allow reading outside the configured/local artifacts root
+- add speculative multi-user/app-platform architecture
+- allow writes outside the configured/local artifacts root
+- bypass the existing 18W/18X bounded flow with duplicated logic
 
 ## Desired shape
 
 Use the repo’s existing UI/app pattern.
-Prefer the smallest possible bounded operator surface.
+Prefer the smallest possible bounded addition to the current operator UI surface.
 
 A good result is:
 
-- one page/screen for artifact run listing
-- one detail view or split view for a selected run
-- small helper(s) for local artifact discovery and reading
-- deterministic tests for read/list/render behavior
+- one run form/view
+- one submit path
+- one safe handoff into the existing flow
+- redirect or link to the created run detail
+- deterministic tests for form submit, success, and failure cases
 
 ## Behavioral requirements
 
 The implementation must preserve this contract:
 
-1. Existing artifact files remain the source of truth.
-2. UI is read-only and downstream of the artifact-writing flow.
-3. UI does not regenerate or mutate artifacts.
-4. Success and failure runs remain clearly distinct.
+1. Existing top-level review artifact entry flow remains the source of truth for generation behavior.
+2. UI trigger layer is only a bounded synchronous invocation surface.
+3. Generated artifact files remain rooted under the configured/local artifacts root.
+4. Success and failure results remain clearly distinct.
 5. Failure-stage identity remains exact.
-6. File reading remains bounded to the configured/local artifacts root.
-7. UI output remains operator-safe and deterministic.
+6. UI remains operator-safe and deterministic.
+7. No run-generation logic is reimplemented in the UI layer.
 
-UI requirements:
+UI trigger requirements:
 
-- must show `theme_id`
-- must show status / failure-stage context
-- must show artifact path or run identifier context
-- must show markdown content
-- must show JSON content or a bounded readable structured rendering
-- must fail explicitly and safely on missing/invalid artifact files
+- must accept explicit context source input
+- must keep target path bounded under the artifacts root
+- must surface `theme_id`
+- must surface status / failure-stage context
+- must provide a clear way to inspect the resulting run
+- must fail explicitly and safely on invalid inputs
 - must not invent fake reasoning or fake policy content
 
 ## Acceptance criteria
 
 This phase is complete when:
 
-- an operator can open the UI and inspect existing generated review artifacts
-- list and detail views are functional and read-only
-- success and failure artifact runs are clearly distinguishable
+- an operator can trigger a run from the UI and generate local review artifacts synchronously
+- the UI can navigate to or reveal the resulting run detail
+- success and failure outcomes are preserved cleanly
 - failure outputs explicitly distinguish:
   - `analyst_timeout`
   - `analyst_transport`
   - `reasoning_parse`
-- file reads stay bounded to the configured/local artifacts root
-- tests cover list/detail behavior and failure-file handling
+- writes stay bounded to the configured/local artifacts root
+- tests cover trigger success, trigger failure, invalid input, and run-detail handoff behavior
 - `src/polymarket_arb/*` remains untouched
 
 ## Validation
@@ -116,7 +117,7 @@ Run narrow validation only.
 
 At minimum, run the smallest reasonable set covering:
 
-- touched UI/read-helper files
+- touched operator UI files
 - touched tests
 
 Use the repo’s normal validation commands for the touched UI surface, plus targeted tests.
