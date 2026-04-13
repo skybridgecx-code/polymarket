@@ -1,13 +1,15 @@
-# Phase 19B — Operator UI Artifact Content Polish
+# Phase 19A — Operator UI Run History and Navigation Hardening
 
 ## Goal
 
-Polish the operator UI artifact detail surface so review content is easier and safer to inspect.
+Harden the operator UI so existing generated runs are easier and safer to inspect and navigate.
 
-This phase is about artifact detail presentation only.
+This phase is about UI usability and resilience only.
 
-19A improved run history, navigation, and safe error handling.
-19B should improve how artifact content itself is rendered and organized without changing the underlying generation pipeline.
+18Y introduced read-only artifact inspection.
+18Z introduced synchronous run triggering from the UI.
+
+19A should improve run history presentation, status clarity, navigation, and safe error handling without changing the core generation pipeline.
 
 ## Read first
 
@@ -15,21 +17,23 @@ Before changing code, read the existing implementations for:
 
 - `src/future_system/operator_ui/*`
 - any helper/read logic used by the operator UI
-- directly relevant tests for the current UI detail surface
+- directly relevant tests for the current UI read/trigger surface
 
 ## Required deliverable
 
-Build a bounded UI polish pass that:
+Build a bounded UI hardening pass that:
 
-- improves markdown presentation in the run detail view
-- improves JSON readability in the run detail view
-- groups metadata into clearer sections
-- handles larger artifact content safely and predictably
-- preserves explicit success vs failure clarity
-- preserves explicit failure stage clarity where applicable:
+- improves run list ordering and labeling
+- makes success vs failure visually/textually clearer
+- shows explicit failure stage clearly where applicable:
   - analyst_timeout
   - analyst_transport
   - reasoning_parse
+- improves navigation between:
+  - run list
+  - selected run detail
+  - newly created run result
+- handles missing/invalid artifact files more clearly and safely
 - remains read-only except for the already-existing synchronous trigger flow
 - is covered with deterministic tests only
 
@@ -38,8 +42,8 @@ Build a bounded UI polish pass that:
 Allowed work in this phase:
 
 - minimal bounded additions/modifications under `src/future_system/operator_ui/*`
-- minimal helper additions strictly needed for safer artifact content rendering and grouping
-- minimal route/page/component adjustments strictly needed for detail-view polish
+- minimal helper additions strictly needed for ordering, labels, and safer read states
+- minimal route/page/component adjustments strictly needed for navigation hardening
 - minimal tests strictly needed for deterministic coverage
 
 ## Hard constraints
@@ -52,21 +56,21 @@ Do not:
 - add delivery/inbox/notification systems
 - add execution/trading behavior
 - reimplement generation logic in the UI layer
-- add speculative platform architecture beyond this bounded detail-view polish
+- add speculative app/platform architecture beyond this bounded hardening pass
 - allow reads/writes outside the configured/local artifacts root
 
 ## Desired shape
 
 Use the repo’s existing UI/app pattern.
-Prefer the smallest possible bounded refinement of the current operator UI detail surface.
+Prefer the smallest possible bounded refinement of the current operator UI surface.
 
 A good result is:
 
-- clearer metadata grouping in detail view
-- more readable markdown section
-- cleaner JSON presentation
-- safe truncation/collapsing or bounded display behavior for large content
-- deterministic tests for rendering/grouping/large-content/error behavior
+- clearer run list rows/cards
+- stronger badges/labels for success vs failure
+- clearer detail headers and back-navigation
+- explicit safe empty/missing/error states
+- deterministic tests for ordering, labels, and invalid/missing-file behavior
 
 ## Behavioral requirements
 
@@ -84,24 +88,24 @@ UI requirements:
 
 - must show `theme_id`
 - must show status / failure-stage context clearly
-- must group key metadata clearly
-- must render markdown content in a cleaner readable way
-- must render JSON content in a bounded readable way
-- must provide explicit and safe handling for missing/invalid/oversized content
+- must improve run identification in the list/history view
+- must provide clear navigation between list and detail
+- must provide explicit and safe missing/invalid-file states
 - must not invent fake reasoning or fake policy content
 
 ## Acceptance criteria
 
 This phase is complete when:
 
-- an operator can inspect artifact content more easily in the detail view
-- success and failure content remain clearly distinguishable
+- an operator can more easily browse prior runs and open details
+- success and failure runs are more clearly distinguishable in the UI
 - failure outputs explicitly distinguish:
   - `analyst_timeout`
   - `analyst_transport`
   - `reasoning_parse`
-- larger content is handled safely and predictably
-- tests cover detail rendering, metadata grouping, and safe large-content/error behavior
+- navigation between list, detail, and triggered runs is cleaner
+- missing/invalid artifact states are handled safely and clearly
+- tests cover ordering/navigation/error-state behavior
 - `src/polymarket_arb/*` remains untouched
 
 ## Validation

@@ -61,6 +61,11 @@ def test_operator_ui_detail_shows_markdown_and_json_content(tmp_path: Path) -> N
     assert "&quot;failure_stage&quot;: &quot;reasoning_parse&quot;" in body
     assert "Back to runs" in body
     assert "FAILED (reasoning_parse)" in body
+    assert "Run Metadata" in body
+    assert "Artifact Paths" in body
+    assert "Artifact Content" in body
+    assert "Markdown Content" in body
+    assert "JSON Content" in body
 
 
 def test_operator_ui_detail_fails_safely_when_markdown_is_missing(tmp_path: Path) -> None:
@@ -106,6 +111,20 @@ def test_operator_ui_list_shows_explicit_run_issues_for_invalid_files(tmp_path: 
     assert "bad-run" in response.text
     assert "json_invalid" in response.text
     assert "markdown_missing" in response.text
+
+
+def test_operator_ui_detail_handles_large_content_with_safe_truncation(tmp_path: Path) -> None:
+    run_id = _write_large_run(tmp_path)
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.get(f"/runs/{run_id}")
+
+    assert response.status_code == 200
+    body = response.text
+    assert "Markdown content display truncated for safety" in body
+    assert "JSON content display truncated for safety" in body
+    assert "TAIL_MARKDOWN_SENTINEL" not in body
+    assert "TAIL_JSON_SENTINEL" not in body
 
 
 def test_operator_ui_trigger_success_redirects_to_run_detail_and_writes_inside_root(
@@ -254,6 +273,31 @@ def _write_json_only_failure_run(root: Path, *, run_id: str, failure_stage: str)
         json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n",
         encoding="utf-8",
     )
+
+
+def _write_large_run(root: Path) -> str:
+    run_id = "theme_ctx_large.analysis_success_export"
+    large_markdown = (
+        "# Analysis Review Export\n"
+        + ("- detail line for bounded display safety\n" * 900)
+        + "TAIL_MARKDOWN_SENTINEL\n"
+    )
+    payload = {
+        "theme_id": "theme_ctx_large",
+        "status": "success",
+        "payload": {
+            "export_kind": "analysis_success_export",
+            "status": "success",
+            "theme_id": "theme_ctx_large",
+            "large_text": ("json payload line " * 2000) + "TAIL_JSON_SENTINEL",
+        },
+    }
+    (root / f"{run_id}.md").write_text(large_markdown, encoding="utf-8")
+    (root / f"{run_id}.json").write_text(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    return run_id
 
 
 def _set_mtime_ns(path: Path, *, timestamp_ns: int) -> None:

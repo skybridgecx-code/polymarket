@@ -30,6 +30,8 @@ _TRIGGER_ANALYST_MODE_CHOICES = (
     "analyst_transport",
     "reasoning_parse",
 )
+_DETAIL_MARKDOWN_MAX_CHARS = 16_000
+_DETAIL_JSON_MAX_CHARS = 24_000
 
 
 class ArtifactRunListItem(BaseModel):
@@ -597,8 +599,29 @@ def _render_detail_page(*, detail: ArtifactRunDetail, created_via_trigger: bool)
         status=detail.run.status,
         failure_stage=detail.run.failure_stage,
     )
-    markdown_block = html.escape(detail.markdown_content)
-    json_block = html.escape(json.dumps(detail.json_content, indent=2, sort_keys=True))
+    markdown_display, markdown_truncated, markdown_total_chars = _bounded_display_text(
+        detail.markdown_content,
+        max_chars=_DETAIL_MARKDOWN_MAX_CHARS,
+    )
+    json_pretty = json.dumps(detail.json_content, indent=2, sort_keys=True)
+    json_display, json_truncated, json_total_chars = _bounded_display_text(
+        json_pretty,
+        max_chars=_DETAIL_JSON_MAX_CHARS,
+    )
+    markdown_block = html.escape(markdown_display)
+    json_block = html.escape(json_display)
+    markdown_notice = ""
+    if markdown_truncated:
+        markdown_notice = (
+            "<p class=\"truncate\">Markdown content display truncated for safety: "
+            f"showing first {_DETAIL_MARKDOWN_MAX_CHARS} of {markdown_total_chars} characters.</p>"
+        )
+    json_notice = ""
+    if json_truncated:
+        json_notice = (
+            "<p class=\"truncate\">JSON content display truncated for safety: "
+            f"showing first {_DETAIL_JSON_MAX_CHARS} of {json_total_chars} characters.</p>"
+        )
     created_block = ""
     if created_via_trigger:
         created_block = (
@@ -614,30 +637,54 @@ def _render_detail_page(*, detail: ArtifactRunDetail, created_via_trigger: bool)
         ".badge{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:600;}"
         ".badge-success{background:#dcfce7;color:#166534;}"
         ".badge-failed{background:#fee2e2;color:#991b1b;}"
+        ".section{margin-top:18px;background:#fff;border:1px solid #d1d5db;padding:12px;}"
+        ".meta-grid{display:grid;grid-template-columns:140px 1fr;gap:6px 10px;}"
         "pre{white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #d1d5db;"
-        "padding:12px;}"
-        "dl{display:grid;grid-template-columns:140px 1fr;gap:6px 10px;}"
+        "padding:12px;max-height:540px;overflow:auto;}"
         "dt{font-weight:600;}"
+        ".truncate{background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:8px;}"
         "a{color:#1d4ed8;text-decoration:none;}"
         "</style></head><body>"
         "<p><a href=\"/\">Back to runs</a></p>"
         f"{created_block}"
         "<h1>Review Artifact Detail</h1>"
-        "<dl>"
+        "<section class=\"section\">"
+        "<h2>Run Metadata</h2>"
+        "<dl class=\"meta-grid\">"
         f"<dt>Run</dt><dd>{html.escape(detail.run.run_id)}</dd>"
         f"<dt>Theme ID</dt><dd>{html.escape(detail.run.theme_id)}</dd>"
         f"<dt>Status</dt><dd>{status_badge}</dd>"
         f"<dt>Failure Stage</dt><dd>{html.escape(failure_stage)}</dd>"
         f"<dt>Updated</dt><dd>{html.escape(detail.run.updated_at_label)}</dd>"
+        "</dl>"
+        "</section>"
+        "<section class=\"section\">"
+        "<h2>Artifact Paths</h2>"
+        "<dl class=\"meta-grid\">"
         f"<dt>Markdown Path</dt><dd>{html.escape(detail.run.markdown_path)}</dd>"
         f"<dt>JSON Path</dt><dd>{html.escape(detail.run.json_path)}</dd>"
+        f"<dt>Markdown Size</dt><dd>{len(detail.markdown_content)} chars</dd>"
+        f"<dt>JSON Size</dt><dd>{len(json_pretty)} chars</dd>"
         "</dl>"
-        "<h2>Markdown</h2>"
+        "</section>"
+        "<section class=\"section\">"
+        "<h2>Artifact Content</h2>"
+        "<h3>Markdown Content</h3>"
+        f"{markdown_notice}"
         f"<pre>{markdown_block}</pre>"
-        "<h2>JSON</h2>"
+        "<h3>JSON Content</h3>"
+        f"{json_notice}"
         f"<pre>{json_block}</pre>"
+        "</section>"
         "</body></html>"
     )
+
+
+def _bounded_display_text(value: str, *, max_chars: int) -> tuple[str, bool, int]:
+    total_chars = len(value)
+    if total_chars <= max_chars:
+        return value, False, total_chars
+    return value[:max_chars], True, total_chars
 
 
 def _render_error_page(*, title: str, message: str, back_href: str, back_label: str) -> str:
