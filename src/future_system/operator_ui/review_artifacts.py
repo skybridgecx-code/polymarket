@@ -36,6 +36,11 @@ _DETAIL_MARKDOWN_MAX_CHARS = 16_000
 _DETAIL_JSON_MAX_CHARS = 24_000
 _DEFAULT_TRIGGER_TARGET_SUBDIRECTORY = "operator_runs"
 _TARGET_SUBDIRECTORY_SEGMENT_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+_FAILURE_STAGE_DESCRIPTIONS: dict[AnalysisRunFailureStage, str] = {
+    "analyst_timeout": "Analyst timed out before producing a complete response.",
+    "analyst_transport": "Analyst transport call failed before a usable response was returned.",
+    "reasoning_parse": "Analyst response was received but reasoning payload parsing failed.",
+}
 
 
 @dataclass(frozen=True)
@@ -247,6 +252,20 @@ def create_review_artifacts_operator_app(
                     create=False,
                 )
             except ValueError as exc:
+                if created == 1:
+                    return HTMLResponse(
+                        content=_render_error_page(
+                            title="Trigger Result Unavailable",
+                            message=_build_trigger_result_unavailable_message(
+                                run_id=run_id,
+                                target_subdirectory=target_subdirectory,
+                                detail_error=str(exc),
+                            ),
+                            back_href="/",
+                            back_label="Back to runs",
+                        ),
+                        status_code=422,
+                    )
                 return HTMLResponse(
                     content=_render_error_page(
                         title="Run Read Error",
@@ -263,6 +282,20 @@ def create_review_artifacts_operator_app(
                 run_id=run_id,
             )
         except ValueError as exc:
+            if created == 1:
+                return HTMLResponse(
+                    content=_render_error_page(
+                        title="Trigger Result Unavailable",
+                        message=_build_trigger_result_unavailable_message(
+                            run_id=run_id,
+                            target_subdirectory=normalized_target_subdirectory,
+                            detail_error=str(exc),
+                        ),
+                        back_href="/",
+                        back_label="Back to runs",
+                    ),
+                    status_code=422,
+                )
             status_code = 404 if str(exc).startswith("artifact_run_not_found") else 422
             return HTMLResponse(
                 content=_render_error_page(
@@ -597,6 +630,19 @@ def _resolve_target_subdirectory(
     return target_directory, normalized_subdirectory
 
 
+def _build_trigger_result_unavailable_message(
+    *,
+    run_id: str,
+    target_subdirectory: str | None,
+    detail_error: str,
+) -> str:
+    target_context = target_subdirectory if target_subdirectory is not None else "(not provided)"
+    return (
+        "trigger_result_unavailable: newly triggered run is missing or partially readable. "
+        f"run_id={run_id}; target_subdirectory={target_context}; detail_error={detail_error}"
+    )
+
+
 def _load_context_bundle_from_source(*, context_source: str) -> OpportunityContextBundle:
     normalized_source = context_source.strip()
     if not normalized_source:
@@ -902,6 +948,18 @@ def _render_detail_page(
         status=detail.run.status,
         failure_stage=detail.run.failure_stage,
     )
+    outcome_label = "SUCCESS" if detail.run.status == "success" else "FAILED"
+    outcome_tone_class = (
+        "outcome-success" if detail.run.status == "success" else "outcome-failed"
+    )
+    failure_stage_description = _failure_stage_description(
+        status=detail.run.status,
+        failure_stage=detail.run.failure_stage,
+    )
+    artifact_directory = str(Path(detail.run.json_path).parent)
+    target_subdirectory_display = (
+        target_subdirectory if target_subdirectory is not None else "(not provided)"
+    )
     markdown_display, markdown_truncated, markdown_total_chars = _bounded_display_text(
         detail.markdown_content,
         max_chars=_DETAIL_MARKDOWN_MAX_CHARS,
@@ -927,21 +985,20 @@ def _render_detail_page(
         )
     created_block = ""
     if created_via_trigger:
-        target_subdirectory_line = (
-            f"<dt>Target Subdirectory</dt><dd>{html.escape(target_subdirectory)}</dd>"
-            if target_subdirectory is not None
-            else ""
-        )
         created_block = (
             "<section class=\"section\" style=\"border-color:#86efac;background:#f0fdf4;\">"
-            "<h2>Trigger Result</h2>"
+            "<h2>Trigger Result Summary</h2>"
             "<p style=\"color:#065f46;font-weight:600;\">Run created via trigger and loaded.</p>"
             "<dl class=\"meta-grid\">"
+            f"<dt>Run ID</dt><dd>{html.escape(detail.run.run_id)}</dd>"
             f"<dt>Theme ID</dt><dd>{html.escape(detail.run.theme_id)}</dd>"
-            f"<dt>Status</dt><dd>{status_badge}</dd>"
+            f"<dt>Run Outcome</dt><dd>{status_badge}</dd>"
             f"<dt>Failure Stage</dt><dd>{html.escape(failure_stage)}</dd>"
-            f"{target_subdirectory_line}"
+            f"<dt>Target Subdirectory</dt><dd>{html.escape(target_subdirectory_display)}</dd>"
+            f"<dt>Artifact Directory</dt><dd>{html.escape(artifact_directory)}</dd>"
             "</dl>"
+            "<p style=\"margin-top:8px;color:#065f46;\">Inspect outcome and artifact content "
+            "sections below for full details.</p>"
             "</section>"
         )
 
@@ -955,6 +1012,10 @@ def _render_detail_page(
         ".badge-failed{background:#fee2e2;color:#991b1b;}"
         ".section{margin-top:18px;background:#fff;border:1px solid #d1d5db;padding:12px;}"
         ".meta-grid{display:grid;grid-template-columns:140px 1fr;gap:6px 10px;}"
+        ".outcome{border-width:2px;}"
+        ".outcome-success{border-color:#86efac;background:#f0fdf4;}"
+        ".outcome-failed{border-color:#fca5a5;background:#fef2f2;}"
+        ".outcome-label{font-size:24px;font-weight:700;margin:0 0 8px 0;}"
         "pre{white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #d1d5db;"
         "padding:12px;max-height:540px;overflow:auto;}"
         "dt{font-weight:600;}"
@@ -964,6 +1025,15 @@ def _render_detail_page(
         "<p><a href=\"/\">Back to runs</a></p>"
         f"{created_block}"
         "<h1>Review Artifact Detail</h1>"
+        f"<section class=\"section outcome {outcome_tone_class}\">"
+        "<h2>Outcome Summary</h2>"
+        f"<p class=\"outcome-label\">{html.escape(outcome_label)}</p>"
+        "<dl class=\"meta-grid\">"
+        f"<dt>Status Label</dt><dd>{html.escape(detail.run.status_label)}</dd>"
+        f"<dt>Failure Stage</dt><dd>{html.escape(failure_stage)}</dd>"
+        f"<dt>Failure Context</dt><dd>{html.escape(failure_stage_description)}</dd>"
+        "</dl>"
+        "</section>"
         "<section class=\"section\">"
         "<h2>Run Metadata</h2>"
         "<dl class=\"meta-grid\">"
@@ -977,6 +1047,8 @@ def _render_detail_page(
         "<section class=\"section\">"
         "<h2>Artifact Paths</h2>"
         "<dl class=\"meta-grid\">"
+        f"<dt>Target Subdirectory</dt><dd>{html.escape(target_subdirectory_display)}</dd>"
+        f"<dt>Artifact Directory</dt><dd>{html.escape(artifact_directory)}</dd>"
         f"<dt>Markdown Path</dt><dd>{html.escape(detail.run.markdown_path)}</dd>"
         f"<dt>JSON Path</dt><dd>{html.escape(detail.run.json_path)}</dd>"
         f"<dt>Markdown Size</dt><dd>{len(detail.markdown_content)} chars</dd>"
@@ -1001,6 +1073,18 @@ def _bounded_display_text(value: str, *, max_chars: int) -> tuple[str, bool, int
     if total_chars <= max_chars:
         return value, False, total_chars
     return value[:max_chars], True, total_chars
+
+
+def _failure_stage_description(
+    *,
+    status: Literal["success", "failed"],
+    failure_stage: AnalysisRunFailureStage | None,
+) -> str:
+    if status == "success":
+        return "No failure stage. Run completed successfully."
+    if failure_stage is None:
+        return "Failure stage is unavailable for this failed run."
+    return _FAILURE_STAGE_DESCRIPTIONS[failure_stage]
 
 
 def _render_error_page(*, title: str, message: str, back_href: str, back_label: str) -> str:

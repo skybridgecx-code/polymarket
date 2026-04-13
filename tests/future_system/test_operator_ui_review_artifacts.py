@@ -64,6 +64,9 @@ def test_operator_ui_detail_shows_markdown_and_json_content(tmp_path: Path) -> N
     assert "Back to runs" in body
     assert "FAILED (reasoning_parse)" in body
     assert "Run Metadata" in body
+    assert "Outcome Summary" in body
+    assert "Failure Context" in body
+    assert "reasoning payload parsing failed" in body
     assert "Artifact Paths" in body
     assert "Artifact Content" in body
     assert "Markdown Content" in body
@@ -152,9 +155,12 @@ def test_operator_ui_trigger_success_redirects_to_run_detail_and_writes_inside_r
     detail = client.get(location)
     assert detail.status_code == 200
     assert "Review Artifact Detail" in detail.text
-    assert "Trigger Result" in detail.text
+    assert "Trigger Result Summary" in detail.text
     assert "Run created via trigger and loaded." in detail.text
+    assert "Run Outcome" in detail.text
+    assert "Outcome Summary" in detail.text
     assert "Target Subdirectory" in detail.text
+    assert "Artifact Directory" in detail.text
     assert _DEFAULT_TRIGGER_TARGET_SUBDIRECTORY in detail.text
     assert "status" in detail.text
 
@@ -201,8 +207,33 @@ def test_operator_ui_trigger_failure_preserves_stage_and_handoff(
 
     detail = client.get(location)
     assert detail.status_code == 200
+    assert "Outcome Summary" in detail.text
+    assert "Failure Context" in detail.text
     assert expected_failure_stage in detail.text
     assert "failed" in detail.text
+
+
+def test_operator_ui_created_detail_reports_partial_run_safely(tmp_path: Path) -> None:
+    target_root = tmp_path / _DEFAULT_TRIGGER_TARGET_SUBDIRECTORY
+    target_root.mkdir()
+    run_id = "theme_ctx_strong.analysis_failure_export.analyst_timeout"
+    _write_json_only_failure_run(
+        target_root,
+        run_id=run_id,
+        failure_stage="analyst_timeout",
+    )
+
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+    response = client.get(
+        f"/runs/{run_id}?created=1&target_subdirectory={_DEFAULT_TRIGGER_TARGET_SUBDIRECTORY}"
+    )
+
+    assert response.status_code == 422
+    assert "Trigger Result Unavailable" in response.text
+    assert "trigger_result_unavailable" in response.text
+    assert run_id in response.text
+    assert _DEFAULT_TRIGGER_TARGET_SUBDIRECTORY in response.text
+    assert "artifact_markdown_missing: markdown file is missing." in response.text
 
 
 def test_operator_ui_trigger_fails_safely_for_invalid_context_input(tmp_path: Path) -> None:
