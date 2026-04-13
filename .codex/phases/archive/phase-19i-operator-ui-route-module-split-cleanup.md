@@ -1,29 +1,28 @@
-# Phase 19J — Operator UI Dependency and Config Assembly Cleanup
+# Phase 19I — Operator UI Route/Module Split Cleanup
 
 ## Goal
 
-Clean up operator UI app wiring so dependency/config assembly is easier to maintain without changing behavior.
+Split the growing operator UI route/module into smaller route-focused pieces so the UI surface is easier to maintain without changing behavior.
 
-This phase is about bounded app-factory/config cleanup only.
+This phase is about bounded route/module cleanup only.
 
-18Y–19I established the operator UI read, trigger, history, detail, helper extraction, template extraction, styling cleanup, and route-module cleanup flows.
-19J should improve app wiring structure and maintainability while preserving current operator-visible behavior.
+18Y–19H established the operator UI read, trigger, history, detail, helper extraction, template extraction, and styling cleanup flows.
+19I should improve route/module structure and maintainability while preserving current operator-visible behavior.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
 - `src/future_system/operator_ui/*`
-- the current app factory/config/dependency assembly in `review_artifacts.py`
+- the current route/request handling logic in `review_artifacts.py`
 - directly relevant tests for the current UI list/detail/trigger/root-state surface
 
 ## Required deliverable
 
 Build a bounded cleanup pass that:
 
-- extracts app wiring/dependency assembly into smaller focused helper(s) or module(s) where appropriate
-- centralizes config/default handling for the operator UI app where appropriate
-- keeps app factory code focused on assembly rather than inline setup detail
+- splits route/request handling into smaller focused helpers or modules where appropriate
+- keeps route handlers focused on request/response flow
 - preserves existing list/detail/trigger behavior
 - preserves current success/failure and failure-stage rendering behavior
 - keeps reads/writes bounded to the configured/local artifacts root
@@ -34,7 +33,7 @@ Build a bounded cleanup pass that:
 Allowed work in this phase:
 
 - minimal bounded additions/modifications under `src/future_system/operator_ui/*`
-- creation of small config/dependency helper modules/files if clearly justified
+- creation of small route/helper modules/files if clearly justified
 - minimal test updates strictly needed to preserve and verify unchanged behavior
 
 ## Hard constraints
@@ -58,7 +57,7 @@ Prefer the smallest possible bounded refactor.
 A good result is:
 
 - smaller/more focused `review_artifacts.py`
-- one or more small helper modules for app wiring/config/default assembly
+- one or more small route/helper modules for list/detail/trigger handling
 - unchanged route behavior
 - deterministic tests proving behavior stayed intact
 
@@ -86,7 +85,7 @@ UI/cleanup requirements:
 
 This phase is complete when:
 
-- the operator UI dependency/config assembly is cleaner and more modular
+- the operator UI route/module structure is cleaner and more modular
 - current UI behavior remains intact for valid and invalid root/artifact states
 - success and failure outputs still clearly distinguish:
   - `analyst_timeout`

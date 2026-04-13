@@ -12,6 +12,12 @@ from fastapi.responses import HTMLResponse
 
 from future_system.context_bundle.models import OpportunityContextBundle
 from future_system.live_analyst.errors import LiveAnalystTimeoutError, LiveAnalystTransportError
+from future_system.operator_ui.app_wiring import (
+    DEFAULT_TRIGGER_TARGET_SUBDIRECTORY as _DEFAULT_TRIGGER_TARGET_SUBDIRECTORY,
+)
+from future_system.operator_ui.app_wiring import (
+    build_review_artifacts_operator_ui_assembly,
+)
 from future_system.operator_ui.artifact_reads import (
     ArtifactRunDetail,
     ArtifactRunHistory,
@@ -27,10 +33,7 @@ from future_system.operator_ui.artifact_reads import (
 from future_system.operator_ui.artifact_reads import (
     read_review_artifact_run_detail as _read_review_artifact_run_detail,
 )
-from future_system.operator_ui.root_status import (
-    resolve_artifacts_root,
-    resolve_artifacts_root_status,
-)
+from future_system.operator_ui.root_status import resolve_artifacts_root
 from future_system.operator_ui.route_handlers import (
     handle_list_runs_request as _handle_list_runs_request,
 )
@@ -45,13 +48,6 @@ from future_system.review_entrypoints.entry import run_analysis_and_write_review
 from future_system.runtime.protocol import AnalystProtocol, AnalystResponsePayload
 from future_system.runtime.stub_analyst import DeterministicStubAnalyst
 
-_TRIGGER_ANALYST_MODE_CHOICES = (
-    "stub",
-    "analyst_timeout",
-    "analyst_transport",
-    "reasoning_parse",
-)
-_DEFAULT_TRIGGER_TARGET_SUBDIRECTORY = "operator_runs"
 _TARGET_SUBDIRECTORY_SEGMENT_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 
 
@@ -69,7 +65,16 @@ def create_review_artifacts_operator_app(
 ) -> FastAPI:
     """Create a bounded read-only operator UI app scoped to one artifacts root."""
 
-    root_status = resolve_artifacts_root_status(artifacts_root)
+    assembly = build_review_artifacts_operator_ui_assembly(
+        artifacts_root=artifacts_root,
+        discover_review_artifact_history_fn=discover_review_artifact_history,
+        trigger_review_artifact_run_fn=trigger_review_artifact_run,
+        read_review_artifact_run_detail_fn=read_review_artifact_run_detail,
+        resolve_target_subdirectory_fn=_resolve_target_subdirectory,
+    )
+    root_status = assembly.root_status
+    config = assembly.config
+    dependencies = assembly.dependencies
     app = FastAPI(title="Future System Review Artifact Operator UI", version="0.1.0")
     app.state.artifacts_root_status = root_status
 
@@ -77,28 +82,28 @@ def create_review_artifacts_operator_app(
     async def list_runs() -> str:
         return _handle_list_runs_request(
             root_status=root_status,
-            discover_review_artifact_history_fn=discover_review_artifact_history,
+            discover_review_artifact_history_fn=dependencies.discover_review_artifact_history_fn,
             trigger_error=None,
-            last_context_source="",
-            last_analyst_mode="stub",
-            last_target_subdirectory=_DEFAULT_TRIGGER_TARGET_SUBDIRECTORY,
-            trigger_analyst_mode_choices=_TRIGGER_ANALYST_MODE_CHOICES,
+            last_context_source=config.default_trigger_context_source,
+            last_analyst_mode=config.default_trigger_analyst_mode,
+            last_target_subdirectory=config.default_target_subdirectory,
+            trigger_analyst_mode_choices=config.trigger_analyst_mode_choices,
         )
 
     @app.post("/runs/trigger")
     async def trigger_run(
         context_source: str = Form(...),
-        analyst_mode: str = Form("stub"),
-        target_subdirectory: str = Form(_DEFAULT_TRIGGER_TARGET_SUBDIRECTORY),
+        analyst_mode: str = Form(config.default_trigger_analyst_mode),
+        target_subdirectory: str = Form(config.default_target_subdirectory),
     ) -> Response:
         return _handle_trigger_run_request(
             root_status=root_status,
             context_source=context_source,
             analyst_mode=analyst_mode,
             target_subdirectory=target_subdirectory,
-            trigger_analyst_mode_choices=_TRIGGER_ANALYST_MODE_CHOICES,
-            trigger_review_artifact_run_fn=trigger_review_artifact_run,
-            discover_review_artifact_history_fn=discover_review_artifact_history,
+            trigger_analyst_mode_choices=config.trigger_analyst_mode_choices,
+            trigger_review_artifact_run_fn=dependencies.trigger_review_artifact_run_fn,
+            discover_review_artifact_history_fn=dependencies.discover_review_artifact_history_fn,
         )
 
     @app.get("/runs/{run_id}", response_class=HTMLResponse)
@@ -112,8 +117,8 @@ def create_review_artifacts_operator_app(
             run_id=run_id,
             created=created,
             target_subdirectory=target_subdirectory,
-            read_review_artifact_run_detail_fn=read_review_artifact_run_detail,
-            resolve_target_subdirectory_fn=_resolve_target_subdirectory,
+            read_review_artifact_run_detail_fn=dependencies.read_review_artifact_run_detail_fn,
+            resolve_target_subdirectory_fn=dependencies.resolve_target_subdirectory_fn,
         )
 
     return app
