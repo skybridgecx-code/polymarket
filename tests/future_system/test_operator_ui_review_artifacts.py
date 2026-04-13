@@ -16,7 +16,7 @@ from future_system.crypto_evidence.models import ThemeCryptoEvidencePacket
 from future_system.divergence.models import ThemeDivergencePacket
 from future_system.evidence.models import ThemeEvidencePacket
 from future_system.news_evidence.models import ThemeNewsEvidencePacket
-from future_system.operator_ui import create_review_artifacts_operator_app
+from future_system.operator_ui import create_operator_ui_app as create_review_artifacts_operator_app
 from future_system.runtime.models import AnalysisRunFailureStage
 from future_system.theme_graph.models import ThemeLinkPacket
 

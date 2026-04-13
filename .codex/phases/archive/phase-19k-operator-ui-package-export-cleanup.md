@@ -1,30 +1,29 @@
-# Phase 19L — Operator UI App Entry/Export Surface Cleanup
+# Phase 19K — Operator UI Package/Export Cleanup
 
 ## Goal
 
-Clean up the operator UI app entry/export surface so external callers can construct and import the operator UI app more cleanly without changing behavior.
+Clean up the `operator_ui` package structure so exports and import paths are easier to maintain without changing behavior.
 
-This phase is about bounded app-entry/export cleanup only.
+This phase is about bounded package/export cleanup only.
 
-18Y–19K established the operator UI read, trigger, detail, helper extraction, template extraction, styling cleanup, route cleanup, app-wiring cleanup, and package/export cleanup flows.
-19L should improve app entry ergonomics while preserving current operator-visible behavior.
+18Y–19J established the operator UI read, trigger, detail, helper extraction, template extraction, styling cleanup, route cleanup, and app-wiring cleanup flows.
+19K should improve package ergonomics and internal structure while preserving current operator-visible behavior.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
 - `src/future_system/operator_ui/*`
-- current public operator UI exports in `__init__.py`
-- current app factory / app wiring usage patterns
+- current `__init__.py` exports and import paths across the operator UI package
 - directly relevant tests for the current UI surface
 
 ## Required deliverable
 
 Build a bounded cleanup pass that:
 
-- makes the public operator UI app factory/export surface clearer where appropriate
-- reduces awkward external import/use paths where appropriate
-- centralizes the primary app-construction entrypoint where appropriate
+- cleans up `operator_ui` exports where appropriate
+- reduces awkward import paths across operator UI modules where appropriate
+- centralizes public package entrypoints where appropriate
 - preserves existing list/detail/trigger behavior
 - preserves current success/failure and failure-stage rendering behavior
 - keeps reads/writes bounded to the configured/local artifacts root
@@ -35,7 +34,7 @@ Build a bounded cleanup pass that:
 Allowed work in this phase:
 
 - minimal bounded additions/modifications under `src/future_system/operator_ui/*`
-- small app-entry/export helper adjustments if clearly justified
+- small package export/helper adjustments if clearly justified
 - minimal test updates strictly needed to preserve and verify unchanged behavior
 
 ## Hard constraints
@@ -58,8 +57,9 @@ Prefer the smallest possible bounded refactor.
 
 A good result is:
 
-- a clearer single public app-construction/export surface
-- cleaner external import ergonomics
+- cleaner `operator_ui/__init__.py`
+- cleaner internal imports
+- clearer public package entrypoints
 - unchanged route behavior
 - deterministic tests proving behavior stayed intact
 
@@ -79,7 +79,7 @@ The implementation must preserve this contract:
 
 This phase is complete when:
 
-- the operator UI app entry/export surface is cleaner and easier for callers to consume
+- the operator UI package/export structure is cleaner and easier to consume
 - current UI behavior remains intact for valid and invalid root/artifact states
 - success and failure outputs still clearly distinguish:
   - `analyst_timeout`
