@@ -1,58 +1,67 @@
-# Phase 19P — Operator UI Integration-Flow Test Hardening
+# Phase 19Q — Operator UI Track Closeout
 
 ## Goal
 
-Add bounded integration-style tests that lock in the currently shipped operator UI read/trigger/detail and mount behavior without introducing runtime behavior changes.
+Produce a factual closeout/readiness checkpoint document for the `future_system` operator UI + review-artifact track.
 
-This phase is primarily tests plus phase-file update.
+This phase is docs-only closeout.
 
 ## Read first
 
-Before implementing, read:
+Before writing closeout docs, read:
 
+- `.codex/phases/current_phase.md`
 - `docs/FUTURE_SYSTEM_OPERATOR_UI_LOCAL_RUNBOOK.md`
+- `docs/PHASE_19O_OPERATOR_UI_MANUAL_VERIFICATION_CHECKPOINT.md`
+- `tests/future_system/test_operator_ui_integration_flows.py`
 - `src/future_system/operator_ui/app_entry.py`
 - `src/future_system/operator_ui/review_artifacts.py`
-- `src/future_system/operator_ui/route_handlers.py`
-- `src/future_system/operator_ui/app_wiring.py`
-- `tests/future_system/test_operator_ui_review_artifacts.py`
-- `tests/future_system/test_operator_ui_app_entry.py`
-- `tests/future_system/test_operator_ui_app_wiring.py`
+- `src/future_system/cli/review_artifacts.py`
 
 ## Required deliverable
 
-Build a bounded integration-flow test pass that covers:
+Add one closeout document:
 
-- `create_operator_ui_app` exposing shipped routes
-- `mount_operator_ui_app` default-path mounting behavior
-- `GET /` root/list rendering for configured readable root
-- `POST /runs/trigger` redirect/handoff into `GET /runs/{run_id}`
-- detail visibility for success and failure-stage outcomes
-- default trigger target subdirectory (`operator_runs`)
-- top-level list visibility behavior for triggered subdirectory runs
-- bounded root-status messaging for not-configured/missing/invalid roots
+- `docs/PHASE_19Q_OPERATOR_UI_TRACK_CLOSEOUT.md`
 
-## Scope allowed
+The closeout must include:
 
-Allowed work in this phase:
-
-- update this phase file
-- add one bounded integration-style operator UI test module
-- minimal test-only helper additions in that new test module
+- repo/branch/phase context
+- what the full Phase 18O–19Q track delivered
+- current operator workflow coverage:
+  - CLI artifact generation
+  - UI read/list/detail
+  - UI synchronous trigger
+  - mounted app support
+  - local runbook
+  - integration-flow tests
+- explicit out-of-scope items that remain out:
+  - production trading/execution
+  - background jobs/scheduling
+  - DB persistence
+  - notification/delivery
+  - broader `src/polymarket_arb` integration
+- safety boundaries that must remain true
+- validation commands to run before merge/handoff
+- recommended next decision:
+  - stop/merge checkpoint, or
+  - start a new bounded track
 
 ## Hard constraints
 
 Do not:
 
 - modify anything under `src/polymarket_arb/*`
-- add DB/queues/background jobs/scheduling/delivery/inbox/execution/trading logic
-- change shipped behavior unless a tiny non-behavioral testability seam is required
-- drift beyond operator UI integration-flow hardening
+- change production/runtime/operator UI behavior
+- add features or infrastructure (DB/jobs/queues/scheduling/delivery/inbox/execution/trading logic)
+- claim live production readiness
 
 ## Validation
 
 Run exactly:
 
+- `git diff --stat`
+- `git diff --name-only`
 - `pytest tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_app_wiring.py tests/future_system/test_operator_ui_package_exports.py tests/future_system/test_operator_ui_app_entry.py tests/future_system/test_operator_ui_integration_flows.py`
 - `ruff check src/future_system/operator_ui tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_app_wiring.py tests/future_system/test_operator_ui_package_exports.py tests/future_system/test_operator_ui_app_entry.py tests/future_system/test_operator_ui_integration_flows.py`
 - `mypy src/future_system/operator_ui`
