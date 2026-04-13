@@ -7,13 +7,15 @@ import json
 from pathlib import Path
 from typing import Literal
 
-from future_system.operator_ui.artifact_reads import (
+from future_system.runtime.models import AnalysisRunFailureStage
+
+from .artifact_reads import (
     ArtifactRunDetail,
     ArtifactRunHistory,
     status_label,
 )
-from future_system.operator_ui.root_status import ARTIFACTS_ROOT_ENV, ArtifactsRootStatus
-from future_system.operator_ui.style_tokens import (
+from .root_status import ARTIFACTS_ROOT_ENV, ArtifactsRootStatus
+from .style_tokens import (
     BADGE_CSS,
     BASE_PAGE_CSS,
     DETAIL_SECTION_CSS,
@@ -36,7 +38,6 @@ from future_system.operator_ui.style_tokens import (
     root_status_class,
     status_badge_class,
 )
-from future_system.runtime.models import AnalysisRunFailureStage
 
 DETAIL_MARKDOWN_MAX_CHARS = 16_000
 DETAIL_JSON_MAX_CHARS = 24_000

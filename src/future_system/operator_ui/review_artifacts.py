@@ -12,41 +12,42 @@ from fastapi.responses import HTMLResponse
 
 from future_system.context_bundle.models import OpportunityContextBundle
 from future_system.live_analyst.errors import LiveAnalystTimeoutError, LiveAnalystTransportError
-from future_system.operator_ui.app_wiring import (
+from future_system.reasoning_contracts.models import ReasoningInputPacket, RenderedPromptPacket
+from future_system.review_entrypoints.entry import run_analysis_and_write_review_artifacts
+from future_system.runtime.protocol import AnalystProtocol, AnalystResponsePayload
+from future_system.runtime.stub_analyst import DeterministicStubAnalyst
+
+from .app_wiring import (
     DEFAULT_TRIGGER_TARGET_SUBDIRECTORY as _DEFAULT_TRIGGER_TARGET_SUBDIRECTORY,
 )
-from future_system.operator_ui.app_wiring import (
+from .app_wiring import (
     build_review_artifacts_operator_ui_assembly,
 )
-from future_system.operator_ui.artifact_reads import (
+from .artifact_reads import (
     ArtifactRunDetail,
     ArtifactRunHistory,
     ArtifactRunListItem,
     normalize_run_id,
 )
-from future_system.operator_ui.artifact_reads import (
+from .artifact_reads import (
     discover_review_artifact_history as _discover_review_artifact_history,
 )
-from future_system.operator_ui.artifact_reads import (
+from .artifact_reads import (
     discover_review_artifact_runs as _discover_review_artifact_runs,
 )
-from future_system.operator_ui.artifact_reads import (
+from .artifact_reads import (
     read_review_artifact_run_detail as _read_review_artifact_run_detail,
 )
-from future_system.operator_ui.root_status import resolve_artifacts_root
-from future_system.operator_ui.route_handlers import (
+from .root_status import resolve_artifacts_root
+from .route_handlers import (
     handle_list_runs_request as _handle_list_runs_request,
 )
-from future_system.operator_ui.route_handlers import (
+from .route_handlers import (
     handle_trigger_run_request as _handle_trigger_run_request,
 )
-from future_system.operator_ui.route_handlers import (
+from .route_handlers import (
     handle_view_run_request as _handle_view_run_request,
 )
-from future_system.reasoning_contracts.models import ReasoningInputPacket, RenderedPromptPacket
-from future_system.review_entrypoints.entry import run_analysis_and_write_review_artifacts
-from future_system.runtime.protocol import AnalystProtocol, AnalystResponsePayload
-from future_system.runtime.stub_analyst import DeterministicStubAnalyst
 
 _TARGET_SUBDIRECTORY_SEGMENT_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 

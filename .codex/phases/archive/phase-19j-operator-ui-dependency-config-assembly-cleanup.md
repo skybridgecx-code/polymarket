@@ -1,29 +1,29 @@
-# Phase 19K — Operator UI Package/Export Cleanup
+# Phase 19J — Operator UI Dependency and Config Assembly Cleanup
 
 ## Goal
 
-Clean up the `operator_ui` package structure so exports and import paths are easier to maintain without changing behavior.
+Clean up operator UI app wiring so dependency/config assembly is easier to maintain without changing behavior.
 
-This phase is about bounded package/export cleanup only.
+This phase is about bounded app-factory/config cleanup only.
 
-18Y–19J established the operator UI read, trigger, detail, helper extraction, template extraction, styling cleanup, route cleanup, and app-wiring cleanup flows.
-19K should improve package ergonomics and internal structure while preserving current operator-visible behavior.
+18Y–19I established the operator UI read, trigger, history, detail, helper extraction, template extraction, styling cleanup, and route-module cleanup flows.
+19J should improve app wiring structure and maintainability while preserving current operator-visible behavior.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
 - `src/future_system/operator_ui/*`
-- current `__init__.py` exports and import paths across the operator UI package
-- directly relevant tests for the current UI surface
+- the current app factory/config/dependency assembly in `review_artifacts.py`
+- directly relevant tests for the current UI list/detail/trigger/root-state surface
 
 ## Required deliverable
 
 Build a bounded cleanup pass that:
 
-- cleans up `operator_ui` exports where appropriate
-- reduces awkward import paths across operator UI modules where appropriate
-- centralizes public package entrypoints where appropriate
+- extracts app wiring/dependency assembly into smaller focused helper(s) or module(s) where appropriate
+- centralizes config/default handling for the operator UI app where appropriate
+- keeps app factory code focused on assembly rather than inline setup detail
 - preserves existing list/detail/trigger behavior
 - preserves current success/failure and failure-stage rendering behavior
 - keeps reads/writes bounded to the configured/local artifacts root
@@ -34,7 +34,7 @@ Build a bounded cleanup pass that:
 Allowed work in this phase:
 
 - minimal bounded additions/modifications under `src/future_system/operator_ui/*`
-- small package export/helper adjustments if clearly justified
+- creation of small config/dependency helper modules/files if clearly justified
 - minimal test updates strictly needed to preserve and verify unchanged behavior
 
 ## Hard constraints
@@ -52,14 +52,13 @@ Do not:
 
 ## Desired shape
 
-Use the repo’s existing package pattern.
+Use the repo’s existing UI/app pattern.
 Prefer the smallest possible bounded refactor.
 
 A good result is:
 
-- cleaner `operator_ui/__init__.py`
-- cleaner internal imports
-- clearer public package entrypoints
+- smaller/more focused `review_artifacts.py`
+- one or more small helper modules for app wiring/config/default assembly
 - unchanged route behavior
 - deterministic tests proving behavior stayed intact
 
@@ -75,17 +74,25 @@ The implementation must preserve this contract:
 6. Reads/writes remain bounded to the configured/local artifacts root.
 7. Operator-visible behavior remains materially unchanged except for safe cleanup side effects.
 
+UI/cleanup requirements:
+
+- must preserve `theme_id` visibility
+- must preserve status / failure-stage context
+- must preserve run list/detail/trigger behavior
+- must preserve safe missing/invalid/unreadable root handling
+- must not invent fake reasoning or fake policy content
+
 ## Acceptance criteria
 
 This phase is complete when:
 
-- the operator UI package/export structure is cleaner and easier to consume
+- the operator UI dependency/config assembly is cleaner and more modular
 - current UI behavior remains intact for valid and invalid root/artifact states
 - success and failure outputs still clearly distinguish:
   - `analyst_timeout`
   - `analyst_transport`
   - `reasoning_parse`
-- tests cover unchanged behavior after the cleanup
+- tests cover unchanged list/detail/trigger/root-state behavior after the cleanup
 - `src/polymarket_arb/*` remains untouched
 
 ## Validation

@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from future_system.operator_ui.root_status import ArtifactsRootStatus, resolve_artifacts_root_status
-from future_system.operator_ui.route_handlers import (
+from .root_status import ArtifactsRootStatus, resolve_artifacts_root_status
+from .route_handlers import (
     DiscoverReviewArtifactHistoryFn,
     ReadReviewArtifactRunDetailFn,
     ResolveTargetSubdirectoryFn,

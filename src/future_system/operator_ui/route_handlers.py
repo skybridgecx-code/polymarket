@@ -10,13 +10,13 @@ from urllib.parse import quote
 from fastapi import Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from future_system.operator_ui.artifact_reads import ArtifactRunDetail, ArtifactRunHistory
-from future_system.operator_ui.render_templates import (
+from .artifact_reads import ArtifactRunDetail, ArtifactRunHistory
+from .render_templates import (
     render_detail_page,
     render_error_page,
     render_list_page,
 )
-from future_system.operator_ui.root_status import (
+from .root_status import (
     ArtifactsRootStatus,
     artifacts_root_unavailable_message,
 )

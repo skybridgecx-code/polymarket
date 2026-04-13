@@ -10,8 +10,9 @@ from typing import Any, Literal, cast
 
 from pydantic import BaseModel, field_validator
 
-from future_system.operator_ui.root_status import resolve_artifacts_root
 from future_system.runtime.models import AnalysisRunFailureStage
+
+from .root_status import resolve_artifacts_root
 
 _RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 
