@@ -1,42 +1,39 @@
-# Phase 18V — Runtime-to-Review Artifact Flow
+# Phase 18W — Runtime Entry-to-Artifact Entry Flow
 
 ## Goal
 
-Add a bounded end-to-end artifact flow that takes a structured runtime result and produces written local review artifact files through the existing review bundle, export, and file-writer layers.
+Add a bounded top-level entry flow that starts from the actual runtime result entrypoint and produces written local review artifacts through the existing artifact flow.
 
-This phase is about composition and flow wiring only.
+This phase is about top-level composition only.
 
-18P introduced structured runtime results.
-18Q introduced review packets.
-18R introduced renderers.
-18S introduced review bundles.
-18T introduced export payloads.
-18U introduced bounded local file writing.
+18P introduced the runtime result entrypoint.
+18V introduced the runtime-result-to-review-artifact composition flow.
 
-18V should compose those layers into one small end-to-end artifact flow without adding new delivery systems, persistence backends, UI, or orchestration.
+18W should connect those layers so a caller with a context bundle, analyst, and target directory can invoke one small entrypoint and receive the final artifact result.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
 - `src/future_system/runtime/*`
-- `src/future_system/review_packets/*`
-- `src/future_system/review_renderers/*`
+- `src/future_system/review_artifacts/*`
 - `src/future_system/review_bundles/*`
 - `src/future_system/review_exports/*`
 - `src/future_system/review_file_writers/*`
 
-Also read the directly relevant tests for those layers before implementing.
+Also read the directly relevant tests for the runtime and review artifact flow before implementing.
 
 ## Required deliverable
 
-Build a bounded flow layer that:
+Build a bounded top-level entry flow that:
 
-- accepts an 18P runtime result envelope
-- derives the 18S review bundle
-- derives the 18T export payload package
-- writes artifacts through the 18U file-writer boundary into a caller-provided target directory
-- returns a structured end-to-end artifact flow result/model
+- accepts:
+  - context bundle
+  - runtime analyst
+  - caller-provided target directory
+- invokes the 18P runtime result entrypoint
+- invokes the 18V review artifact flow
+- returns a structured end-to-end entry result/model
 - supports both success and expected failure outcomes
 - preserves explicit distinction between:
   - success
@@ -49,8 +46,9 @@ Build a bounded flow layer that:
 
 Allowed work in this phase:
 
-- new bounded files under `src/future_system/review_artifacts/*`
-- minimal helper/model additions strictly needed for end-to-end flow composition
+- new bounded files under `src/future_system/review_entrypoints/*`
+- or minimal bounded additions under `src/future_system/review_artifacts/*` if the repo shape strongly prefers that
+- minimal helper/model additions strictly needed for the top-level composition entrypoint
 - minimal test additions strictly needed for deterministic coverage
 
 ## Hard constraints
@@ -60,21 +58,21 @@ Do not:
 - modify anything under `src/polymarket_arb/*`
 - add database/persistence backends
 - add network delivery, email, notifications, queues, or inbox/reporting systems
-- add scheduling/orchestration beyond this single synchronous composition flow
+- add scheduling/orchestration beyond this single synchronous top-level flow
 - add UI
 - add execution/trading behavior
-- re-run runtime, reasoning, or policy logic inside this layer
-- change semantics of review bundle/export/writer layers beyond minimal bounded integration support
+- re-run reasoning or policy logic outside the existing runtime entrypoint
+- change semantics of runtime result, bundle, export, writer, or artifact-flow layers beyond minimal bounded integration support
 - write outside the caller-provided target directory
-- add speculative job-runner or artifact-registry architecture
+- add speculative service/application framework architecture
 
 ## Desired shape
 
-Prefer a small dedicated composition surface, for example:
+Prefer a small dedicated entry surface, for example:
 
-- `src/future_system/review_artifacts/__init__.py`
-- `src/future_system/review_artifacts/models.py`
-- `src/future_system/review_artifacts/flow.py`
+- `src/future_system/review_entrypoints/__init__.py`
+- `src/future_system/review_entrypoints/models.py`
+- `src/future_system/review_entrypoints/entry.py`
 
 Tests should stay narrow and deterministic and should use temp directories only.
 
@@ -82,23 +80,20 @@ Tests should stay narrow and deterministic and should use temp directories only.
 
 The implementation must preserve this contract:
 
-1. Runtime result remains the source of truth for success/failure.
-2. Review bundle builder remains the source of bundle construction.
-3. Export layer remains the source of export payload construction.
-4. File-writer layer remains the source of local file writing.
-5. This layer is only a bounded synchronous composition flow across those existing components.
-6. Success and failure outcomes remain structurally distinct or explicitly typed.
-7. Failure-stage identity remains exact.
-8. Output remains deterministic and operator-safe.
+1. Runtime result entrypoint remains the source of truth for runtime success/failure.
+2. Review artifact flow remains the source of downstream artifact construction/writing.
+3. This layer is only a bounded synchronous entry composition across those existing components.
+4. Success and failure outcomes remain structurally distinct or explicitly typed.
+5. Failure-stage identity remains exact.
+6. Output remains deterministic and operator-safe.
+7. Local writes remain bounded to the caller-provided target directory.
 
-Artifact flow requirements:
+Entry flow requirements:
 
 - must include `theme_id`
-- must include flow status / kind
+- must include entry status / kind
 - must include the runtime result envelope or a bounded reference to it
-- must include the derived review bundle or bounded reference to it
-- must include the derived export payload package or bounded reference to it
-- must include the file-writer result
+- must include the review artifact flow result
 - must include `run_flags`
 - failure outcomes must include explicit failure stage
 - success outcomes may include bounded success details already present upstream
@@ -106,7 +101,7 @@ Artifact flow requirements:
 
 Expose a small entrypoint such as:
 
-- `build_and_write_review_artifacts(...)`
+- `run_analysis_and_write_review_artifacts(...)`
 
 or a similarly small bounded equivalent.
 
@@ -115,23 +110,21 @@ A good result model may include, at minimum:
 - theme_id
 - target directory
 - runtime result reference
-- review bundle reference
-- export payload reference
-- file write result
+- artifact flow result
 - status / failure stage context
 
 ## Acceptance criteria
 
 This phase is complete when:
 
-- callers can pass an 18P runtime result envelope and a target directory and receive deterministic written review artifacts through the composed flow
-- flow includes bundle construction, export payload construction, and local file writing
+- callers can pass a context bundle, analyst, and target directory and receive deterministic written review artifacts through the composed top-level entrypoint
+- flow includes runtime result construction and artifact writing
 - success and failure outcomes are preserved cleanly
 - failure outputs explicitly distinguish:
   - `analyst_timeout`
   - `analyst_transport`
   - `reasoning_parse`
-- flow stays bounded to caller-provided local filesystem targets only
+- writes stay bounded to caller-provided local filesystem targets only
 - tests cover success plus each expected failure stage, using temp directories
 - `src/polymarket_arb/*` remains untouched
 
@@ -141,7 +134,7 @@ Run narrow validation only.
 
 At minimum, run the smallest reasonable set covering:
 
-- touched `review_artifacts` files
+- touched `review_entrypoints` and/or `review_artifacts` files
 - any touched tests
 
 Use:
