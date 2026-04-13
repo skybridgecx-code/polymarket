@@ -4,28 +4,46 @@ from __future__ import annotations
 
 import html
 import json
-import os
 import re
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Literal
 from urllib.parse import quote
 
 from fastapi import FastAPI, Form, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
-from pydantic import BaseModel, field_validator
 
 from future_system.context_bundle.models import OpportunityContextBundle
 from future_system.live_analyst.errors import LiveAnalystTimeoutError, LiveAnalystTransportError
+from future_system.operator_ui.artifact_reads import (
+    ArtifactRunDetail,
+    ArtifactRunHistory,
+    ArtifactRunListItem,
+    normalize_run_id,
+    status_label,
+)
+from future_system.operator_ui.artifact_reads import (
+    discover_review_artifact_history as _discover_review_artifact_history,
+)
+from future_system.operator_ui.artifact_reads import (
+    discover_review_artifact_runs as _discover_review_artifact_runs,
+)
+from future_system.operator_ui.artifact_reads import (
+    read_review_artifact_run_detail as _read_review_artifact_run_detail,
+)
+from future_system.operator_ui.root_status import (
+    ARTIFACTS_ROOT_ENV,
+    ArtifactsRootStatus,
+    artifacts_root_unavailable_message,
+    resolve_artifacts_root,
+    resolve_artifacts_root_status,
+)
 from future_system.reasoning_contracts.models import ReasoningInputPacket, RenderedPromptPacket
 from future_system.review_entrypoints.entry import run_analysis_and_write_review_artifacts
 from future_system.runtime.models import AnalysisRunFailureStage
 from future_system.runtime.protocol import AnalystProtocol, AnalystResponsePayload
 from future_system.runtime.stub_analyst import DeterministicStubAnalyst
 
-_ARTIFACTS_ROOT_ENV = "FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT"
-_RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 _TRIGGER_ANALYST_MODE_CHOICES = (
     "stub",
     "analyst_timeout",
@@ -44,106 +62,6 @@ _FAILURE_STAGE_DESCRIPTIONS: dict[AnalysisRunFailureStage, str] = {
 
 
 @dataclass(frozen=True)
-class ArtifactsRootStatus:
-    """Bounded status for configured artifacts root visibility and safety checks."""
-
-    state: Literal[
-        "configured_readable",
-        "configured_missing",
-        "configured_invalid_or_unreadable",
-        "not_configured",
-    ]
-    configured_value: str | None
-    resolved_root: Path | None
-    message: str
-
-    @property
-    def is_usable(self) -> bool:
-        return self.state == "configured_readable" and self.resolved_root is not None
-
-
-class ArtifactRunListItem(BaseModel):
-    """One bounded list-row record for a discovered artifact run."""
-
-    run_id: str
-    theme_id: str
-    status: Literal["success", "failed"]
-    failure_stage: AnalysisRunFailureStage | None = None
-    status_label: str
-    updated_at_epoch_ns: int
-    updated_at_label: str
-    markdown_path: str
-    json_path: str
-
-    @field_validator(
-        "run_id",
-        "theme_id",
-        "status_label",
-        "updated_at_label",
-        "markdown_path",
-        "json_path",
-        mode="before",
-    )
-    @classmethod
-    def _normalize_text_fields(cls, value: Any) -> str:
-        if not isinstance(value, str):
-            raise ValueError("artifact list fields must be strings.")
-        normalized = value.strip()
-        if not normalized:
-            raise ValueError("artifact list fields must be non-empty strings.")
-        return normalized
-
-    @field_validator("updated_at_epoch_ns", mode="before")
-    @classmethod
-    def _validate_updated_at_epoch_ns(cls, value: Any) -> int:
-        if not isinstance(value, int):
-            raise ValueError("updated_at_epoch_ns must be an integer.")
-        if value < 0:
-            raise ValueError("updated_at_epoch_ns must be non-negative.")
-        return value
-
-
-class ArtifactRunIssue(BaseModel):
-    """One explicit safe issue found while reading artifact run files."""
-
-    run_id: str
-    issue_kind: Literal[
-        "invalid_run_id",
-        "json_invalid",
-        "json_fields_invalid",
-        "markdown_missing",
-    ]
-    issue_message: str
-    json_path: str
-    markdown_path: str
-
-    @field_validator("run_id", "issue_message", "json_path", "markdown_path", mode="before")
-    @classmethod
-    def _normalize_issue_text_fields(cls, value: Any) -> str:
-        if not isinstance(value, str):
-            raise ValueError("artifact issue fields must be strings.")
-        normalized = value.strip()
-        if not normalized:
-            raise ValueError("artifact issue fields must be non-empty strings.")
-        return normalized
-
-
-class ArtifactRunHistory(BaseModel):
-    """Bounded run history view with valid runs and explicit file-read issues."""
-
-    runs: list[ArtifactRunListItem]
-    issues: list[ArtifactRunIssue]
-
-
-class ArtifactRunDetail(BaseModel):
-    """Bounded detail payload for one run used by the operator UI."""
-
-    run: ArtifactRunListItem
-    markdown_content: str
-    json_content: dict[str, object]
-
-
-@dataclass(frozen=True)
 class TriggerRunResult:
     """Bounded trigger outcome metadata needed for deterministic UI handoff."""
 
@@ -157,7 +75,7 @@ def create_review_artifacts_operator_app(
 ) -> FastAPI:
     """Create a bounded read-only operator UI app scoped to one artifacts root."""
 
-    root_status = _resolve_artifacts_root_status(artifacts_root)
+    root_status = resolve_artifacts_root_status(artifacts_root)
     app = FastAPI(title="Future System Review Artifact Operator UI", version="0.1.0")
     app.state.artifacts_root_status = root_status
 
@@ -187,7 +105,7 @@ def create_review_artifacts_operator_app(
                     root_status=root_status,
                     trigger_error=(
                         "artifacts_root_unavailable: "
-                        f"{_artifacts_root_unavailable_message(root_status=root_status)}"
+                        f"{artifacts_root_unavailable_message(root_status=root_status)}"
                     ),
                     last_context_source=context_source,
                     last_analyst_mode=analyst_mode,
@@ -234,7 +152,7 @@ def create_review_artifacts_operator_app(
                     title="Run Read Error",
                     message=(
                         "artifacts_root_unavailable: "
-                        f"{_artifacts_root_unavailable_message(root_status=root_status)}"
+                        f"{artifacts_root_unavailable_message(root_status=root_status)}"
                     ),
                     back_href="/",
                     back_label="Back to runs",
@@ -321,93 +239,13 @@ def create_review_artifacts_operator_app(
 def discover_review_artifact_runs(*, artifacts_root: Path) -> list[ArtifactRunListItem]:
     """Enumerate deterministic valid run list records from bounded artifact files."""
 
-    return discover_review_artifact_history(artifacts_root=artifacts_root).runs
+    return _discover_review_artifact_runs(artifacts_root=artifacts_root)
 
 
 def discover_review_artifact_history(*, artifacts_root: Path) -> ArtifactRunHistory:
     """Enumerate deterministic run history with explicit safe file-read issues."""
 
-    root = _resolve_artifacts_root(artifacts_root)
-    runs: list[ArtifactRunListItem] = []
-    issues: list[ArtifactRunIssue] = []
-
-    json_paths = sorted(
-        root.glob("*.json"),
-        key=lambda path: (-path.stat().st_mtime_ns, path.name),
-    )
-
-    for json_path in json_paths:
-        run_id = json_path.stem
-        markdown_path = root / f"{run_id}.md"
-        if not _RUN_ID_PATTERN.fullmatch(run_id):
-            issues.append(
-                ArtifactRunIssue(
-                    run_id=run_id,
-                    issue_kind="invalid_run_id",
-                    issue_message="run_id contains invalid characters.",
-                    json_path=str(json_path),
-                    markdown_path=str(markdown_path),
-                )
-            )
-            continue
-        try:
-            payload = _read_export_json(json_path=json_path)
-        except ValueError as exc:
-            issues.append(
-                ArtifactRunIssue(
-                    run_id=run_id,
-                    issue_kind="json_invalid",
-                    issue_message=str(exc),
-                    json_path=str(json_path),
-                    markdown_path=str(markdown_path),
-                )
-            )
-            continue
-
-        try:
-            theme_id = _require_string(payload.get("theme_id"), "theme_id")
-            status = _require_status(payload.get("status"))
-            failure_stage = _optional_failure_stage(payload)
-        except ValueError as exc:
-            issues.append(
-                ArtifactRunIssue(
-                    run_id=run_id,
-                    issue_kind="json_fields_invalid",
-                    issue_message=str(exc),
-                    json_path=str(json_path),
-                    markdown_path=str(markdown_path),
-                )
-            )
-            continue
-
-        if not markdown_path.exists() or not markdown_path.is_file():
-            issues.append(
-                ArtifactRunIssue(
-                    run_id=run_id,
-                    issue_kind="markdown_missing",
-                    issue_message="artifact_markdown_missing: markdown file is missing.",
-                    json_path=str(json_path),
-                    markdown_path=str(markdown_path),
-                )
-            )
-
-        status_label = _status_label(status=status, failure_stage=failure_stage)
-        updated_at_epoch_ns = json_path.stat().st_mtime_ns
-        runs.append(
-            ArtifactRunListItem(
-                run_id=run_id,
-                theme_id=theme_id,
-                status=status,
-                failure_stage=failure_stage,
-                status_label=status_label,
-                updated_at_epoch_ns=updated_at_epoch_ns,
-                updated_at_label=_format_timestamp_ns(updated_at_epoch_ns),
-                markdown_path=str(markdown_path),
-                json_path=str(json_path),
-            )
-        )
-
-    return ArtifactRunHistory(runs=runs, issues=issues)
+    return _discover_review_artifact_history(artifacts_root=artifacts_root)
 
 
 def trigger_review_artifact_run(
@@ -419,7 +257,7 @@ def trigger_review_artifact_run(
 ) -> TriggerRunResult:
     """Run one synchronous artifact-generation invocation and return the resulting run id."""
 
-    root = _resolve_artifacts_root(artifacts_root)
+    root = resolve_artifacts_root(artifacts_root)
     target_directory, normalized_target_subdirectory = _resolve_target_subdirectory(
         artifacts_root=root,
         target_subdirectory=target_subdirectory,
@@ -436,7 +274,7 @@ def trigger_review_artifact_run(
         entry_result.entry_result.artifact_flow.flow_result.file_write_result.json_file_path
     )
     return TriggerRunResult(
-        run_id=_normalize_run_id(run_json_path.stem),
+        run_id=normalize_run_id(run_json_path.stem),
         target_subdirectory=normalized_target_subdirectory,
     )
 
@@ -444,126 +282,9 @@ def trigger_review_artifact_run(
 def read_review_artifact_run_detail(*, artifacts_root: Path, run_id: str) -> ArtifactRunDetail:
     """Read one run detail strictly from files under the configured artifacts root."""
 
-    root = _resolve_artifacts_root(artifacts_root)
-    normalized_run_id = _normalize_run_id(run_id)
-
-    json_path = _bounded_run_path(root=root, run_id=normalized_run_id, suffix=".json")
-    markdown_path = _bounded_run_path(root=root, run_id=normalized_run_id, suffix=".md")
-
-    if not json_path.exists() or not json_path.is_file():
-        raise ValueError("artifact_run_not_found: json file is missing.")
-    if not markdown_path.exists() or not markdown_path.is_file():
-        raise ValueError("artifact_markdown_missing: markdown file is missing.")
-
-    payload = _read_export_json(json_path=json_path)
-    status = _require_status(payload.get("status"))
-    failure_stage = _optional_failure_stage(payload)
-    updated_at_epoch_ns = json_path.stat().st_mtime_ns
-    run = ArtifactRunListItem(
-        run_id=normalized_run_id,
-        theme_id=_require_string(payload.get("theme_id"), "theme_id"),
-        status=status,
-        failure_stage=failure_stage,
-        status_label=_status_label(status=status, failure_stage=failure_stage),
-        updated_at_epoch_ns=updated_at_epoch_ns,
-        updated_at_label=_format_timestamp_ns(updated_at_epoch_ns),
-        markdown_path=str(markdown_path),
-        json_path=str(json_path),
-    )
-
-    markdown_content = markdown_path.read_text(encoding="utf-8")
-    return ArtifactRunDetail(
-        run=run,
-        markdown_content=markdown_content,
-        json_content=payload,
-    )
-
-
-def _resolve_artifacts_root(artifacts_root: str | Path | None) -> Path:
-    status = _resolve_artifacts_root_status(artifacts_root)
-    if status.is_usable and status.resolved_root is not None:
-        return status.resolved_root
-    raise ValueError(_artifacts_root_unavailable_message(root_status=status))
-
-
-def _resolve_artifacts_root_status(artifacts_root: str | Path | None) -> ArtifactsRootStatus:
-    configured_value: str | None = None
-    candidate: Path | None = None
-
-    if artifacts_root is None:
-        env_value = os.getenv(_ARTIFACTS_ROOT_ENV, "").strip()
-        if not env_value:
-            return ArtifactsRootStatus(
-                state="not_configured",
-                configured_value=None,
-                resolved_root=None,
-                message=(
-                    "Artifacts root is not configured. Set "
-                    f"{_ARTIFACTS_ROOT_ENV} or pass artifacts_root when creating the app."
-                ),
-            )
-        configured_value = env_value
-        candidate = Path(env_value)
-    elif isinstance(artifacts_root, Path):
-        configured_value = str(artifacts_root)
-        candidate = artifacts_root
-    elif isinstance(artifacts_root, str):
-        stripped = artifacts_root.strip()
-        if not stripped:
-            return ArtifactsRootStatus(
-                state="configured_invalid_or_unreadable",
-                configured_value=artifacts_root,
-                resolved_root=None,
-                message="Configured artifacts root is invalid: path string is empty.",
-            )
-        configured_value = stripped
-        candidate = Path(stripped)
-    else:
-        raise ValueError("artifacts_root must be a path-like string or Path.")
-
-    assert candidate is not None
-    try:
-        resolved_candidate = candidate.resolve(strict=False)
-    except OSError:
-        return ArtifactsRootStatus(
-            state="configured_invalid_or_unreadable",
-            configured_value=configured_value,
-            resolved_root=None,
-            message="Configured artifacts root is unreadable or invalid.",
-        )
-
-    if not resolved_candidate.exists():
-        return ArtifactsRootStatus(
-            state="configured_missing",
-            configured_value=configured_value,
-            resolved_root=None,
-            message="Configured artifacts root is missing on disk.",
-        )
-    if not resolved_candidate.is_dir():
-        return ArtifactsRootStatus(
-            state="configured_invalid_or_unreadable",
-            configured_value=configured_value,
-            resolved_root=None,
-            message="Configured artifacts root is invalid: path is not a directory.",
-        )
-
-    required_access = os.R_OK | os.W_OK | os.X_OK
-    if not os.access(resolved_candidate, required_access):
-        return ArtifactsRootStatus(
-            state="configured_invalid_or_unreadable",
-            configured_value=configured_value,
-            resolved_root=None,
-            message=(
-                "Configured artifacts root is unreadable or unwritable; read/write access "
-                "is required."
-            ),
-        )
-
-    return ArtifactsRootStatus(
-        state="configured_readable",
-        configured_value=str(resolved_candidate),
-        resolved_root=resolved_candidate,
-        message="Configured artifacts root is readable and writable.",
+    return _read_review_artifact_run_detail(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
     )
 
 
@@ -571,17 +292,6 @@ def _discover_history_for_root_status(*, root_status: ArtifactsRootStatus) -> Ar
     if not root_status.is_usable or root_status.resolved_root is None:
         return ArtifactRunHistory(runs=[], issues=[])
     return discover_review_artifact_history(artifacts_root=root_status.resolved_root)
-
-
-def _artifacts_root_unavailable_message(*, root_status: ArtifactsRootStatus) -> str:
-    if root_status.state == "not_configured":
-        return (
-            "artifacts_root is required unless "
-            f"{_ARTIFACTS_ROOT_ENV} is configured."
-        )
-    if root_status.state == "configured_missing":
-        return "artifacts_root must reference an existing directory."
-    return "artifacts_root must reference a readable and writable directory."
 
 
 def _resolve_target_subdirectory(
@@ -682,89 +392,6 @@ def _build_trigger_analyst(*, mode: str) -> AnalystProtocol:
     )
 
 
-def _normalize_run_id(run_id: str) -> str:
-    normalized = run_id.strip()
-    if not normalized:
-        raise ValueError("artifact_run_id_invalid: run_id must be a non-empty string.")
-    if not _RUN_ID_PATTERN.fullmatch(normalized):
-        raise ValueError("artifact_run_id_invalid: run_id contains invalid characters.")
-    return normalized
-
-
-def _bounded_run_path(*, root: Path, run_id: str, suffix: str) -> Path:
-    path = (root / f"{run_id}{suffix}").resolve()
-    try:
-        path.relative_to(root)
-    except ValueError as exc:
-        raise ValueError("artifact_run_path_out_of_bounds") from exc
-    return path
-
-
-def _read_export_json(*, json_path: Path) -> dict[str, object]:
-    try:
-        parsed = json.loads(json_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise ValueError("artifact_json_invalid: malformed JSON content.") from exc
-    if not isinstance(parsed, dict):
-        raise ValueError("artifact_json_invalid: top-level artifact payload must be an object.")
-    normalized: dict[str, object] = {}
-    for key, value in parsed.items():
-        if not isinstance(key, str):
-            raise ValueError("artifact_json_invalid: object keys must be strings.")
-        normalized[key] = value
-    return normalized
-
-
-def _require_string(value: object, field_name: str) -> str:
-    if not isinstance(value, str):
-        raise ValueError(f"artifact_json_invalid: {field_name} must be a string.")
-    normalized = value.strip()
-    if not normalized:
-        raise ValueError(f"artifact_json_invalid: {field_name} must be non-empty.")
-    return normalized
-
-
-def _require_status(value: object) -> Literal["success", "failed"]:
-    if value == "success":
-        return "success"
-    if value == "failed":
-        return "failed"
-    raise ValueError("artifact_json_invalid: status must be 'success' or 'failed'.")
-
-
-def _optional_failure_stage(payload: dict[str, object]) -> AnalysisRunFailureStage | None:
-    if payload.get("status") != "failed":
-        return None
-
-    payload_field = payload.get("payload")
-    if not isinstance(payload_field, dict):
-        raise ValueError("artifact_json_invalid: payload must be an object.")
-    failure_stage = payload_field.get("failure_stage")
-    if failure_stage not in {"analyst_timeout", "analyst_transport", "reasoning_parse"}:
-        raise ValueError("artifact_json_invalid: failure_stage is invalid for failed runs.")
-    if not isinstance(failure_stage, str):
-        raise ValueError("artifact_json_invalid: failure_stage must be a string.")
-    return cast(AnalysisRunFailureStage, failure_stage)
-
-
-def _status_label(
-    *,
-    status: Literal["success", "failed"],
-    failure_stage: AnalysisRunFailureStage | None,
-) -> str:
-    if status == "success":
-        return "SUCCESS"
-    if failure_stage is None:
-        return "FAILED"
-    return f"FAILED ({failure_stage})"
-
-
-def _format_timestamp_ns(timestamp_ns: int) -> str:
-    timestamp_seconds = timestamp_ns / 1_000_000_000
-    formatted = datetime.fromtimestamp(timestamp_seconds, tz=UTC)
-    return formatted.isoformat(timespec="seconds")
-
-
 def _render_list_page(
     *,
     history: ArtifactRunHistory,
@@ -831,7 +458,7 @@ def _render_list_page(
     configured_value = (
         html.escape(root_status.configured_value)
         if root_status.configured_value is not None
-        else f"(unset; {_ARTIFACTS_ROOT_ENV} is empty)"
+        else f"(unset; {ARTIFACTS_ROOT_ENV} is empty)"
     )
     root_message_html = html.escape(root_status.message)
     root_block = (
@@ -932,7 +559,7 @@ def _render_status_badge(
     status: Literal["success", "failed"],
     failure_stage: AnalysisRunFailureStage | None,
 ) -> str:
-    label = _status_label(status=status, failure_stage=failure_stage)
+    label = status_label(status=status, failure_stage=failure_stage)
     class_name = "badge-success" if status == "success" else "badge-failed"
     return f"<span class=\"badge {class_name}\">{html.escape(label)}</span>"
 

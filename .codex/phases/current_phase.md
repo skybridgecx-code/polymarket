@@ -1,37 +1,32 @@
-# Phase 19E — Operator UI Run-Detail and Status Polish
+# Phase 19F — Operator UI Artifact-Read Helper Extraction and Cleanup
 
 ## Goal
 
-Polish the operator UI run-detail surface so run outcomes are clearer and easier to inspect after trigger and navigation flows.
+Extract the growing artifact-read and root-status logic out of the operator UI route/module so the UI surface is easier to maintain without changing behavior.
 
-This phase is about run-detail/status UX only.
+This phase is about bounded refactor/cleanup only.
 
-18Z introduced synchronous run triggering from the UI.
-19A/19B/19C/19D improved history, artifact presentation, root-path safety, and run-input UX.
-
-19E should improve detail-page status clarity and post-trigger outcome presentation while preserving the existing bounded generation flow.
+18Y–19E established the operator UI read, trigger, history, detail, and root-status flows.
+19F should improve code structure and maintainability while preserving current operator-visible behavior.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
 - `src/future_system/operator_ui/*`
-- any helper/read logic used by the operator UI
-- directly relevant tests for the current UI detail and trigger surface
+- any helper/read logic already embedded in the current operator UI module
+- directly relevant tests for the current UI list/detail/trigger surface
 
 ## Required deliverable
 
-Build a bounded UI polish pass that:
+Build a bounded cleanup pass that:
 
-- improves trigger-result summaries on run detail pages
-- improves success/failure status hierarchy and labeling
-- makes failure-stage context clearer where applicable:
-  - analyst_timeout
-  - analyst_transport
-  - reasoning_parse
-- makes target-subdirectory and artifact path visibility clearer
-- tightens empty/error states around newly created or partially readable runs
-- remains read-only except for the already-existing synchronous trigger flow
+- extracts artifact-root status logic into bounded helper(s)
+- extracts run listing / run detail read logic into bounded helper(s) where appropriate
+- extracts any growing formatting/state-construction logic out of the main route/module where appropriate
+- preserves existing list/detail/trigger behavior
+- preserves current success/failure and failure-stage rendering behavior
+- keeps reads/writes bounded to the configured/local artifacts root
 - is covered with deterministic tests only
 
 ## Scope allowed
@@ -39,9 +34,8 @@ Build a bounded UI polish pass that:
 Allowed work in this phase:
 
 - minimal bounded additions/modifications under `src/future_system/operator_ui/*`
-- minimal helper additions strictly needed for clearer status/detail rendering
-- minimal route/page/component adjustments strictly needed for detail-page polish
-- minimal tests strictly needed for deterministic coverage
+- creation of small helper modules/files if clearly justified
+- minimal test updates strictly needed to preserve and verify unchanged behavior
 
 ## Hard constraints
 
@@ -52,57 +46,53 @@ Do not:
 - add background jobs, queues, or scheduling
 - add delivery/inbox/notification systems
 - add execution/trading behavior
-- reimplement generation logic in the UI layer
-- add speculative platform architecture beyond this bounded UX pass
+- change the underlying generation pipeline
+- widen scope into UI redesign or new features
 - allow reads/writes outside the configured/local artifacts root
 
 ## Desired shape
 
 Use the repo’s existing UI/app pattern.
-Prefer the smallest possible bounded refinement of the current operator UI detail surface.
+Prefer the smallest possible bounded refactor.
 
 A good result is:
 
-- clearer post-trigger status summary block
-- stronger success/failure/failure-stage labels
-- clearer artifact location/subdirectory context
-- safer partial/missing-run states
-- deterministic tests for detail rendering, status hierarchy, and error-state behavior
+- smaller/more focused `review_artifacts.py`
+- one or more small helper modules for artifact root validation, run discovery, or detail-state construction
+- unchanged route behavior
+- deterministic tests proving behavior stayed intact
 
 ## Behavioral requirements
 
 The implementation must preserve this contract:
 
-1. Existing generation flow remains the source of truth.
-2. UI remains a bounded synchronous invocation + inspection surface.
-3. UI does not reimplement generation logic.
+1. Existing artifact files remain the source of truth.
+2. UI remains downstream of the existing generation flow.
+3. UI does not regenerate or mutate artifacts outside the existing trigger flow.
 4. Success and failure results remain clearly distinct.
 5. Failure-stage identity remains exact.
 6. Reads/writes remain bounded to the configured/local artifacts root.
-7. UI output remains operator-safe and deterministic.
+7. Operator-visible behavior remains materially unchanged except for safe cleanup side effects.
 
-UI requirements:
+UI/cleanup requirements:
 
-- must show `theme_id`
-- must show status / failure-stage context clearly
-- must make post-trigger result context easier to scan
-- must make target-subdirectory / artifact path context clearer
-- must provide explicit safe handling for empty/partial/missing detail states
+- must preserve `theme_id` visibility
+- must preserve status / failure-stage context
+- must preserve run list/detail/trigger behavior
+- must preserve safe missing/invalid/unreadable root handling
 - must not invent fake reasoning or fake policy content
 
 ## Acceptance criteria
 
 This phase is complete when:
 
-- an operator can understand run outcome more quickly from the detail page
-- success and failure detail states are more clearly distinguishable
-- failure outputs explicitly distinguish:
+- the operator UI artifact-read/root-status logic is cleaner and more modular
+- current UI behavior remains intact for valid and invalid root/artifact states
+- success and failure outputs still clearly distinguish:
   - `analyst_timeout`
   - `analyst_transport`
   - `reasoning_parse`
-- target-subdirectory and artifact path context are clearer
-- empty/partial/missing detail states are handled safely and clearly
-- tests cover detail/status/error-state behavior
+- tests cover unchanged list/detail/trigger/root-state behavior after the refactor
 - `src/polymarket_arb/*` remains untouched
 
 ## Validation
