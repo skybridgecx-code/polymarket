@@ -1,67 +1,60 @@
-# Phase 19O — Operator UI Manual Verification and Checkpoint Docs Polish
+# Phase 19P — Operator UI Integration-Flow Test Hardening
 
 ## Goal
 
-Manually verify that the local `future_system` operator UI artifact workflow docs are accurate and operator-usable, then polish docs/checkpoint notes without changing runtime behavior.
+Add bounded integration-style tests that lock in the currently shipped operator UI read/trigger/detail and mount behavior without introducing runtime behavior changes.
 
-This phase is primarily manual verification and documentation polish.
+This phase is primarily tests plus phase-file update.
 
 ## Read first
 
-Before changing docs, read:
+Before implementing, read:
 
 - `docs/FUTURE_SYSTEM_OPERATOR_UI_LOCAL_RUNBOOK.md`
 - `src/future_system/operator_ui/app_entry.py`
 - `src/future_system/operator_ui/review_artifacts.py`
-- `src/future_system/cli/review_artifacts.py`
-- relevant operator UI tests
+- `src/future_system/operator_ui/route_handlers.py`
+- `src/future_system/operator_ui/app_wiring.py`
+- `tests/future_system/test_operator_ui_review_artifacts.py`
+- `tests/future_system/test_operator_ui_app_entry.py`
+- `tests/future_system/test_operator_ui_app_wiring.py`
 
 ## Required deliverable
 
-Build a bounded manual-verification/docs pass that:
+Build a bounded integration-flow test pass that covers:
 
-- confirms runbook launch instructions match shipped public entrypoints
-- confirms CLI flags/examples match shipped CLI behavior
-- confirms artifacts-root behavior docs match root handling and route behavior
-- confirms UI read/trigger routes and troubleshooting states are accurately documented
-- polishes docs where wording is unclear or incomplete
-- optionally adds a concise checkpoint document
+- `create_operator_ui_app` exposing shipped routes
+- `mount_operator_ui_app` default-path mounting behavior
+- `GET /` root/list rendering for configured readable root
+- `POST /runs/trigger` redirect/handoff into `GET /runs/{run_id}`
+- detail visibility for success and failure-stage outcomes
+- default trigger target subdirectory (`operator_runs`)
+- top-level list visibility behavior for triggered subdirectory runs
+- bounded root-status messaging for not-configured/missing/invalid roots
 
 ## Scope allowed
 
 Allowed work in this phase:
 
-- minimal bounded updates to operator-UI local docs
-- small checkpoint doc addition under `docs/` if useful
-- no runtime behavior changes unless fixing a clear docs/test mismatch
+- update this phase file
+- add one bounded integration-style operator UI test module
+- minimal test-only helper additions in that new test module
 
 ## Hard constraints
 
 Do not:
 
 - modify anything under `src/polymarket_arb/*`
-- add DB/persistence/queues/background jobs/scheduling/delivery/inbox/execution/trading logic
-- introduce speculative workflows not currently shipped
-- widen scope beyond local operator UI manual verification docs
-
-## Acceptance criteria
-
-This phase is complete when:
-
-- docs are accurate for local launch/config/generation/inspection flow
-- troubleshooting language matches actual operator UI and CLI behavior
-- validation is run with the specified narrow commands
-- docs/checkpoint updates are bounded and operator-focused
-- `src/polymarket_arb/*` remains untouched
+- add DB/queues/background jobs/scheduling/delivery/inbox/execution/trading logic
+- change shipped behavior unless a tiny non-behavioral testability seam is required
+- drift beyond operator UI integration-flow hardening
 
 ## Validation
 
-Run:
+Run exactly:
 
-- `git diff --stat`
-- `git diff --name-only`
-- `pytest tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_app_wiring.py tests/future_system/test_operator_ui_package_exports.py tests/future_system/test_operator_ui_app_entry.py`
-- `ruff check src/future_system/operator_ui tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_app_wiring.py tests/future_system/test_operator_ui_package_exports.py tests/future_system/test_operator_ui_app_entry.py`
+- `pytest tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_app_wiring.py tests/future_system/test_operator_ui_package_exports.py tests/future_system/test_operator_ui_app_entry.py tests/future_system/test_operator_ui_integration_flows.py`
+- `ruff check src/future_system/operator_ui tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_app_wiring.py tests/future_system/test_operator_ui_package_exports.py tests/future_system/test_operator_ui_app_entry.py tests/future_system/test_operator_ui_integration_flows.py`
 - `mypy src/future_system/operator_ui`
 
 ## Required Codex return format
@@ -72,4 +65,4 @@ Return:
 2. exact files changed
 3. validation output
 4. any risks/deferred items
-5. explicit note: do not commit unless asked
+5. do not commit unless asked
