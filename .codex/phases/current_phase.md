@@ -1,13 +1,14 @@
-# Phase 19B — Operator UI Artifact Content Polish
+# Phase 19C — Operator UI Configuration and Root-Path Hardening
 
 ## Goal
 
-Polish the operator UI artifact detail surface so review content is easier and safer to inspect.
+Harden the operator UI around artifacts-root configuration so the operator can clearly understand whether the local artifact root is configured and readable, and the system fails safely when it is not.
 
-This phase is about artifact detail presentation only.
+This phase is about configuration visibility and local root-path safety only.
 
-19A improved run history, navigation, and safe error handling.
-19B should improve how artifact content itself is rendered and organized without changing the underlying generation pipeline.
+19A improved run history and navigation.
+19B improved artifact content presentation.
+19C should improve the operator UI’s handling of the configured/local artifacts root without changing the generation pipeline.
 
 ## Read first
 
@@ -15,22 +16,22 @@ Before changing code, read the existing implementations for:
 
 - `src/future_system/operator_ui/*`
 - any helper/read logic used by the operator UI
-- directly relevant tests for the current UI detail surface
+- any existing configuration/env handling already used for the artifacts root
+- directly relevant tests for the current UI surface
 
 ## Required deliverable
 
-Build a bounded UI polish pass that:
+Build a bounded UI/config hardening pass that:
 
-- improves markdown presentation in the run detail view
-- improves JSON readability in the run detail view
-- groups metadata into clearer sections
-- handles larger artifact content safely and predictably
-- preserves explicit success vs failure clarity
-- preserves explicit failure stage clarity where applicable:
-  - analyst_timeout
-  - analyst_transport
-  - reasoning_parse
-- remains read-only except for the already-existing synchronous trigger flow
+- makes configured artifacts-root status clearer
+- clearly distinguishes:
+  - configured and readable
+  - configured but missing
+  - configured but unreadable/invalid
+  - not configured
+- keeps file reads/writes bounded to the configured/local artifacts root
+- provides safe, operator-readable UI messaging for invalid/missing/unreadable root states
+- preserves existing run list/detail/trigger behavior when the root is valid
 - is covered with deterministic tests only
 
 ## Scope allowed
@@ -38,8 +39,8 @@ Build a bounded UI polish pass that:
 Allowed work in this phase:
 
 - minimal bounded additions/modifications under `src/future_system/operator_ui/*`
-- minimal helper additions strictly needed for safer artifact content rendering and grouping
-- minimal route/page/component adjustments strictly needed for detail-view polish
+- minimal helper additions strictly needed for root-path validation and safe status reporting
+- minimal route/page/component adjustments strictly needed for configuration-status rendering
 - minimal tests strictly needed for deterministic coverage
 
 ## Hard constraints
@@ -52,21 +53,20 @@ Do not:
 - add delivery/inbox/notification systems
 - add execution/trading behavior
 - reimplement generation logic in the UI layer
-- add speculative platform architecture beyond this bounded detail-view polish
+- add speculative config/platform architecture beyond this bounded hardening pass
 - allow reads/writes outside the configured/local artifacts root
 
 ## Desired shape
 
 Use the repo’s existing UI/app pattern.
-Prefer the smallest possible bounded refinement of the current operator UI detail surface.
+Prefer the smallest possible bounded refinement of the current operator UI surface.
 
 A good result is:
 
-- clearer metadata grouping in detail view
-- more readable markdown section
-- cleaner JSON presentation
-- safe truncation/collapsing or bounded display behavior for large content
-- deterministic tests for rendering/grouping/large-content/error behavior
+- a clear configuration-status section/banner
+- explicit safe UI states for missing/invalid/unreadable root
+- preserved normal behavior when the root is valid
+- deterministic tests for configured/unconfigured/invalid root behavior
 
 ## Behavioral requirements
 
@@ -79,29 +79,25 @@ The implementation must preserve this contract:
 5. Failure-stage identity remains exact.
 6. Reads/writes remain bounded to the configured/local artifacts root.
 7. UI output remains operator-safe and deterministic.
+8. Configuration problems are surfaced clearly and safely.
 
-UI requirements:
+UI/config requirements:
 
-- must show `theme_id`
-- must show status / failure-stage context clearly
-- must group key metadata clearly
-- must render markdown content in a cleaner readable way
-- must render JSON content in a bounded readable way
-- must provide explicit and safe handling for missing/invalid/oversized content
+- must make the current artifacts-root state visible
+- must provide explicit and safe messaging for missing/invalid/unreadable root states
+- must preserve normal list/detail/trigger behavior when the root is valid
+- must fail explicitly and safely on invalid root usage
 - must not invent fake reasoning or fake policy content
 
 ## Acceptance criteria
 
 This phase is complete when:
 
-- an operator can inspect artifact content more easily in the detail view
-- success and failure content remain clearly distinguishable
-- failure outputs explicitly distinguish:
-  - `analyst_timeout`
-  - `analyst_transport`
-  - `reasoning_parse`
-- larger content is handled safely and predictably
-- tests cover detail rendering, metadata grouping, and safe large-content/error behavior
+- an operator can tell whether the artifacts root is configured and usable
+- invalid/missing/unreadable root states are handled safely and clearly
+- normal UI behavior remains intact when the root is valid
+- reads/writes stay bounded to the configured/local artifacts root
+- tests cover configured, missing, invalid, and unreadable-root behavior
 - `src/polymarket_arb/*` remains untouched
 
 ## Validation

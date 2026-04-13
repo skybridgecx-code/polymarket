@@ -6,6 +6,7 @@ import html
 import json
 import os
 import re
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, cast
@@ -32,6 +33,25 @@ _TRIGGER_ANALYST_MODE_CHOICES = (
 )
 _DETAIL_MARKDOWN_MAX_CHARS = 16_000
 _DETAIL_JSON_MAX_CHARS = 24_000
+
+
+@dataclass(frozen=True)
+class ArtifactsRootStatus:
+    """Bounded status for configured artifacts root visibility and safety checks."""
+
+    state: Literal[
+        "configured_readable",
+        "configured_missing",
+        "configured_invalid_or_unreadable",
+        "not_configured",
+    ]
+    configured_value: str | None
+    resolved_root: Path | None
+    message: str
+
+    @property
+    def is_usable(self) -> bool:
+        return self.state == "configured_readable" and self.resolved_root is not None
 
 
 class ArtifactRunListItem(BaseModel):
@@ -121,16 +141,16 @@ def create_review_artifacts_operator_app(
 ) -> FastAPI:
     """Create a bounded read-only operator UI app scoped to one artifacts root."""
 
-    resolved_root = _resolve_artifacts_root(artifacts_root)
+    root_status = _resolve_artifacts_root_status(artifacts_root)
     app = FastAPI(title="Future System Review Artifact Operator UI", version="0.1.0")
-    app.state.artifacts_root = resolved_root
+    app.state.artifacts_root_status = root_status
 
     @app.get("/", response_class=HTMLResponse)
     async def list_runs() -> str:
-        history = discover_review_artifact_history(artifacts_root=resolved_root)
+        history = _discover_history_for_root_status(root_status=root_status)
         return _render_list_page(
             history=history,
-            artifacts_root=resolved_root,
+            root_status=root_status,
             trigger_error=None,
             last_context_source="",
             last_analyst_mode="stub",
@@ -141,18 +161,34 @@ def create_review_artifacts_operator_app(
         context_source: str = Form(...),
         analyst_mode: str = Form("stub"),
     ) -> Response:
+        if not root_status.is_usable or root_status.resolved_root is None:
+            history = _discover_history_for_root_status(root_status=root_status)
+            return HTMLResponse(
+                content=_render_list_page(
+                    history=history,
+                    root_status=root_status,
+                    trigger_error=(
+                        "artifacts_root_unavailable: "
+                        f"{_artifacts_root_unavailable_message(root_status=root_status)}"
+                    ),
+                    last_context_source=context_source,
+                    last_analyst_mode=analyst_mode,
+                ),
+                status_code=422,
+            )
+
         try:
             run_id = trigger_review_artifact_run(
-                artifacts_root=resolved_root,
+                artifacts_root=root_status.resolved_root,
                 context_source=context_source,
                 analyst_mode=analyst_mode,
             )
         except ValueError as exc:
-            history = discover_review_artifact_history(artifacts_root=resolved_root)
+            history = _discover_history_for_root_status(root_status=root_status)
             return HTMLResponse(
                 content=_render_list_page(
                     history=history,
-                    artifacts_root=resolved_root,
+                    root_status=root_status,
                     trigger_error=str(exc),
                     last_context_source=context_source,
                     last_analyst_mode=analyst_mode,
@@ -163,9 +199,23 @@ def create_review_artifacts_operator_app(
 
     @app.get("/runs/{run_id}", response_class=HTMLResponse)
     async def view_run(run_id: str, created: int | None = None) -> Response:
+        if not root_status.is_usable or root_status.resolved_root is None:
+            return HTMLResponse(
+                content=_render_error_page(
+                    title="Run Read Error",
+                    message=(
+                        "artifacts_root_unavailable: "
+                        f"{_artifacts_root_unavailable_message(root_status=root_status)}"
+                    ),
+                    back_href="/",
+                    back_label="Back to runs",
+                ),
+                status_code=422,
+            )
+
         try:
             detail = read_review_artifact_run_detail(
-                artifacts_root=resolved_root,
+                artifacts_root=root_status.resolved_root,
                 run_id=run_id,
             )
         except ValueError as exc:
@@ -343,29 +393,108 @@ def read_review_artifact_run_detail(*, artifacts_root: Path, run_id: str) -> Art
 
 
 def _resolve_artifacts_root(artifacts_root: str | Path | None) -> Path:
-    candidate: Path
+    status = _resolve_artifacts_root_status(artifacts_root)
+    if status.is_usable and status.resolved_root is not None:
+        return status.resolved_root
+    raise ValueError(_artifacts_root_unavailable_message(root_status=status))
+
+
+def _resolve_artifacts_root_status(artifacts_root: str | Path | None) -> ArtifactsRootStatus:
+    configured_value: str | None = None
+    candidate: Path | None = None
+
     if artifacts_root is None:
         env_value = os.getenv(_ARTIFACTS_ROOT_ENV, "").strip()
         if not env_value:
-            raise ValueError(
-                f"artifacts_root is required unless {_ARTIFACTS_ROOT_ENV} is configured."
+            return ArtifactsRootStatus(
+                state="not_configured",
+                configured_value=None,
+                resolved_root=None,
+                message=(
+                    "Artifacts root is not configured. Set "
+                    f"{_ARTIFACTS_ROOT_ENV} or pass artifacts_root when creating the app."
+                ),
             )
+        configured_value = env_value
         candidate = Path(env_value)
     elif isinstance(artifacts_root, Path):
+        configured_value = str(artifacts_root)
         candidate = artifacts_root
     elif isinstance(artifacts_root, str):
         stripped = artifacts_root.strip()
         if not stripped:
-            raise ValueError("artifacts_root must be a non-empty path string.")
+            return ArtifactsRootStatus(
+                state="configured_invalid_or_unreadable",
+                configured_value=artifacts_root,
+                resolved_root=None,
+                message="Configured artifacts root is invalid: path string is empty.",
+            )
+        configured_value = stripped
         candidate = Path(stripped)
     else:
         raise ValueError("artifacts_root must be a path-like string or Path.")
 
-    if not candidate.exists():
-        raise ValueError("artifacts_root must reference an existing directory.")
-    if not candidate.is_dir():
-        raise ValueError("artifacts_root must reference a directory.")
-    return candidate.resolve()
+    assert candidate is not None
+    try:
+        resolved_candidate = candidate.resolve(strict=False)
+    except OSError:
+        return ArtifactsRootStatus(
+            state="configured_invalid_or_unreadable",
+            configured_value=configured_value,
+            resolved_root=None,
+            message="Configured artifacts root is unreadable or invalid.",
+        )
+
+    if not resolved_candidate.exists():
+        return ArtifactsRootStatus(
+            state="configured_missing",
+            configured_value=configured_value,
+            resolved_root=None,
+            message="Configured artifacts root is missing on disk.",
+        )
+    if not resolved_candidate.is_dir():
+        return ArtifactsRootStatus(
+            state="configured_invalid_or_unreadable",
+            configured_value=configured_value,
+            resolved_root=None,
+            message="Configured artifacts root is invalid: path is not a directory.",
+        )
+
+    required_access = os.R_OK | os.W_OK | os.X_OK
+    if not os.access(resolved_candidate, required_access):
+        return ArtifactsRootStatus(
+            state="configured_invalid_or_unreadable",
+            configured_value=configured_value,
+            resolved_root=None,
+            message=(
+                "Configured artifacts root is unreadable or unwritable; read/write access "
+                "is required."
+            ),
+        )
+
+    return ArtifactsRootStatus(
+        state="configured_readable",
+        configured_value=str(resolved_candidate),
+        resolved_root=resolved_candidate,
+        message="Configured artifacts root is readable and writable.",
+    )
+
+
+def _discover_history_for_root_status(*, root_status: ArtifactsRootStatus) -> ArtifactRunHistory:
+    if not root_status.is_usable or root_status.resolved_root is None:
+        return ArtifactRunHistory(runs=[], issues=[])
+    return discover_review_artifact_history(artifacts_root=root_status.resolved_root)
+
+
+def _artifacts_root_unavailable_message(*, root_status: ArtifactsRootStatus) -> str:
+    if root_status.state == "not_configured":
+        return (
+            "artifacts_root is required unless "
+            f"{_ARTIFACTS_ROOT_ENV} is configured."
+        )
+    if root_status.state == "configured_missing":
+        return "artifacts_root must reference an existing directory."
+    return "artifacts_root must reference a readable and writable directory."
 
 
 def _load_context_bundle_from_source(*, context_source: str) -> OpportunityContextBundle:
@@ -491,7 +620,7 @@ def _format_timestamp_ns(timestamp_ns: int) -> str:
 def _render_list_page(
     *,
     history: ArtifactRunHistory,
-    artifacts_root: Path,
+    root_status: ArtifactsRootStatus,
     trigger_error: str | None,
     last_context_source: str,
     last_analyst_mode: str,
@@ -546,6 +675,32 @@ def _render_list_page(
             f"<option value=\"{html.escape(mode)}\"{selected_attr}>{html.escape(mode)}</option>"
         )
     mode_options_html = "".join(mode_options)
+    root_status_label = _render_artifacts_root_state_label(root_status=root_status)
+    root_status_class = (
+        "root-ok" if root_status.is_usable else "root-problem"
+    )
+    configured_value = (
+        html.escape(root_status.configured_value)
+        if root_status.configured_value is not None
+        else f"(unset; {_ARTIFACTS_ROOT_ENV} is empty)"
+    )
+    root_message_html = html.escape(root_status.message)
+    root_block = (
+        "<h2>Artifacts Root Status</h2>"
+        f"<div class=\"root-status {root_status_class}\">"
+        f"<p><strong>Status:</strong> {html.escape(root_status_label)}</p>"
+        f"<p><strong>Configured Value:</strong> <code>{configured_value}</code></p>"
+        f"<p>{root_message_html}</p>"
+        "</div>"
+    )
+    disable_trigger_attr = " disabled" if not root_status.is_usable else ""
+    trigger_disabled_block = ""
+    if not root_status.is_usable:
+        trigger_disabled_block = (
+            "<p style=\"color:#991b1b;font-weight:600;\">"
+            "Triggering is unavailable until artifacts root configuration is fixed."
+            "</p>"
+        )
 
     return (
         "<!doctype html>"
@@ -559,20 +714,24 @@ def _render_list_page(
         ".badge{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:600;}"
         ".badge-success{background:#dcfce7;color:#166534;}"
         ".badge-failed{background:#fee2e2;color:#991b1b;}"
+        ".root-status{border:1px solid #d1d5db;padding:12px;background:#fff;margin-bottom:8px;}"
+        ".root-ok{border-color:#86efac;background:#f0fdf4;}"
+        ".root-problem{border-color:#fca5a5;background:#fef2f2;}"
         "input,select,button{font:inherit;padding:6px;border:1px solid #d1d5db;border-radius:4px;}"
         "form{display:grid;grid-template-columns:1fr auto auto;gap:8px;max-width:900px;}"
         "</style></head><body>"
         "<h1>Review Artifacts</h1>"
-        f"<p>Artifacts root: <code>{html.escape(str(artifacts_root))}</code></p>"
+        f"{root_block}"
         "<h2>Trigger Run</h2>"
         "<form action=\"/runs/trigger\" method=\"post\">"
         "<input type=\"text\" name=\"context_source\" placeholder=\"/path/to/context_bundle.json\" "
-        f"value=\"{html.escape(last_context_source)}\" required>"
-        "<select name=\"analyst_mode\">"
+        f"value=\"{html.escape(last_context_source)}\" required{disable_trigger_attr}>"
+        f"<select name=\"analyst_mode\"{disable_trigger_attr}>"
         f"{mode_options_html}"
         "</select>"
-        "<button type=\"submit\">Run</button>"
+        f"<button type=\"submit\"{disable_trigger_attr}>Run</button>"
         "</form>"
+        f"{trigger_disabled_block}"
         f"{error_block}"
         "<h2>Runs</h2>"
         "<table><thead><tr>"
@@ -581,6 +740,16 @@ def _render_list_page(
         f"{issues_block}"
         "</body></html>"
     )
+
+
+def _render_artifacts_root_state_label(*, root_status: ArtifactsRootStatus) -> str:
+    if root_status.state == "configured_readable":
+        return "configured and readable"
+    if root_status.state == "configured_missing":
+        return "configured but missing"
+    if root_status.state == "configured_invalid_or_unreadable":
+        return "configured but unreadable/invalid"
+    return "not configured"
 
 
 def _render_status_badge(

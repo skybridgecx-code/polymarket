@@ -23,6 +23,7 @@ from future_system.theme_graph.models import ThemeLinkPacket
 _CONTEXT_FIXTURE_PATH = Path(
     "tests/fixtures/future_system/context_bundle/context_bundle_inputs.json"
 )
+_ARTIFACTS_ROOT_ENV = "FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT"
 
 
 def test_operator_ui_lists_success_and_failure_runs_with_stage_context(tmp_path: Path) -> None:
@@ -206,6 +207,95 @@ def test_operator_ui_trigger_fails_safely_for_invalid_context_input(tmp_path: Pa
     assert "Trigger Error" in response.text
     assert "context_source must reference an existing file." in response.text
     assert "Review Artifacts" in response.text
+
+
+def test_operator_ui_reports_configured_readable_root_status(tmp_path: Path) -> None:
+    _write_success_run(tmp_path)
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "Artifacts Root Status" in response.text
+    assert "configured and readable" in response.text
+    assert str(tmp_path.resolve()) in response.text
+
+
+def test_operator_ui_handles_not_configured_root_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv(_ARTIFACTS_ROOT_ENV, raising=False)
+    client = TestClient(create_review_artifacts_operator_app())
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "not configured" in response.text
+    assert "FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT" in response.text
+    assert "Triggering is unavailable" in response.text
+
+    trigger_response = client.post(
+        "/runs/trigger",
+        data={"context_source": str(tmp_path / "missing.json"), "analyst_mode": "stub"},
+        follow_redirects=False,
+    )
+    assert trigger_response.status_code == 422
+    assert "artifacts_root_unavailable" in trigger_response.text
+
+
+def test_operator_ui_handles_configured_but_missing_root_state(tmp_path: Path) -> None:
+    missing_root = tmp_path / "missing-root"
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=missing_root))
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "configured but missing" in response.text
+    assert str(missing_root) in response.text
+    assert "Triggering is unavailable" in response.text
+
+    trigger_response = client.post(
+        "/runs/trigger",
+        data={"context_source": str(tmp_path / "missing.json"), "analyst_mode": "stub"},
+        follow_redirects=False,
+    )
+    assert trigger_response.status_code == 422
+    assert "artifacts_root_unavailable" in trigger_response.text
+
+    detail_response = client.get("/runs/theme_ctx_strong.analysis_success_export")
+    assert detail_response.status_code == 422
+    assert "artifacts_root_unavailable" in detail_response.text
+
+
+def test_operator_ui_handles_configured_but_invalid_root_state(tmp_path: Path) -> None:
+    invalid_root = tmp_path / "not-a-directory"
+    invalid_root.write_text("invalid", encoding="utf-8")
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=invalid_root))
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "configured but unreadable/invalid" in response.text
+    assert "not a directory" in response.text
+    assert "Triggering is unavailable" in response.text
+
+
+def test_operator_ui_handles_configured_but_unreadable_root_state(
+    tmp_path: Path,
+) -> None:
+    artifacts_root = tmp_path / "artifacts-root"
+    artifacts_root.mkdir()
+    artifacts_root.chmod(0o500)
+    try:
+        client = TestClient(create_review_artifacts_operator_app(artifacts_root=artifacts_root))
+        response = client.get("/")
+        assert response.status_code == 200
+        assert "configured but unreadable/invalid" in response.text
+        assert "readable or unwritable" in response.text
+        assert "Triggering is unavailable" in response.text
+    finally:
+        artifacts_root.chmod(0o700)
 
 
 def _write_success_run(root: Path) -> str:
