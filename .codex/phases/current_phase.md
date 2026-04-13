@@ -1,47 +1,56 @@
-# Phase 18U — Review Bundle File Writer Boundary
+# Phase 18V — Runtime-to-Review Artifact Flow
 
 ## Goal
 
-Add a bounded file-writer layer that takes the 18T review export payloads and writes deterministic local files to a controlled output target.
+Add a bounded end-to-end artifact flow that takes a structured runtime result and produces written local review artifact files through the existing review bundle, export, and file-writer layers.
 
-This phase is about filesystem writing only.
+This phase is about composition and flow wiring only.
 
-18T introduced deterministic export payloads.
-18U should add a small local file-writing boundary without introducing delivery, persistence backends, UI, or orchestration.
+18P introduced structured runtime results.
+18Q introduced review packets.
+18R introduced renderers.
+18S introduced review bundles.
+18T introduced export payloads.
+18U introduced bounded local file writing.
+
+18V should compose those layers into one small end-to-end artifact flow without adding new delivery systems, persistence backends, UI, or orchestration.
 
 ## Read first
 
 Before changing code, read the existing implementations for:
 
-- `src/future_system/review_exports/*`
+- `src/future_system/runtime/*`
+- `src/future_system/review_packets/*`
+- `src/future_system/review_renderers/*`
 - `src/future_system/review_bundles/*`
-- any directly relevant existing local artifact/file-writing helpers already present in the repo, if any
+- `src/future_system/review_exports/*`
+- `src/future_system/review_file_writers/*`
 
-Also read the directly relevant tests for the export layer before implementing.
+Also read the directly relevant tests for those layers before implementing.
 
 ## Required deliverable
 
-Build a bounded file-writer layer that:
+Build a bounded flow layer that:
 
-- accepts the 18T export payload package
-- writes deterministic local files for at least:
-  - markdown output
-  - JSON output
-- writes only into an explicitly provided target directory
-- returns a structured file-write result/model describing what was written
+- accepts an 18P runtime result envelope
+- derives the 18S review bundle
+- derives the 18T export payload package
+- writes artifacts through the 18U file-writer boundary into a caller-provided target directory
+- returns a structured end-to-end artifact flow result/model
+- supports both success and expected failure outcomes
 - preserves explicit distinction between:
-  - success exports
-  - analyst timeout failure exports
-  - analyst transport failure exports
-  - reasoning parse failure exports
+  - success
+  - analyst timeout failure
+  - analyst transport failure
+  - reasoning parse failure
 - is covered with deterministic unit tests only
 
 ## Scope allowed
 
 Allowed work in this phase:
 
-- new bounded files under `src/future_system/review_file_writers/*`
-- minimal helper/model additions strictly needed for local file writing
+- new bounded files under `src/future_system/review_artifacts/*`
+- minimal helper/model additions strictly needed for end-to-end flow composition
 - minimal test additions strictly needed for deterministic coverage
 
 ## Hard constraints
@@ -50,22 +59,22 @@ Do not:
 
 - modify anything under `src/polymarket_arb/*`
 - add database/persistence backends
-- add network delivery, email, notifications, or inbox/reporting systems
-- add scheduling/orchestration
+- add network delivery, email, notifications, queues, or inbox/reporting systems
+- add scheduling/orchestration beyond this single synchronous composition flow
 - add UI
 - add execution/trading behavior
-- change review export semantics beyond minimal bounded writer support
+- re-run runtime, reasoning, or policy logic inside this layer
+- change semantics of review bundle/export/writer layers beyond minimal bounded integration support
 - write outside the caller-provided target directory
-- introduce unsafe path behavior or implicit global output locations
-- add speculative artifact registry architecture
+- add speculative job-runner or artifact-registry architecture
 
 ## Desired shape
 
-Prefer a small dedicated file-writer surface, for example:
+Prefer a small dedicated composition surface, for example:
 
-- `src/future_system/review_file_writers/__init__.py`
-- `src/future_system/review_file_writers/models.py`
-- `src/future_system/review_file_writers/writer.py`
+- `src/future_system/review_artifacts/__init__.py`
+- `src/future_system/review_artifacts/models.py`
+- `src/future_system/review_artifacts/flow.py`
 
 Tests should stay narrow and deterministic and should use temp directories only.
 
@@ -73,50 +82,56 @@ Tests should stay narrow and deterministic and should use temp directories only.
 
 The implementation must preserve this contract:
 
-1. Review export payloads remain the source of truth for written content.
-2. File-writer layer is downstream of export payload construction.
-3. File writing does not re-run runtime, reasoning, policy, review packet, rendering, bundle, or export logic.
-4. Files written must be deterministic in content and naming.
-5. Writer must operate only inside an explicitly provided target directory.
-6. Writer result must clearly describe what files were written.
-7. The writer must remain local-only and side-effect-bounded.
+1. Runtime result remains the source of truth for success/failure.
+2. Review bundle builder remains the source of bundle construction.
+3. Export layer remains the source of export payload construction.
+4. File-writer layer remains the source of local file writing.
+5. This layer is only a bounded synchronous composition flow across those existing components.
+6. Success and failure outcomes remain structurally distinct or explicitly typed.
+7. Failure-stage identity remains exact.
+8. Output remains deterministic and operator-safe.
 
-File-writer requirements:
+Artifact flow requirements:
 
-- must write at least one markdown file and one JSON file
-- must include `theme_id` in deterministic filenames or directory layout
-- must produce stable naming for success vs failure outputs
-- must preserve explicit failure-stage identity in the written content and/or metadata when applicable
-- must return structured metadata describing paths written
-- must not invent fake reasoning or fake policy content
-- must fail explicitly on invalid target directory inputs rather than silently choosing another location
+- must include `theme_id`
+- must include flow status / kind
+- must include the runtime result envelope or a bounded reference to it
+- must include the derived review bundle or bounded reference to it
+- must include the derived export payload package or bounded reference to it
+- must include the file-writer result
+- must include `run_flags`
+- failure outcomes must include explicit failure stage
+- success outcomes may include bounded success details already present upstream
+- failure outcomes must not invent fake reasoning or fake policy content
 
 Expose a small entrypoint such as:
 
-- `write_review_export_files(...)`
+- `build_and_write_review_artifacts(...)`
 
 or a similarly small bounded equivalent.
 
 A good result model may include, at minimum:
 
-- target directory
-- written markdown file path
-- written JSON file path
 - theme_id
-- export status / failure stage context
+- target directory
+- runtime result reference
+- review bundle reference
+- export payload reference
+- file write result
+- status / failure stage context
 
 ## Acceptance criteria
 
 This phase is complete when:
 
-- callers can pass an 18T export payload package and a target directory and receive deterministic written local files
-- markdown and JSON files are both written
-- success and failure exports are preserved cleanly
+- callers can pass an 18P runtime result envelope and a target directory and receive deterministic written review artifacts through the composed flow
+- flow includes bundle construction, export payload construction, and local file writing
+- success and failure outcomes are preserved cleanly
 - failure outputs explicitly distinguish:
   - `analyst_timeout`
   - `analyst_transport`
   - `reasoning_parse`
-- writer stays bounded to caller-provided local filesystem targets only
+- flow stays bounded to caller-provided local filesystem targets only
 - tests cover success plus each expected failure stage, using temp directories
 - `src/polymarket_arb/*` remains untouched
 
@@ -126,7 +141,7 @@ Run narrow validation only.
 
 At minimum, run the smallest reasonable set covering:
 
-- touched `review_file_writers` files
+- touched `review_artifacts` files
 - any touched tests
 
 Use:
