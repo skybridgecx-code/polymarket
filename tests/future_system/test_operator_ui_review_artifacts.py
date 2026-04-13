@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -25,8 +26,10 @@ _CONTEXT_FIXTURE_PATH = Path(
 
 
 def test_operator_ui_lists_success_and_failure_runs_with_stage_context(tmp_path: Path) -> None:
-    _write_success_run(tmp_path)
-    _write_failure_run(tmp_path, failure_stage="analyst_transport")
+    older_run = _write_success_run(tmp_path)
+    newer_run = _write_failure_run(tmp_path, failure_stage="analyst_transport")
+    _set_mtime_ns(tmp_path / f"{older_run}.json", timestamp_ns=1_700_000_000_000_000_000)
+    _set_mtime_ns(tmp_path / f"{newer_run}.json", timestamp_ns=1_800_000_000_000_000_000)
 
     client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
     response = client.get("/")
@@ -34,10 +37,11 @@ def test_operator_ui_lists_success_and_failure_runs_with_stage_context(tmp_path:
     assert response.status_code == 200
     body = response.text
     assert "Review Artifacts" in body
-    assert "theme_ctx_strong.analysis_success_export" in body
-    assert "theme_ctx_strong.analysis_failure_export.analyst_transport" in body
-    assert "success" in body
-    assert "failed" in body
+    assert older_run in body
+    assert newer_run in body
+    assert body.index(newer_run) < body.index(older_run)
+    assert "SUCCESS" in body
+    assert "FAILED (analyst_transport)" in body
     assert "analyst_transport" in body
 
 
@@ -55,6 +59,8 @@ def test_operator_ui_detail_shows_markdown_and_json_content(tmp_path: Path) -> N
     assert "reasoning_parse" in body
     assert "# Analysis Review Export" in body
     assert "&quot;failure_stage&quot;: &quot;reasoning_parse&quot;" in body
+    assert "Back to runs" in body
+    assert "FAILED (reasoning_parse)" in body
 
 
 def test_operator_ui_detail_fails_safely_when_markdown_is_missing(tmp_path: Path) -> None:
@@ -65,7 +71,9 @@ def test_operator_ui_detail_fails_safely_when_markdown_is_missing(tmp_path: Path
     response = client.get(f"/runs/{run_id}")
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "artifact_markdown_missing: markdown file is missing."
+    assert "Run Read Error" in response.text
+    assert "artifact_markdown_missing: markdown file is missing." in response.text
+    assert "Back to runs" in response.text
 
 
 def test_operator_ui_detail_fails_safely_for_invalid_json(tmp_path: Path) -> None:
@@ -77,7 +85,27 @@ def test_operator_ui_detail_fails_safely_for_invalid_json(tmp_path: Path) -> Non
     response = client.get(f"/runs/{run_id}")
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "artifact_json_invalid: malformed JSON content."
+    assert "Run Read Error" in response.text
+    assert "artifact_json_invalid: malformed JSON content." in response.text
+
+
+def test_operator_ui_list_shows_explicit_run_issues_for_invalid_files(tmp_path: Path) -> None:
+    _write_success_run(tmp_path)
+    (tmp_path / "bad-run.json").write_text("{invalid_json", encoding="utf-8")
+    _write_json_only_failure_run(
+        tmp_path,
+        run_id="theme_ctx_strong.analysis_failure_export.analyst_timeout",
+        failure_stage="analyst_timeout",
+    )
+
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "Run Issues" in response.text
+    assert "bad-run" in response.text
+    assert "json_invalid" in response.text
+    assert "markdown_missing" in response.text
 
 
 def test_operator_ui_trigger_success_redirects_to_run_detail_and_writes_inside_root(
@@ -94,11 +122,12 @@ def test_operator_ui_trigger_success_redirects_to_run_detail_and_writes_inside_r
 
     assert response.status_code == 303
     location = response.headers["location"]
-    assert location == "/runs/theme_ctx_strong.analysis_success_export"
+    assert location == "/runs/theme_ctx_strong.analysis_success_export?created=1"
 
     detail = client.get(location)
     assert detail.status_code == 200
     assert "Review Artifact Detail" in detail.text
+    assert "Run created via trigger and loaded." in detail.text
     assert "status" in detail.text
 
     markdown_path = tmp_path / "theme_ctx_strong.analysis_success_export.md"
@@ -135,7 +164,7 @@ def test_operator_ui_trigger_failure_preserves_stage_and_handoff(
     location = response.headers["location"]
     assert (
         location
-        == f"/runs/theme_ctx_strong.analysis_failure_export.{expected_failure_stage}"
+        == f"/runs/theme_ctx_strong.analysis_failure_export.{expected_failure_stage}?created=1"
     )
 
     detail = client.get(location)
@@ -157,6 +186,7 @@ def test_operator_ui_trigger_fails_safely_for_invalid_context_input(tmp_path: Pa
     assert response.status_code == 422
     assert "Trigger Error" in response.text
     assert "context_source must reference an existing file." in response.text
+    assert "Review Artifacts" in response.text
 
 
 def _write_success_run(root: Path) -> str:
@@ -224,6 +254,10 @@ def _write_json_only_failure_run(root: Path, *, run_id: str, failure_stage: str)
         json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n",
         encoding="utf-8",
     )
+
+
+def _set_mtime_ns(path: Path, *, timestamp_ns: int) -> None:
+    os.utime(path, ns=(timestamp_ns, timestamp_ns))
 
 
 def _write_context_source(tmp_path: Path) -> Path:

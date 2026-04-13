@@ -6,10 +6,11 @@ import html
 import json
 import os
 import re
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from fastapi import FastAPI, Form, HTTPException, Response
+from fastapi import FastAPI, Form, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, field_validator
 
@@ -38,10 +39,21 @@ class ArtifactRunListItem(BaseModel):
     theme_id: str
     status: Literal["success", "failed"]
     failure_stage: AnalysisRunFailureStage | None = None
+    status_label: str
+    updated_at_epoch_ns: int
+    updated_at_label: str
     markdown_path: str
     json_path: str
 
-    @field_validator("run_id", "theme_id", "markdown_path", "json_path", mode="before")
+    @field_validator(
+        "run_id",
+        "theme_id",
+        "status_label",
+        "updated_at_label",
+        "markdown_path",
+        "json_path",
+        mode="before",
+    )
     @classmethod
     def _normalize_text_fields(cls, value: Any) -> str:
         if not isinstance(value, str):
@@ -50,6 +62,47 @@ class ArtifactRunListItem(BaseModel):
         if not normalized:
             raise ValueError("artifact list fields must be non-empty strings.")
         return normalized
+
+    @field_validator("updated_at_epoch_ns", mode="before")
+    @classmethod
+    def _validate_updated_at_epoch_ns(cls, value: Any) -> int:
+        if not isinstance(value, int):
+            raise ValueError("updated_at_epoch_ns must be an integer.")
+        if value < 0:
+            raise ValueError("updated_at_epoch_ns must be non-negative.")
+        return value
+
+
+class ArtifactRunIssue(BaseModel):
+    """One explicit safe issue found while reading artifact run files."""
+
+    run_id: str
+    issue_kind: Literal[
+        "invalid_run_id",
+        "json_invalid",
+        "json_fields_invalid",
+        "markdown_missing",
+    ]
+    issue_message: str
+    json_path: str
+    markdown_path: str
+
+    @field_validator("run_id", "issue_message", "json_path", "markdown_path", mode="before")
+    @classmethod
+    def _normalize_issue_text_fields(cls, value: Any) -> str:
+        if not isinstance(value, str):
+            raise ValueError("artifact issue fields must be strings.")
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("artifact issue fields must be non-empty strings.")
+        return normalized
+
+
+class ArtifactRunHistory(BaseModel):
+    """Bounded run history view with valid runs and explicit file-read issues."""
+
+    runs: list[ArtifactRunListItem]
+    issues: list[ArtifactRunIssue]
 
 
 class ArtifactRunDetail(BaseModel):
@@ -72,9 +125,9 @@ def create_review_artifacts_operator_app(
 
     @app.get("/", response_class=HTMLResponse)
     async def list_runs() -> str:
-        runs = discover_review_artifact_runs(artifacts_root=resolved_root)
+        history = discover_review_artifact_history(artifacts_root=resolved_root)
         return _render_list_page(
-            runs=runs,
+            history=history,
             artifacts_root=resolved_root,
             trigger_error=None,
             last_context_source="",
@@ -93,10 +146,10 @@ def create_review_artifacts_operator_app(
                 analyst_mode=analyst_mode,
             )
         except ValueError as exc:
-            runs = discover_review_artifact_runs(artifacts_root=resolved_root)
+            history = discover_review_artifact_history(artifacts_root=resolved_root)
             return HTMLResponse(
                 content=_render_list_page(
-                    runs=runs,
+                    history=history,
                     artifacts_root=resolved_root,
                     trigger_error=str(exc),
                     last_context_source=context_source,
@@ -104,50 +157,127 @@ def create_review_artifacts_operator_app(
                 ),
                 status_code=422,
             )
-        return RedirectResponse(url=f"/runs/{run_id}", status_code=303)
+        return RedirectResponse(url=f"/runs/{run_id}?created=1", status_code=303)
 
     @app.get("/runs/{run_id}", response_class=HTMLResponse)
-    async def view_run(run_id: str) -> str:
+    async def view_run(run_id: str, created: int | None = None) -> Response:
         try:
             detail = read_review_artifact_run_detail(
                 artifacts_root=resolved_root,
                 run_id=run_id,
             )
         except ValueError as exc:
-            message = str(exc)
-            if message.startswith("artifact_run_not_found"):
-                raise HTTPException(status_code=404, detail=message) from exc
-            raise HTTPException(status_code=422, detail=message) from exc
+            status_code = 404 if str(exc).startswith("artifact_run_not_found") else 422
+            return HTMLResponse(
+                content=_render_error_page(
+                    title="Run Read Error",
+                    message=str(exc),
+                    back_href="/",
+                    back_label="Back to runs",
+                ),
+                status_code=status_code,
+            )
 
-        return _render_detail_page(detail=detail)
+        return HTMLResponse(
+            content=_render_detail_page(
+                detail=detail,
+                created_via_trigger=(created == 1),
+            )
+        )
 
     return app
 
 
 def discover_review_artifact_runs(*, artifacts_root: Path) -> list[ArtifactRunListItem]:
-    """Enumerate deterministic run list records from bounded artifact files."""
+    """Enumerate deterministic valid run list records from bounded artifact files."""
+
+    return discover_review_artifact_history(artifacts_root=artifacts_root).runs
+
+
+def discover_review_artifact_history(*, artifacts_root: Path) -> ArtifactRunHistory:
+    """Enumerate deterministic run history with explicit safe file-read issues."""
 
     root = _resolve_artifacts_root(artifacts_root)
     runs: list[ArtifactRunListItem] = []
+    issues: list[ArtifactRunIssue] = []
 
-    for json_path in sorted(root.glob("*.json"), key=lambda path: path.name):
+    json_paths = sorted(
+        root.glob("*.json"),
+        key=lambda path: (-path.stat().st_mtime_ns, path.name),
+    )
+
+    for json_path in json_paths:
         run_id = json_path.stem
-        if not _RUN_ID_PATTERN.fullmatch(run_id):
-            continue
         markdown_path = root / f"{run_id}.md"
-        payload = _read_export_json(json_path=json_path)
+        if not _RUN_ID_PATTERN.fullmatch(run_id):
+            issues.append(
+                ArtifactRunIssue(
+                    run_id=run_id,
+                    issue_kind="invalid_run_id",
+                    issue_message="run_id contains invalid characters.",
+                    json_path=str(json_path),
+                    markdown_path=str(markdown_path),
+                )
+            )
+            continue
+        try:
+            payload = _read_export_json(json_path=json_path)
+        except ValueError as exc:
+            issues.append(
+                ArtifactRunIssue(
+                    run_id=run_id,
+                    issue_kind="json_invalid",
+                    issue_message=str(exc),
+                    json_path=str(json_path),
+                    markdown_path=str(markdown_path),
+                )
+            )
+            continue
+
+        try:
+            theme_id = _require_string(payload.get("theme_id"), "theme_id")
+            status = _require_status(payload.get("status"))
+            failure_stage = _optional_failure_stage(payload)
+        except ValueError as exc:
+            issues.append(
+                ArtifactRunIssue(
+                    run_id=run_id,
+                    issue_kind="json_fields_invalid",
+                    issue_message=str(exc),
+                    json_path=str(json_path),
+                    markdown_path=str(markdown_path),
+                )
+            )
+            continue
+
+        if not markdown_path.exists() or not markdown_path.is_file():
+            issues.append(
+                ArtifactRunIssue(
+                    run_id=run_id,
+                    issue_kind="markdown_missing",
+                    issue_message="artifact_markdown_missing: markdown file is missing.",
+                    json_path=str(json_path),
+                    markdown_path=str(markdown_path),
+                )
+            )
+
+        status_label = _status_label(status=status, failure_stage=failure_stage)
+        updated_at_epoch_ns = json_path.stat().st_mtime_ns
         runs.append(
             ArtifactRunListItem(
                 run_id=run_id,
-                theme_id=_require_string(payload.get("theme_id"), "theme_id"),
-                status=_require_status(payload.get("status")),
-                failure_stage=_optional_failure_stage(payload),
+                theme_id=theme_id,
+                status=status,
+                failure_stage=failure_stage,
+                status_label=status_label,
+                updated_at_epoch_ns=updated_at_epoch_ns,
+                updated_at_label=_format_timestamp_ns(updated_at_epoch_ns),
                 markdown_path=str(markdown_path),
                 json_path=str(json_path),
             )
         )
 
-    return runs
+    return ArtifactRunHistory(runs=runs, issues=issues)
 
 
 def trigger_review_artifact_run(
@@ -187,11 +317,17 @@ def read_review_artifact_run_detail(*, artifacts_root: Path, run_id: str) -> Art
         raise ValueError("artifact_markdown_missing: markdown file is missing.")
 
     payload = _read_export_json(json_path=json_path)
+    status = _require_status(payload.get("status"))
+    failure_stage = _optional_failure_stage(payload)
+    updated_at_epoch_ns = json_path.stat().st_mtime_ns
     run = ArtifactRunListItem(
         run_id=normalized_run_id,
         theme_id=_require_string(payload.get("theme_id"), "theme_id"),
-        status=_require_status(payload.get("status")),
-        failure_stage=_optional_failure_stage(payload),
+        status=status,
+        failure_stage=failure_stage,
+        status_label=_status_label(status=status, failure_stage=failure_stage),
+        updated_at_epoch_ns=updated_at_epoch_ns,
+        updated_at_label=_format_timestamp_ns(updated_at_epoch_ns),
         markdown_path=str(markdown_path),
         json_path=str(json_path),
     )
@@ -332,32 +468,70 @@ def _optional_failure_stage(payload: dict[str, object]) -> AnalysisRunFailureSta
     return cast(AnalysisRunFailureStage, failure_stage)
 
 
+def _status_label(
+    *,
+    status: Literal["success", "failed"],
+    failure_stage: AnalysisRunFailureStage | None,
+) -> str:
+    if status == "success":
+        return "SUCCESS"
+    if failure_stage is None:
+        return "FAILED"
+    return f"FAILED ({failure_stage})"
+
+
+def _format_timestamp_ns(timestamp_ns: int) -> str:
+    timestamp_seconds = timestamp_ns / 1_000_000_000
+    formatted = datetime.fromtimestamp(timestamp_seconds, tz=UTC)
+    return formatted.isoformat(timespec="seconds")
+
+
 def _render_list_page(
     *,
-    runs: list[ArtifactRunListItem],
+    history: ArtifactRunHistory,
     artifacts_root: Path,
     trigger_error: str | None,
     last_context_source: str,
     last_analyst_mode: str,
 ) -> str:
     rows: list[str] = []
-    for run in runs:
+    for run in history.runs:
+        status_badge = _render_status_badge(status=run.status, failure_stage=run.failure_stage)
         failure_stage = run.failure_stage if run.failure_stage is not None else "none"
         rows.append(
             "<tr>"
             f"<td><a href=\"/runs/{html.escape(run.run_id)}\">{html.escape(run.run_id)}</a></td>"
             f"<td>{html.escape(run.theme_id)}</td>"
-            f"<td>{html.escape(run.status)}</td>"
+            f"<td>{status_badge}</td>"
             f"<td>{html.escape(failure_stage)}</td>"
+            f"<td>{html.escape(run.updated_at_label)}</td>"
             "</tr>"
         )
 
-    table_rows = "".join(rows) if rows else "<tr><td colspan=\"4\">No runs found.</td></tr>"
+    table_rows = "".join(rows) if rows else "<tr><td colspan=\"5\">No runs found.</td></tr>"
     error_block = ""
     if trigger_error is not None:
         error_block = (
             "<p style=\"color:#b91c1c;font-weight:600;\">Trigger Error: "
             f"{html.escape(trigger_error)}</p>"
+        )
+    issue_rows: list[str] = []
+    for issue in history.issues:
+        issue_rows.append(
+            "<tr>"
+            f"<td>{html.escape(issue.run_id)}</td>"
+            f"<td>{html.escape(issue.issue_kind)}</td>"
+            f"<td>{html.escape(issue.issue_message)}</td>"
+            f"<td>{html.escape(issue.json_path)}</td>"
+            "</tr>"
+        )
+    issues_block = ""
+    if issue_rows:
+        issues_block = (
+            "<h2>Run Issues</h2>"
+            "<p>Some run files are incomplete or invalid and were safely skipped from details.</p>"
+            "<table><thead><tr><th>Run</th><th>Issue</th><th>Message</th><th>JSON Path</th>"
+            f"</tr></thead><tbody>{''.join(issue_rows)}</tbody></table>"
         )
 
     selected_mode = (
@@ -380,6 +554,9 @@ def _render_list_page(
         "th,td{border:1px solid #d1d5db;padding:8px;text-align:left;}"
         "th{background:#eef2ff;}"
         "a{color:#1d4ed8;text-decoration:none;}"
+        ".badge{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:600;}"
+        ".badge-success{background:#dcfce7;color:#166534;}"
+        ".badge-failed{background:#fee2e2;color:#991b1b;}"
         "input,select,button{font:inherit;padding:6px;border:1px solid #d1d5db;border-radius:4px;}"
         "form{display:grid;grid-template-columns:1fr auto auto;gap:8px;max-width:900px;}"
         "</style></head><body>"
@@ -396,22 +573,47 @@ def _render_list_page(
         "</form>"
         f"{error_block}"
         "<h2>Runs</h2>"
-        "<table><thead><tr><th>Run</th><th>Theme ID</th><th>Status</th><th>Failure Stage</th>"
+        "<table><thead><tr>"
+        "<th>Run</th><th>Theme ID</th><th>Status</th><th>Failure Stage</th><th>Updated</th>"
         f"</tr></thead><tbody>{table_rows}</tbody></table>"
+        f"{issues_block}"
         "</body></html>"
     )
 
 
-def _render_detail_page(*, detail: ArtifactRunDetail) -> str:
+def _render_status_badge(
+    *,
+    status: Literal["success", "failed"],
+    failure_stage: AnalysisRunFailureStage | None,
+) -> str:
+    label = _status_label(status=status, failure_stage=failure_stage)
+    class_name = "badge-success" if status == "success" else "badge-failed"
+    return f"<span class=\"badge {class_name}\">{html.escape(label)}</span>"
+
+
+def _render_detail_page(*, detail: ArtifactRunDetail, created_via_trigger: bool) -> str:
     failure_stage = detail.run.failure_stage if detail.run.failure_stage is not None else "none"
+    status_badge = _render_status_badge(
+        status=detail.run.status,
+        failure_stage=detail.run.failure_stage,
+    )
     markdown_block = html.escape(detail.markdown_content)
     json_block = html.escape(json.dumps(detail.json_content, indent=2, sort_keys=True))
+    created_block = ""
+    if created_via_trigger:
+        created_block = (
+            "<p style=\"color:#065f46;font-weight:600;\">Run created via trigger and loaded."
+            "</p>"
+        )
 
     return (
         "<!doctype html>"
         "<html><head><meta charset=\"utf-8\"><title>Review Artifact Detail</title>"
         "<style>"
         "body{font-family:ui-sans-serif,system-ui;padding:20px;background:#f8fafc;color:#111827;}"
+        ".badge{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:600;}"
+        ".badge-success{background:#dcfce7;color:#166534;}"
+        ".badge-failed{background:#fee2e2;color:#991b1b;}"
         "pre{white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #d1d5db;"
         "padding:12px;}"
         "dl{display:grid;grid-template-columns:140px 1fr;gap:6px 10px;}"
@@ -419,12 +621,14 @@ def _render_detail_page(*, detail: ArtifactRunDetail) -> str:
         "a{color:#1d4ed8;text-decoration:none;}"
         "</style></head><body>"
         "<p><a href=\"/\">Back to runs</a></p>"
+        f"{created_block}"
         "<h1>Review Artifact Detail</h1>"
         "<dl>"
         f"<dt>Run</dt><dd>{html.escape(detail.run.run_id)}</dd>"
         f"<dt>Theme ID</dt><dd>{html.escape(detail.run.theme_id)}</dd>"
-        f"<dt>Status</dt><dd>{html.escape(detail.run.status)}</dd>"
+        f"<dt>Status</dt><dd>{status_badge}</dd>"
         f"<dt>Failure Stage</dt><dd>{html.escape(failure_stage)}</dd>"
+        f"<dt>Updated</dt><dd>{html.escape(detail.run.updated_at_label)}</dd>"
         f"<dt>Markdown Path</dt><dd>{html.escape(detail.run.markdown_path)}</dd>"
         f"<dt>JSON Path</dt><dd>{html.escape(detail.run.json_path)}</dd>"
         "</dl>"
@@ -432,6 +636,22 @@ def _render_detail_page(*, detail: ArtifactRunDetail) -> str:
         f"<pre>{markdown_block}</pre>"
         "<h2>JSON</h2>"
         f"<pre>{json_block}</pre>"
+        "</body></html>"
+    )
+
+
+def _render_error_page(*, title: str, message: str, back_href: str, back_label: str) -> str:
+    return (
+        "<!doctype html>"
+        f"<html><head><meta charset=\"utf-8\"><title>{html.escape(title)}</title>"
+        "<style>"
+        "body{font-family:ui-sans-serif,system-ui;padding:20px;background:#f8fafc;color:#111827;}"
+        "a{color:#1d4ed8;text-decoration:none;}"
+        ".error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:12px;}"
+        "</style></head><body>"
+        f"<p><a href=\"{html.escape(back_href)}\">{html.escape(back_label)}</a></p>"
+        f"<h1>{html.escape(title)}</h1>"
+        f"<div class=\"error\">{html.escape(message)}</div>"
         "</body></html>"
     )
 
