@@ -16,7 +16,11 @@ from future_system.divergence.models import ThemeDivergencePacket
 from future_system.evidence.models import ThemeEvidencePacket
 from future_system.live_analyst.adapter import LiveAnalystAdapter
 from future_system.news_evidence.models import ThemeNewsEvidencePacket
+from future_system.operator_review_models import OperatorReviewDecisionRecord
 from future_system.review_artifacts.flow import build_and_write_review_artifacts
+from future_system.review_artifacts.operator_review_metadata import (
+    write_initialized_operator_review_metadata_companion,
+)
 from future_system.runtime.models import AnalysisRunFailureStage
 from future_system.runtime.runner import run_analysis_pipeline_result
 from future_system.runtime.stub_analyst import DeterministicStubAnalyst
@@ -133,6 +137,115 @@ def test_build_and_write_review_artifacts_is_deterministic_for_same_runtime_resu
     assert json_path.read_text(encoding="utf-8") == Path(
         flow_b.flow_result.file_write_result.json_file_path
     ).read_text(encoding="utf-8")
+
+
+def test_build_and_write_review_artifacts_default_does_not_write_operator_review_metadata(
+    tmp_path: Path,
+) -> None:
+    runtime_result = _success_runtime_result()
+
+    flow = build_and_write_review_artifacts(
+        runtime_result=runtime_result,
+        target_directory=tmp_path,
+    )
+    run_id = Path(flow.flow_result.file_write_result.json_file_path).stem
+
+    assert not (tmp_path / f"{run_id}.operator_review.json").exists()
+
+
+def test_build_and_write_review_artifacts_opt_in_writes_pending_operator_review_metadata(
+    tmp_path: Path,
+) -> None:
+    runtime_result = _success_runtime_result()
+
+    flow = build_and_write_review_artifacts(
+        runtime_result=runtime_result,
+        target_directory=tmp_path,
+        initialize_operator_review=True,
+    )
+    run_id = Path(flow.flow_result.file_write_result.json_file_path).stem
+    metadata_path = tmp_path / f"{run_id}.operator_review.json"
+
+    assert metadata_path.exists()
+
+    record = OperatorReviewDecisionRecord.model_validate(
+        json.loads(metadata_path.read_text(encoding="utf-8"))
+    )
+    assert record.review_status == "pending"
+    assert record.operator_decision is None
+    assert record.artifact.run_id == run_id
+    assert record.artifact.status == "success"
+    assert record.artifact.failure_stage is None
+    assert record.artifact.json_file_path == flow.flow_result.file_write_result.json_file_path
+    assert (
+        record.artifact.markdown_file_path
+        == flow.flow_result.file_write_result.markdown_file_path
+    )
+
+
+def test_build_and_write_review_artifacts_opt_in_preserves_failure_stage_in_metadata(
+    tmp_path: Path,
+) -> None:
+    runtime_result = _failure_runtime_result("reasoning_parse")
+
+    flow = build_and_write_review_artifacts(
+        runtime_result=runtime_result,
+        target_directory=tmp_path,
+        initialize_operator_review=True,
+    )
+    run_id = Path(flow.flow_result.file_write_result.json_file_path).stem
+    metadata_path = tmp_path / f"{run_id}.operator_review.json"
+    record = OperatorReviewDecisionRecord.model_validate(
+        json.loads(metadata_path.read_text(encoding="utf-8"))
+    )
+
+    assert record.review_status == "pending"
+    assert record.artifact.status == "failed"
+    assert record.artifact.export_kind == "analysis_failure_export"
+    assert record.artifact.failure_stage == "reasoning_parse"
+
+
+def test_build_and_write_review_artifacts_opt_in_does_not_overwrite_existing_metadata(
+    tmp_path: Path,
+) -> None:
+    runtime_result = _success_runtime_result()
+
+    first = build_and_write_review_artifacts(
+        runtime_result=runtime_result,
+        target_directory=tmp_path,
+        initialize_operator_review=True,
+    )
+    run_id = Path(first.flow_result.file_write_result.json_file_path).stem
+    metadata_path = tmp_path / f"{run_id}.operator_review.json"
+    existing = metadata_path.read_text(encoding="utf-8")
+
+    with pytest.raises(ValueError, match="refusing to overwrite"):
+        build_and_write_review_artifacts(
+            runtime_result=runtime_result,
+            target_directory=tmp_path,
+            initialize_operator_review=True,
+        )
+
+    assert metadata_path.read_text(encoding="utf-8") == existing
+
+
+def test_write_initialized_operator_review_metadata_companion_bounds_writes_to_target_directory(
+    tmp_path: Path,
+) -> None:
+    outside_path = tmp_path.parent / "outside.operator_review.json"
+
+    with pytest.raises(ValueError, match="run_id contains invalid characters"):
+        write_initialized_operator_review_metadata_companion(
+            target_directory=tmp_path,
+            run_id="../outside",
+            artifact_payload={
+                "theme_id": "theme_ctx_strong",
+                "status": "success",
+                "export_kind": "analysis_success_export",
+            },
+        )
+
+    assert not outside_path.exists()
 
 
 def _success_runtime_result() -> Any:

@@ -1,43 +1,45 @@
-# Phase 20C — Operator UI Decision/Status Rendering Surface
+# Phase 20D — CLI/Artifact Review Workflow Alignment
 
 ## Goal
 
-Surface existing operator review decision/status metadata in local operator UI list/detail views
-when companion decision metadata files exist.
+Align CLI/local artifact generation with the operator review metadata contract by adding an
+explicit opt-in path that initializes companion operator review metadata files next to generated
+artifacts.
 
-This phase is read-only rendering/discovery only.
+Default behavior must remain unchanged.
 
 ## Read first
 
 - `.codex/phases/current_phase.md`
 - `docs/PHASE_20A_FUTURE_SYSTEM_NEXT_TRACK_SCOPE_LOCK.md`
 - `docs/PHASE_20B_OPERATOR_REVIEW_DECISION_METADATA_CONTRACTS.md`
+- `docs/PHASE_20C_OPERATOR_UI_DECISION_STATUS_RENDERING.md`
 - `src/future_system/operator_review_models/*`
+- `src/future_system/review_artifacts/*`
+- `src/future_system/review_entrypoints/*`
+- `src/future_system/cli/review_artifacts.py`
 - `src/future_system/operator_ui/artifact_reads.py`
-- `src/future_system/operator_ui/render_templates.py`
-- `src/future_system/operator_ui/route_handlers.py`
-- `tests/future_system/test_operator_ui_review_artifacts.py`
-- `tests/future_system/test_operator_ui_integration_flows.py`
+- `tests/future_system/test_operator_review_models.py`
+- relevant tests for `review_artifacts` / `review_entrypoints` / CLI surfaces
 
 ## Required deliverable
 
-Add bounded read-only companion metadata discovery/loading and UI rendering support:
+Add deterministic helper support so generated artifact run id `X` can also initialize:
 
-- for artifact run id `X`, read companion file `X.operator_review.json` when present
-- missing companion metadata file must be optional
-- malformed companion metadata must be bounded and must not break existing artifact rendering
+- `X.operator_review.json`
 
-Render in operator UI:
+Initialized companion metadata must:
 
-- list row review state: `pending` / `decided` / `no-review-metadata`
-- detail view review metadata:
-  - review status
-  - operator decision
-  - review notes summary
-  - reviewer identity
-  - decided/updated timestamps (if present)
+- validate as `OperatorReviewDecisionRecord`
+- be initialized as `review_status="pending"`
+- derive from existing artifact payload + run id
+- write only under explicit target directory bounds
+- avoid silent overwrite (must be explicit and tested if allowed)
 
-Preserve current success/failure-stage outcome rendering and local artifact-file behavior.
+Wire this through generation path with explicit opt-in:
+
+- CLI flag: `--initialize-operator-review`
+- default remains no companion metadata writes
 
 ## Hard constraints
 
@@ -45,26 +47,26 @@ Do not:
 
 - touch `src/polymarket_arb/*`
 - add DB/queues/background jobs/scheduling/delivery/inbox/execution/trading logic
-- add UI editing/write flow (read-only only)
-- widen scope beyond local artifact-file discovery + rendering
+- add UI editing/write flow
+- widen scope beyond local artifact-file workflow alignment
 
 ## Tests required
 
 Add deterministic tests for:
 
-- artifact with no decision metadata renders normally
-- valid pending metadata appears in list/detail
-- valid decided metadata appears in list/detail
-- malformed decision metadata is bounded and does not break artifact display
-- no reads outside configured root
+- default CLI/artifact path does not write companion review metadata
+- opt-in writes valid pending companion metadata
+- existing companion metadata is not silently overwritten
+- failed artifacts preserve `failure_stage` in initialized review metadata
+- no writes outside target directory
 
 ## Validation
 
 Run:
 
-- `pytest tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_integration_flows.py tests/future_system/test_operator_review_models.py`
-- `ruff check src/future_system/operator_ui src/future_system/operator_review_models tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_integration_flows.py tests/future_system/test_operator_review_models.py`
-- `mypy src/future_system/operator_ui src/future_system/operator_review_models`
+- `pytest` on touched `future_system` tests
+- `ruff check` on touched files
+- `mypy` on touched `future_system` modules
 
 ## Required Codex return format
 

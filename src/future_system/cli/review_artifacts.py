@@ -36,6 +36,7 @@ def main(argv: list[str] | None = None) -> int:
             context_bundle=context_bundle,
             analyst=analyst,
             target_directory=args.target_directory,
+            initialize_operator_review=args.initialize_operator_review,
         )
     except ValueError as exc:
         print(f"review_artifacts_cli_error: {exc}", file=sys.stderr)
@@ -67,6 +68,14 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(
             "Analyst mode for deterministic execution: "
             "stub|analyst_timeout|analyst_transport|reasoning_parse."
+        ),
+    )
+    parser.add_argument(
+        "--initialize-operator-review",
+        action="store_true",
+        help=(
+            "When set, also initialize a pending operator review companion JSON file "
+            "(X.operator_review.json) beside generated artifacts."
         ),
     )
     return parser

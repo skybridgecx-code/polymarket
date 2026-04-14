@@ -21,6 +21,7 @@ def run_analysis_and_write_review_artifacts(
     context_bundle: OpportunityContextBundle,
     analyst: AnalystProtocol,
     target_directory: str | Path,
+    initialize_operator_review: bool = False,
 ) -> AnalysisReviewEntryEnvelope:
     """Run runtime result entrypoint and compose the downstream review artifact flow."""
 
@@ -31,6 +32,7 @@ def run_analysis_and_write_review_artifacts(
     artifact_flow = build_and_write_review_artifacts(
         runtime_result=runtime_result,
         target_directory=target_directory,
+        initialize_operator_review=initialize_operator_review,
     )
 
     if runtime_result.status == "success":

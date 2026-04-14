@@ -8,6 +8,9 @@ from future_system.review_artifacts.models import (
     AnalysisSuccessReviewArtifactFlowResult,
     ReviewArtifactFlowKind,
 )
+from future_system.review_artifacts.operator_review_metadata import (
+    write_initialized_operator_review_metadata_companion,
+)
 
 __all__ = [
     "AnalysisFailureReviewArtifactFlowResult",
@@ -16,4 +19,5 @@ __all__ = [
     "AnalysisSuccessReviewArtifactFlowResult",
     "ReviewArtifactFlowKind",
     "build_and_write_review_artifacts",
+    "write_initialized_operator_review_metadata_companion",
 ]

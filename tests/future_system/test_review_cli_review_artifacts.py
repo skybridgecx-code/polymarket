@@ -15,6 +15,7 @@ from future_system.crypto_evidence.models import ThemeCryptoEvidencePacket
 from future_system.divergence.models import ThemeDivergencePacket
 from future_system.evidence.models import ThemeEvidencePacket
 from future_system.news_evidence.models import ThemeNewsEvidencePacket
+from future_system.operator_review_models import OperatorReviewDecisionRecord
 from future_system.runtime.models import AnalysisRunFailureStage
 from future_system.theme_graph.models import ThemeLinkPacket
 
@@ -65,6 +66,51 @@ def test_cli_review_artifacts_success_outputs_deterministic_summary_and_paths(
     assert json_path.exists()
     assert markdown_path.name == "theme_ctx_strong.analysis_success_export.md"
     assert json_path.name == "theme_ctx_strong.analysis_success_export.json"
+    assert not (
+        target_directory / "theme_ctx_strong.analysis_success_export.operator_review.json"
+    ).exists()
+
+
+def test_cli_review_artifacts_opt_in_initializes_pending_operator_review_metadata(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    context_source = _write_context_source(tmp_path)
+    target_directory = tmp_path / "artifacts-with-review-metadata"
+    target_directory.mkdir()
+
+    exit_code = main(
+        [
+            "--context-source",
+            str(context_source),
+            "--target-directory",
+            str(target_directory),
+            "--analyst-mode",
+            "stub",
+            "--initialize-operator-review",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert captured.err == ""
+
+    summary = json.loads(captured.out)
+    json_path = Path(str(summary["json_file_path"]))
+    run_id = json_path.stem
+    metadata_path = target_directory / f"{run_id}.operator_review.json"
+    assert metadata_path.exists()
+
+    record = OperatorReviewDecisionRecord.model_validate(
+        json.loads(metadata_path.read_text(encoding="utf-8"))
+    )
+    assert record.review_status == "pending"
+    assert record.operator_decision is None
+    assert record.artifact.run_id == run_id
+    assert record.artifact.status == "success"
+    assert record.artifact.failure_stage is None
+    assert record.artifact.json_file_path == str(json_path)
+    assert record.artifact.markdown_file_path == str(summary["markdown_file_path"])
 
 
 @pytest.mark.parametrize(
@@ -130,6 +176,76 @@ def test_cli_review_artifacts_failure_modes_preserve_stage_identity(
     assert f"- Failure Stage: `{expected_failure_stage}`" in markdown_text
     assert json_document["payload"]["failure_stage"] == expected_failure_stage
     assert "policy_decision" not in json_document["payload"]["json_payload"]
+
+
+def test_cli_review_artifacts_opt_in_failure_mode_preserves_stage_in_review_metadata(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    context_source = _write_context_source(tmp_path)
+    target_directory = tmp_path / "artifacts-failure-with-review-metadata"
+    target_directory.mkdir()
+
+    exit_code = main(
+        [
+            "--context-source",
+            str(context_source),
+            "--target-directory",
+            str(target_directory),
+            "--analyst-mode",
+            "reasoning_parse",
+            "--initialize-operator-review",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert captured.err == ""
+
+    summary = json.loads(captured.out)
+    json_path = Path(str(summary["json_file_path"]))
+    run_id = json_path.stem
+    metadata_path = target_directory / f"{run_id}.operator_review.json"
+    record = OperatorReviewDecisionRecord.model_validate(
+        json.loads(metadata_path.read_text(encoding="utf-8"))
+    )
+
+    assert record.review_status == "pending"
+    assert record.artifact.status == "failed"
+    assert record.artifact.failure_stage == "reasoning_parse"
+    assert record.artifact.export_kind == "analysis_failure_export"
+
+
+def test_cli_review_artifacts_opt_in_refuses_to_overwrite_existing_review_metadata(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    context_source = _write_context_source(tmp_path)
+    target_directory = tmp_path / "artifacts-existing-review-metadata"
+    target_directory.mkdir()
+    metadata_path = (
+        target_directory / "theme_ctx_strong.analysis_success_export.operator_review.json"
+    )
+    existing_payload = '{"existing":"metadata"}\n'
+    metadata_path.write_text(existing_payload, encoding="utf-8")
+
+    exit_code = main(
+        [
+            "--context-source",
+            str(context_source),
+            "--target-directory",
+            str(target_directory),
+            "--analyst-mode",
+            "stub",
+            "--initialize-operator-review",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 2
+    assert captured.out == ""
+    assert "operator_review_metadata_file_exists" in captured.err
+    assert metadata_path.read_text(encoding="utf-8") == existing_payload
 
 
 def test_cli_review_artifacts_fails_explicitly_for_invalid_context_source(

@@ -10,6 +10,9 @@ from future_system.review_artifacts.models import (
     AnalysisReviewArtifactFlowEnvelope,
     AnalysisSuccessReviewArtifactFlowResult,
 )
+from future_system.review_artifacts.operator_review_metadata import (
+    write_initialized_operator_review_metadata_companion,
+)
 from future_system.review_bundles.builder import build_review_bundle
 from future_system.review_exports.builder import build_review_export_payloads
 from future_system.review_file_writers.models import (
@@ -24,6 +27,7 @@ def build_and_write_review_artifacts(
     *,
     runtime_result: AnalysisRunResultEnvelope,
     target_directory: str | Path,
+    initialize_operator_review: bool = False,
 ) -> AnalysisReviewArtifactFlowEnvelope:
     """Compose bundle/export/file-writer layers to emit deterministic local review artifacts."""
 
@@ -33,6 +37,15 @@ def build_and_write_review_artifacts(
         export_package=export_package,
         target_directory=target_directory,
     )
+    if initialize_operator_review:
+        run_id = Path(file_write_result.json_file_path).stem
+        write_initialized_operator_review_metadata_companion(
+            target_directory=file_write_result.target_directory,
+            run_id=run_id,
+            artifact_payload=export_package.model_dump(mode="json"),
+            json_file_path=file_write_result.json_file_path,
+            markdown_file_path=file_write_result.markdown_file_path,
+        )
 
     if runtime_result.status == "success":
         success_packet = runtime_result.success

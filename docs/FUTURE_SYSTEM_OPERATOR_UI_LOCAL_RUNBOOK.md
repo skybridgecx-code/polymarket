@@ -68,6 +68,19 @@ python -m future_system.cli.review_artifacts \
   --analyst-mode stub
 ```
 
+Optional companion metadata initialization:
+
+```bash
+python -m future_system.cli.review_artifacts \
+  --context-source /absolute/path/context_bundle.json \
+  --target-directory /absolute/path/review-artifacts \
+  --analyst-mode stub \
+  --initialize-operator-review
+```
+
+With `--initialize-operator-review`, CLI also writes `X.operator_review.json` for generated run id
+`X`, initialized as pending operator review metadata.
+
 Supported `--analyst-mode` values:
 
 - `stub`
@@ -76,6 +89,10 @@ Supported `--analyst-mode` values:
 - `reasoning_parse`
 
 CLI output is deterministic JSON summary on stdout. On invalid input, CLI exits with code `2` and prints `review_artifacts_cli_error: ...` to stderr.
+
+If `--initialize-operator-review` is enabled and `X.operator_review.json` already exists, CLI
+fails with a deterministic validation error and does not overwrite the existing companion metadata
+file.
 
 ## Launch The Operator UI (Standalone)
 
