@@ -1,53 +1,49 @@
-# Phase 20F — Decision Workflow Closeout Checkpoint
+# Phase 21A — Editable Operator Decision Workflow Scope Lock
 
 ## Goal
 
-Close out the Phase 20A–20F `future_system` operator decision/review workflow hardening track
-as a local artifact-file-based readiness checkpoint.
+Define a bounded scope lock for the next local-only track: editable operator decisions written to
+artifact companion metadata files.
 
-This phase is documentation/manual-verification only.
+This phase is docs-only.
 
 ## Read first
 
 - `.codex/phases/current_phase.md`
+- `docs/PHASE_20F_DECISION_WORKFLOW_CLOSEOUT_CHECKPOINT.md`
 - `docs/PHASE_20A_FUTURE_SYSTEM_NEXT_TRACK_SCOPE_LOCK.md`
+- `docs/FUTURE_SYSTEM_OPERATOR_UI_LOCAL_RUNBOOK.md`
 - `docs/PHASE_20B_OPERATOR_REVIEW_DECISION_METADATA_CONTRACTS.md`
 - `docs/PHASE_20C_OPERATOR_UI_DECISION_STATUS_RENDERING.md`
 - `docs/PHASE_20D_CLI_ARTIFACT_REVIEW_WORKFLOW_ALIGNMENT.md`
 - `docs/PHASE_20E_DETERMINISTIC_DECISION_WORKFLOW_TEST_HARDENING.md`
-- `docs/FUTURE_SYSTEM_OPERATOR_UI_LOCAL_RUNBOOK.md`
 
 ## Required deliverable
 
 Add:
 
-- `docs/PHASE_20F_DECISION_WORKFLOW_CLOSEOUT_CHECKPOINT.md`
+- `docs/PHASE_21A_EDITABLE_OPERATOR_DECISION_WORKFLOW_SCOPE_LOCK.md`
 
-The closeout checkpoint must capture:
+Define the next track clearly:
 
-- repo/branch/phase context
-- what Phase 20A–20F delivered
-- current local workflow
-  - artifact generation
-  - optional `--initialize-operator-review`
-  - companion `X.operator_review.json`
-  - UI read-only list/detail rendering
-  - no-overwrite behavior
-  - failure-stage preservation
-- explicit out-of-scope boundaries
-  - UI edit/write decisions
-  - DB persistence
-  - queues/jobs/scheduling
-  - notifications/delivery
-  - production trading/execution
-  - `src/polymarket_arb` integration
-- safety boundaries
-- final validation commands
-- recommended next decision:
-  - stop/keep checkpoint or start a new bounded track
+- local UI form for editing `X.operator_review.json`
+- allowed decision fields
+- validation rules
+- deterministic overwrite/update behavior
+- no DB or production workflow
+- no trading/execution behavior
+- file-based only
+- safety constraints for path handling and malformed existing files
 
-If runbook wording needs tiny docs-only polish for final workflow clarity, update it; otherwise
-leave it unchanged.
+Include candidate phases:
+
+- 21B decision update/write helper contracts
+- 21C operator UI edit form rendering
+- 21D POST handler/update flow
+- 21E workflow test hardening
+- 21F closeout checkpoint
+
+Keep scope factual and bounded. Do not claim production readiness.
 
 ## Hard constraints
 
