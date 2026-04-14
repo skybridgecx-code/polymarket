@@ -1,11 +1,11 @@
-# Phase 20E — Deterministic Decision Workflow Test Hardening
+# Phase 20F — Decision Workflow Closeout Checkpoint
 
 ## Goal
 
-Harden deterministic tests across the full local operator review decision metadata path introduced
-in 20B–20D.
+Close out the Phase 20A–20F `future_system` operator decision/review workflow hardening track
+as a local artifact-file-based readiness checkpoint.
 
-Focus is tests/docs with local artifact-file workflow invariants locked end-to-end.
+This phase is documentation/manual-verification only.
 
 ## Read first
 
@@ -14,51 +14,57 @@ Focus is tests/docs with local artifact-file workflow invariants locked end-to-e
 - `docs/PHASE_20B_OPERATOR_REVIEW_DECISION_METADATA_CONTRACTS.md`
 - `docs/PHASE_20C_OPERATOR_UI_DECISION_STATUS_RENDERING.md`
 - `docs/PHASE_20D_CLI_ARTIFACT_REVIEW_WORKFLOW_ALIGNMENT.md`
-- `src/future_system/operator_review_models/*`
-- `src/future_system/review_artifacts/operator_review_metadata.py`
-- `src/future_system/review_artifacts/flow.py`
-- `src/future_system/cli/review_artifacts.py`
-- `src/future_system/operator_ui/artifact_reads.py`
-- `tests/future_system/test_operator_review_models.py`
-- `tests/future_system/test_review_artifacts_flow.py`
-- `tests/future_system/test_review_cli_review_artifacts.py`
-- `tests/future_system/test_operator_ui_review_artifacts.py`
-- `tests/future_system/test_operator_ui_integration_flows.py`
+- `docs/PHASE_20E_DETERMINISTIC_DECISION_WORKFLOW_TEST_HARDENING.md`
+- `docs/FUTURE_SYSTEM_OPERATOR_UI_LOCAL_RUNBOOK.md`
 
 ## Required deliverable
 
-Add/expand deterministic tests to lock the end-to-end local decision metadata workflow:
+Add:
 
-- CLI with `--initialize-operator-review` writes companion metadata
-- operator UI list/detail render initialized metadata as `pending`
-- failed artifact initialized metadata preserves `failure_stage` through CLI -> file -> UI
-- default path still writes no companion metadata
-- existing companion metadata no-overwrite behavior remains preserved
-- malformed companion metadata remains bounded/non-fatal
-- out-of-root metadata read/write safety behavior does not regress
+- `docs/PHASE_20F_DECISION_WORKFLOW_CLOSEOUT_CHECKPOINT.md`
 
-Prefer one integration-style test module when cleaner:
+The closeout checkpoint must capture:
 
-- `tests/future_system/test_operator_review_workflow_integration.py`
+- repo/branch/phase context
+- what Phase 20A–20F delivered
+- current local workflow
+  - artifact generation
+  - optional `--initialize-operator-review`
+  - companion `X.operator_review.json`
+  - UI read-only list/detail rendering
+  - no-overwrite behavior
+  - failure-stage preservation
+- explicit out-of-scope boundaries
+  - UI edit/write decisions
+  - DB persistence
+  - queues/jobs/scheduling
+  - notifications/delivery
+  - production trading/execution
+  - `src/polymarket_arb` integration
+- safety boundaries
+- final validation commands
+- recommended next decision:
+  - stop/keep checkpoint or start a new bounded track
+
+If runbook wording needs tiny docs-only polish for final workflow clarity, update it; otherwise
+leave it unchanged.
 
 ## Hard constraints
 
 Do not:
 
 - touch `src/polymarket_arb/*`
+- touch `src/future_system/*`
+- touch `tests/*`
+- add features
 - add DB/queues/background jobs/scheduling/delivery/inbox/execution/trading logic
-- add UI editing/write flow
-- widen scope beyond deterministic local decision workflow test hardening
-
-Avoid production code changes unless a tiny non-behavioral test seam is absolutely required.
 
 ## Validation
 
 Run:
 
-- `pytest tests/future_system/test_operator_review_models.py tests/future_system/test_review_artifacts_flow.py tests/future_system/test_review_cli_review_artifacts.py tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_integration_flows.py tests/future_system/test_operator_review_workflow_integration.py`
-- `ruff check src/future_system/operator_review_models src/future_system/review_artifacts src/future_system/cli/review_artifacts.py src/future_system/operator_ui tests/future_system/test_operator_review_models.py tests/future_system/test_review_artifacts_flow.py tests/future_system/test_review_cli_review_artifacts.py tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_integration_flows.py tests/future_system/test_operator_review_workflow_integration.py`
-- `mypy src/future_system/operator_review_models src/future_system/review_artifacts src/future_system/cli/review_artifacts.py src/future_system/operator_ui`
+- `git diff --stat`
+- `git diff --name-only`
 
 ## Required Codex return format
 
