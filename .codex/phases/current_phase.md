@@ -1,12 +1,11 @@
-# Phase 20D — CLI/Artifact Review Workflow Alignment
+# Phase 20E — Deterministic Decision Workflow Test Hardening
 
 ## Goal
 
-Align CLI/local artifact generation with the operator review metadata contract by adding an
-explicit opt-in path that initializes companion operator review metadata files next to generated
-artifacts.
+Harden deterministic tests across the full local operator review decision metadata path introduced
+in 20B–20D.
 
-Default behavior must remain unchanged.
+Focus is tests/docs with local artifact-file workflow invariants locked end-to-end.
 
 ## Read first
 
@@ -14,32 +13,33 @@ Default behavior must remain unchanged.
 - `docs/PHASE_20A_FUTURE_SYSTEM_NEXT_TRACK_SCOPE_LOCK.md`
 - `docs/PHASE_20B_OPERATOR_REVIEW_DECISION_METADATA_CONTRACTS.md`
 - `docs/PHASE_20C_OPERATOR_UI_DECISION_STATUS_RENDERING.md`
+- `docs/PHASE_20D_CLI_ARTIFACT_REVIEW_WORKFLOW_ALIGNMENT.md`
 - `src/future_system/operator_review_models/*`
-- `src/future_system/review_artifacts/*`
-- `src/future_system/review_entrypoints/*`
+- `src/future_system/review_artifacts/operator_review_metadata.py`
+- `src/future_system/review_artifacts/flow.py`
 - `src/future_system/cli/review_artifacts.py`
 - `src/future_system/operator_ui/artifact_reads.py`
 - `tests/future_system/test_operator_review_models.py`
-- relevant tests for `review_artifacts` / `review_entrypoints` / CLI surfaces
+- `tests/future_system/test_review_artifacts_flow.py`
+- `tests/future_system/test_review_cli_review_artifacts.py`
+- `tests/future_system/test_operator_ui_review_artifacts.py`
+- `tests/future_system/test_operator_ui_integration_flows.py`
 
 ## Required deliverable
 
-Add deterministic helper support so generated artifact run id `X` can also initialize:
+Add/expand deterministic tests to lock the end-to-end local decision metadata workflow:
 
-- `X.operator_review.json`
+- CLI with `--initialize-operator-review` writes companion metadata
+- operator UI list/detail render initialized metadata as `pending`
+- failed artifact initialized metadata preserves `failure_stage` through CLI -> file -> UI
+- default path still writes no companion metadata
+- existing companion metadata no-overwrite behavior remains preserved
+- malformed companion metadata remains bounded/non-fatal
+- out-of-root metadata read/write safety behavior does not regress
 
-Initialized companion metadata must:
+Prefer one integration-style test module when cleaner:
 
-- validate as `OperatorReviewDecisionRecord`
-- be initialized as `review_status="pending"`
-- derive from existing artifact payload + run id
-- write only under explicit target directory bounds
-- avoid silent overwrite (must be explicit and tested if allowed)
-
-Wire this through generation path with explicit opt-in:
-
-- CLI flag: `--initialize-operator-review`
-- default remains no companion metadata writes
+- `tests/future_system/test_operator_review_workflow_integration.py`
 
 ## Hard constraints
 
@@ -48,25 +48,17 @@ Do not:
 - touch `src/polymarket_arb/*`
 - add DB/queues/background jobs/scheduling/delivery/inbox/execution/trading logic
 - add UI editing/write flow
-- widen scope beyond local artifact-file workflow alignment
+- widen scope beyond deterministic local decision workflow test hardening
 
-## Tests required
-
-Add deterministic tests for:
-
-- default CLI/artifact path does not write companion review metadata
-- opt-in writes valid pending companion metadata
-- existing companion metadata is not silently overwritten
-- failed artifacts preserve `failure_stage` in initialized review metadata
-- no writes outside target directory
+Avoid production code changes unless a tiny non-behavioral test seam is absolutely required.
 
 ## Validation
 
 Run:
 
-- `pytest` on touched `future_system` tests
-- `ruff check` on touched files
-- `mypy` on touched `future_system` modules
+- `pytest tests/future_system/test_operator_review_models.py tests/future_system/test_review_artifacts_flow.py tests/future_system/test_review_cli_review_artifacts.py tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_integration_flows.py tests/future_system/test_operator_review_workflow_integration.py`
+- `ruff check src/future_system/operator_review_models src/future_system/review_artifacts src/future_system/cli/review_artifacts.py src/future_system/operator_ui tests/future_system/test_operator_review_models.py tests/future_system/test_review_artifacts_flow.py tests/future_system/test_review_cli_review_artifacts.py tests/future_system/test_operator_ui_review_artifacts.py tests/future_system/test_operator_ui_integration_flows.py tests/future_system/test_operator_review_workflow_integration.py`
+- `mypy src/future_system/operator_review_models src/future_system/review_artifacts src/future_system/cli/review_artifacts.py src/future_system/operator_ui`
 
 ## Required Codex return format
 
