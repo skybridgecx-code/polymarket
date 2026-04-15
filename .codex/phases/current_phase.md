@@ -1,21 +1,23 @@
-# Current Phase — 21E Editable Decision Workflow Test Hardening
+# Current Phase — 21F Editable Decision Workflow Closeout
 
 ## Branch
 
-`phase-21e-editable-decision-workflow-test-hardening`
+`phase-21f-editable-decision-workflow-closeout`
 
 ## Objective
 
-Harden deterministic integration coverage for the editable local operator decision workflow.
+Close out the local editable operator decision workflow track as a bounded artifact-file-based checkpoint.
 
 ## Scope
 
-- workflow integration tests
-- phase documentation
+- closeout documentation
+- phase tracker update
 
 ## Explicit Non-Scope
 
 - no `src/polymarket_arb/*` changes
+- no `src/future_system/*` changes
+- no tests changed
 - no DB
 - no queues/jobs/scheduling
 - no notifications/delivery
