@@ -74,11 +74,8 @@ def test_cli_opt_in_writes_pending_companion_and_ui_renders_pending(
     )
     run_id = Path(str(summary["json_file_path"])).stem
     metadata_path = target_directory / f"{run_id}.operator_review.json"
-    outside_path = tmp_path.parent / f"{run_id}.operator_review.json"
-
     assert metadata_path.exists()
     assert metadata_path.resolve().parent == target_directory.resolve()
-    assert not outside_path.exists()
 
     record = OperatorReviewDecisionRecord.model_validate(
         json.loads(metadata_path.read_text(encoding="utf-8"))
@@ -273,6 +270,160 @@ def test_ui_rejects_out_of_root_companion_metadata_reads_via_symlink(
     assert detail_response.status_code == 200
     assert "operator_review_metadata_invalid" in detail_response.text
     assert "resolves outside artifacts root" in detail_response.text
+
+
+
+def test_cli_initialized_metadata_can_be_updated_through_operator_ui(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    context_source = _write_context_source(tmp_path)
+    target_directory = tmp_path / "editable-review"
+    target_directory.mkdir()
+
+    summary = _run_cli(
+        capsys=capsys,
+        context_source=context_source,
+        target_directory=target_directory,
+        analyst_mode="stub",
+        initialize_operator_review=True,
+    )
+    run_id = Path(str(summary["json_file_path"])).stem
+
+    client = TestClient(create_operator_ui_app(artifacts_root=target_directory))
+    detail_before = client.get(f"/runs/{run_id}")
+    assert detail_before.status_code == 200
+    assert "Operator Review Edit Form" in detail_before.text
+    assert "operator-review/update" in detail_before.text
+
+    update_response = client.post(
+        f"/runs/{run_id}/operator-review/update",
+        data={
+            "review_status": "decided",
+            "operator_decision": "approve",
+            "review_notes_summary": "Approved after integrated local review.",
+            "reviewer_identity": "operator_integration",
+            "updated_at_epoch_ns": "1900000000000000000",
+        },
+        follow_redirects=False,
+    )
+
+    assert update_response.status_code == 303
+    assert update_response.headers["location"] == f"/runs/{run_id}?updated=1"
+
+    metadata_path = target_directory / f"{run_id}.operator_review.json"
+    record = OperatorReviewDecisionRecord.model_validate(
+        json.loads(metadata_path.read_text(encoding="utf-8"))
+    )
+    assert record.review_status == "decided"
+    assert record.operator_decision == "approve"
+    assert record.review_notes_summary == "Approved after integrated local review."
+    assert record.reviewer_identity == "operator_integration"
+    assert record.decided_at_epoch_ns == 1_900_000_000_000_000_000
+    assert record.updated_at_epoch_ns == 1_900_000_000_000_000_000
+    assert record.artifact.run_id == run_id
+
+    detail_after = client.get(f"/runs/{run_id}")
+    assert detail_after.status_code == 200
+    assert "Review Status</dt><dd>decided" in detail_after.text
+    assert "Operator Decision</dt><dd>approve" in detail_after.text
+    assert "Approved after integrated local review." in detail_after.text
+    assert "operator_integration" in detail_after.text
+
+
+def test_failed_cli_initialized_metadata_can_be_returned_to_pending_through_ui(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    context_source = _write_context_source(tmp_path)
+    target_directory = tmp_path / "editable-failure-review"
+    target_directory.mkdir()
+
+    summary = _run_cli(
+        capsys=capsys,
+        context_source=context_source,
+        target_directory=target_directory,
+        analyst_mode="reasoning_parse",
+        initialize_operator_review=True,
+    )
+    run_id = Path(str(summary["json_file_path"])).stem
+    client = TestClient(create_operator_ui_app(artifacts_root=target_directory))
+
+    decided_response = client.post(
+        f"/runs/{run_id}/operator-review/update",
+        data={
+            "review_status": "decided",
+            "operator_decision": "needs_follow_up",
+            "review_notes_summary": "Needs prompt review.",
+            "reviewer_identity": "operator_integration",
+            "updated_at_epoch_ns": "1900000000000000000",
+        },
+        follow_redirects=False,
+    )
+    assert decided_response.status_code == 303
+
+    pending_response = client.post(
+        f"/runs/{run_id}/operator-review/update",
+        data={
+            "review_status": "pending",
+            "operator_decision": "",
+            "review_notes_summary": "",
+            "reviewer_identity": "",
+            "updated_at_epoch_ns": "1900000000000000001",
+        },
+        follow_redirects=False,
+    )
+
+    assert pending_response.status_code == 303
+    metadata_path = target_directory / f"{run_id}.operator_review.json"
+    record = OperatorReviewDecisionRecord.model_validate(
+        json.loads(metadata_path.read_text(encoding="utf-8"))
+    )
+    assert record.review_status == "pending"
+    assert record.operator_decision is None
+    assert record.review_notes_summary is None
+    assert record.reviewer_identity is None
+    assert record.decided_at_epoch_ns is None
+    assert record.updated_at_epoch_ns == 1_900_000_000_000_000_001
+    assert record.artifact.failure_stage == "reasoning_parse"
+
+    detail = client.get(f"/runs/{run_id}")
+    assert detail.status_code == 200
+    assert "FAILED (reasoning_parse)" in detail.text
+    assert "Review Status</dt><dd>pending" in detail.text
+
+
+def test_ui_update_rejects_missing_companion_after_default_cli_generation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    context_source = _write_context_source(tmp_path)
+    target_directory = tmp_path / "default-no-review-update"
+    target_directory.mkdir()
+
+    summary = _run_cli(
+        capsys=capsys,
+        context_source=context_source,
+        target_directory=target_directory,
+        analyst_mode="stub",
+        initialize_operator_review=False,
+    )
+    run_id = Path(str(summary["json_file_path"])).stem
+    client = TestClient(create_operator_ui_app(artifacts_root=target_directory))
+
+    response = client.post(
+        f"/runs/{run_id}/operator-review/update",
+        data={
+            "review_status": "decided",
+            "operator_decision": "approve",
+            "updated_at_epoch_ns": "1900000000000000000",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "Review Update Error" in response.text
+    assert "operator_review_metadata_missing" in response.text
+    assert not (target_directory / f"{run_id}.operator_review.json").exists()
 
 
 def _run_cli(

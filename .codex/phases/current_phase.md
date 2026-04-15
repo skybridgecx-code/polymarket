@@ -1,19 +1,16 @@
-# Current Phase — 21D Operator Review POST Update Flow
+# Current Phase — 21E Editable Decision Workflow Test Hardening
 
 ## Branch
 
-`phase-21d-operator-review-post-update-flow`
+`phase-21e-editable-decision-workflow-test-hardening`
 
 ## Objective
 
-Add bounded local POST/update handling for existing operator review companion metadata files.
+Harden deterministic integration coverage for the editable local operator decision workflow.
 
 ## Scope
 
-- local operator UI route handler
-- FastAPI route wiring
-- detail-page edit form submission
-- focused tests
+- workflow integration tests
 - phase documentation
 
 ## Explicit Non-Scope
@@ -23,4 +20,3 @@ Add bounded local POST/update handling for existing operator review companion me
 - no queues/jobs/scheduling
 - no notifications/delivery
 - no production trading/execution
-- no writes to base artifact markdown/json files
