@@ -56,6 +56,7 @@ DETAIL_PAGE_CSS = compose_css(
     PRE_CSS,
     TERM_CSS,
     TRUNCATE_CSS,
+    FORM_CSS,
 )
 ERROR_PAGE_CSS = compose_css(
     BASE_PAGE_CSS,
@@ -252,6 +253,7 @@ def render_detail_page(
             f"showing first {DETAIL_JSON_MAX_CHARS} of {json_total_chars} characters.</p>"
         )
     operator_review_metadata_block = _render_operator_review_metadata_section(detail=detail)
+    operator_review_edit_form_block = _render_operator_review_edit_form_section(detail=detail)
     created_block = ""
     if created_via_trigger:
         created_block = (
@@ -301,6 +303,7 @@ def render_detail_page(
         "</dl>"
         "</section>"
         f"{operator_review_metadata_block}"
+        f"{operator_review_edit_form_block}"
         "<section class=\"section\">"
         "<h2>Artifact Paths</h2>"
         "<dl class=\"meta-grid\">"
@@ -412,6 +415,63 @@ def _render_operator_review_metadata_section(*, detail: ArtifactRunDetail) -> st
         f"<dt>Updated At (epoch ns)</dt><dd>{html.escape(updated_at_epoch_ns)}</dd>"
         "</dl>"
         "</section>"
+    )
+
+
+
+def _render_operator_review_edit_form_section(*, detail: ArtifactRunDetail) -> str:
+    record = detail.operator_review_decision
+    if record is None:
+        reason = "companion review metadata is missing"
+        if detail.operator_review_issue is not None:
+            reason = detail.operator_review_issue
+        return (
+            "<section class=\"section\">"
+            "<h2>Operator Review Edit Form</h2>"
+            "<p>Edit form unavailable: "
+            f"{html.escape(reason)}.</p>"
+            "<p>No decision write route is enabled in this phase.</p>"
+            "</section>"
+        )
+
+    pending_selected = " selected" if record.review_status == "pending" else ""
+    decided_selected = " selected" if record.review_status == "decided" else ""
+    decision_options = ["<option value=\"\">none</option>"]
+    for decision in ("approve", "reject", "needs_follow_up"):
+        selected = " selected" if record.operator_decision == decision else ""
+        decision_options.append(
+            f"<option value=\"{html.escape(decision)}\"{selected}>"
+            f"{html.escape(decision)}</option>"
+        )
+
+    decision_options_html = "".join(decision_options)
+    notes_value = record.review_notes_summary or ""
+    reviewer_value = record.reviewer_identity or ""
+
+    return (
+        "<section class=\"section\">"
+        "<h2>Operator Review Edit Form</h2>"
+        "<p>Preview only: decision update handling is not enabled in this phase.</p>"
+        "<form method=\"post\" action=\"#\">"
+        "<div class=\"form-grid\">"
+        "<div class=\"form-field\"><label for=\"review_status\">Review Status</label>"
+        "<select id=\"review_status\" name=\"review_status\">"
+        f"<option value=\"pending\"{pending_selected}>pending</option>"
+        f"<option value=\"decided\"{decided_selected}>decided</option>"
+        "</select></div>"
+        "<div class=\"form-field\"><label for=\"operator_decision\">Operator Decision</label>"
+        "<select id=\"operator_decision\" name=\"operator_decision\">"
+        f"{decision_options_html}</select>"
+        "<p class=\"help\">Required only when review status is decided.</p></div>"
+        "<div class=\"form-field\"><label for=\"review_notes_summary\">Review Notes Summary</label>"
+        "<textarea id=\"review_notes_summary\" name=\"review_notes_summary\" rows=\"4\">"
+        f"{html.escape(notes_value)}</textarea></div>"
+        "<div class=\"form-field\"><label for=\"reviewer_identity\">Reviewer Identity</label>"
+        "<input id=\"reviewer_identity\" name=\"reviewer_identity\" type=\"text\" "
+        f"value=\"{html.escape(reviewer_value)}\"></div>"
+        "</div><div class=\"form-actions\">"
+        "<button type=\"submit\" disabled>Update Review Decision (disabled until 21D)</button>"
+        "</div></form></section>"
     )
 
 

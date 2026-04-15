@@ -87,6 +87,9 @@ def test_operator_ui_artifact_without_review_metadata_renders_normally(tmp_path:
     assert detail_response.status_code == 200
     assert "Operator Review Metadata" in detail_response.text
     assert "no-review-metadata" in detail_response.text
+    assert "Operator Review Edit Form" in detail_response.text
+    assert "Edit form unavailable: companion review metadata is missing." in detail_response.text
+    assert "No decision write route is enabled in this phase." in detail_response.text
     assert "FAILED" not in detail_response.text
 
 
@@ -111,6 +114,8 @@ def test_operator_ui_shows_pending_review_metadata_in_list_and_detail(tmp_path: 
     assert "Operator Review Metadata" in detail_response.text
     assert "Review Status</dt><dd>pending" in detail_response.text
     assert "Operator Decision</dt><dd>none" in detail_response.text
+    assert "Operator Review Edit Form" in detail_response.text
+    assert "Update Review Decision (disabled until 21D)" in detail_response.text
 
 
 def test_operator_ui_shows_decided_review_metadata_in_list_and_detail(tmp_path: Path) -> None:
@@ -146,6 +151,9 @@ def test_operator_ui_shows_decided_review_metadata_in_list_and_detail(tmp_path: 
     assert "Reviewer Identity</dt><dd>operator_b" in detail_response.text
     assert "Decided At (epoch ns)</dt><dd>1900000000000000000" in detail_response.text
     assert "Updated At (epoch ns)</dt><dd>1900000000000000001" in detail_response.text
+    assert "Operator Review Edit Form" in detail_response.text
+    assert "needs_follow_up\" selected" in detail_response.text
+    assert "value=\"operator_b\"" in detail_response.text
 
 
 def test_operator_ui_bounds_malformed_review_metadata_without_breaking_artifact_display(
