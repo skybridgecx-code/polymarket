@@ -1,66 +1,86 @@
-# Phase 21A — Editable Operator Decision Workflow Scope Lock
+# Phase 21B — Decision Update/Write Helper Contracts
 
 ## Goal
 
-Define a bounded scope lock for the next local-only track: editable operator decisions written to
-artifact companion metadata files.
+Add deterministic local helper contracts for validating and writing updates to existing
+`X.operator_review.json` companion metadata files.
 
-This phase is docs-only.
+This phase is helper-contract focused (no UI form/POST flow yet).
 
 ## Read first
 
 - `.codex/phases/current_phase.md`
-- `docs/PHASE_20F_DECISION_WORKFLOW_CLOSEOUT_CHECKPOINT.md`
-- `docs/PHASE_20A_FUTURE_SYSTEM_NEXT_TRACK_SCOPE_LOCK.md`
-- `docs/FUTURE_SYSTEM_OPERATOR_UI_LOCAL_RUNBOOK.md`
+- `docs/PHASE_21A_EDITABLE_OPERATOR_DECISION_WORKFLOW_SCOPE_LOCK.md`
 - `docs/PHASE_20B_OPERATOR_REVIEW_DECISION_METADATA_CONTRACTS.md`
-- `docs/PHASE_20C_OPERATOR_UI_DECISION_STATUS_RENDERING.md`
-- `docs/PHASE_20D_CLI_ARTIFACT_REVIEW_WORKFLOW_ALIGNMENT.md`
-- `docs/PHASE_20E_DETERMINISTIC_DECISION_WORKFLOW_TEST_HARDENING.md`
+- `src/future_system/operator_review_models/*`
+- `src/future_system/review_artifacts/operator_review_metadata.py`
+- `src/future_system/operator_ui/artifact_reads.py`
+- `tests/future_system/test_operator_review_models.py`
+- `tests/future_system/test_review_artifacts_flow.py`
+- `tests/future_system/test_operator_review_workflow_integration.py`
 
 ## Required deliverable
 
-Add:
+Add deterministic update/write helpers for existing companion metadata files.
 
-- `docs/PHASE_21A_EDITABLE_OPERATOR_DECISION_WORKFLOW_SCOPE_LOCK.md`
+Suggested module:
 
-Define the next track clearly:
+- `src/future_system/operator_review_models/updates.py`
 
-- local UI form for editing `X.operator_review.json`
-- allowed decision fields
-- validation rules
-- deterministic overwrite/update behavior
-- no DB or production workflow
-- no trading/execution behavior
-- file-based only
-- safety constraints for path handling and malformed existing files
+Define a bounded update-input contract for editable fields only:
 
-Include candidate phases:
+- `review_status`
+- `operator_decision`
+- `review_notes_summary`
+- `reviewer_identity`
 
-- 21B decision update/write helper contracts
-- 21C operator UI edit form rendering
-- 21D POST handler/update flow
-- 21E workflow test hardening
-- 21F closeout checkpoint
+Helper behavior must:
 
-Keep scope factual and bounded. Do not claim production readiness.
+- read existing `X.operator_review.json`
+- validate existing file as `OperatorReviewDecisionRecord`
+- apply editable-field update only
+- preserve non-editable/system-owned fields
+- write replacement JSON deterministically
+- reject missing companion file
+- reject malformed companion file
+- reject out-of-root paths / unsafe symlink targets
+- reject writes when target is not a regular file
+
+Timestamp policy must be explicit and deterministic:
+
+- `pending` clears `operator_decision` and `decided_at_epoch_ns`
+- `decided` requires `operator_decision`
+- `decided_at_epoch_ns` set/kept by deterministic rule
+- `updated_at_epoch_ns` comes from explicit caller-provided timestamp (never wall clock)
+
+## Tests required
+
+Add focused tests for:
+
+- pending update clears decision and decided timestamp
+- decided update requires decision
+- decided update sets timestamps deterministically from explicit input
+- non-editable fields are preserved
+- missing/malformed/out-of-root/non-file targets reject safely
+- serialized JSON shape is stable
 
 ## Hard constraints
 
 Do not:
 
 - touch `src/polymarket_arb/*`
-- touch `src/future_system/*`
-- touch `tests/*`
-- add features
 - add DB/queues/background jobs/scheduling/delivery/inbox/execution/trading logic
+- add UI form or POST route behavior in 21B
+
+Keep this phase file-based helper contracts only.
 
 ## Validation
 
 Run:
 
-- `git diff --stat`
-- `git diff --name-only`
+- `pytest tests/future_system/test_operator_review_models.py tests/future_system/test_operator_review_update_helpers.py`
+- `ruff check src/future_system/operator_review_models tests/future_system/test_operator_review_models.py tests/future_system/test_operator_review_update_helpers.py`
+- `mypy src/future_system/operator_review_models`
 
 ## Required Codex return format
 

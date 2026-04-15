@@ -9,11 +9,21 @@ from future_system.operator_review_models.models import (
     OperatorReviewDecisionRecord,
     OperatorReviewStatus,
 )
+from future_system.operator_review_models.updates import (
+    OperatorReviewDecisionUpdateInput,
+    apply_operator_review_decision_update,
+    render_operator_review_decision_record_json,
+    update_existing_operator_review_metadata_companion,
+)
 
 __all__ = [
     "OperatorReviewArtifactReference",
     "OperatorReviewDecision",
     "OperatorReviewDecisionRecord",
     "OperatorReviewStatus",
+    "OperatorReviewDecisionUpdateInput",
+    "apply_operator_review_decision_update",
     "build_initial_operator_review_decision_record",
+    "render_operator_review_decision_record_json",
+    "update_existing_operator_review_metadata_companion",
 ]
