@@ -1,16 +1,18 @@
-# Current Phase — 21C Operator UI Edit Form Rendering
+# Current Phase — 21D Operator Review POST Update Flow
 
 ## Branch
 
-`phase-21c-operator-ui-edit-form-rendering`
+`phase-21d-operator-review-post-update-flow`
 
 ## Objective
 
-Render a bounded operator review edit form on the local operator UI detail page, without adding POST/write behavior.
+Add bounded local POST/update handling for existing operator review companion metadata files.
 
 ## Scope
 
-- `future_system` operator UI templates
+- local operator UI route handler
+- FastAPI route wiring
+- detail-page edit form submission
 - focused tests
 - phase documentation
 
@@ -21,4 +23,4 @@ Render a bounded operator review edit form on the local operator UI detail page,
 - no queues/jobs/scheduling
 - no notifications/delivery
 - no production trading/execution
-- no decision write route in this phase
+- no writes to base artifact markdown/json files

@@ -10,6 +10,12 @@ from urllib.parse import quote
 from fastapi import Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from future_system.operator_review_models import (
+    OperatorReviewDecision,
+    OperatorReviewDecisionUpdateInput,
+    OperatorReviewStatus,
+)
+
 from .artifact_reads import ArtifactRunDetail, ArtifactRunHistory
 from .render_templates import (
     render_detail_page,
@@ -33,6 +39,7 @@ TriggerReviewArtifactRunFn = Callable[..., object]
 ReadReviewArtifactRunDetailFn = Callable[..., ArtifactRunDetail]
 ResolveTargetSubdirectoryFn = Callable[..., tuple[Path, str]]
 DiscoverReviewArtifactHistoryFn = Callable[..., ArtifactRunHistory]
+UpdateOperatorReviewMetadataFn = Callable[..., object]
 
 
 def handle_list_runs_request(
@@ -219,6 +226,97 @@ def handle_view_run_request(
     )
 
 
+
+def handle_update_operator_review_request(
+    *,
+    root_status: ArtifactsRootStatus,
+    run_id: str,
+    review_status: str,
+    operator_decision: str | None,
+    review_notes_summary: str | None,
+    reviewer_identity: str | None,
+    updated_at_epoch_ns: int,
+    target_subdirectory: str | None,
+    update_operator_review_metadata_fn: UpdateOperatorReviewMetadataFn,
+    resolve_target_subdirectory_fn: ResolveTargetSubdirectoryFn,
+) -> Response:
+    """Handle one bounded local operator review metadata update request."""
+
+    if not root_status.is_usable or root_status.resolved_root is None:
+        return HTMLResponse(
+            content=render_error_page(
+                title="Review Update Error",
+                message=(
+                    "artifacts_root_unavailable: "
+                    f"{artifacts_root_unavailable_message(root_status=root_status)}"
+                ),
+                back_href="/",
+                back_label="Back to runs",
+            ),
+            status_code=422,
+        )
+
+    detail_root = root_status.resolved_root
+    normalized_target_subdirectory: str | None = None
+    if target_subdirectory is not None and target_subdirectory.strip():
+        try:
+            detail_root, normalized_target_subdirectory = resolve_target_subdirectory_fn(
+                artifacts_root=root_status.resolved_root,
+                target_subdirectory=target_subdirectory,
+                create=False,
+            )
+        except ValueError as exc:
+            return HTMLResponse(
+                content=render_error_page(
+                    title="Review Update Error",
+                    message=str(exc),
+                    back_href="/",
+                    back_label="Back to runs",
+                ),
+                status_code=422,
+            )
+
+    try:
+        update_input = OperatorReviewDecisionUpdateInput(
+            review_status=cast(OperatorReviewStatus, review_status),
+            operator_decision=cast(
+                OperatorReviewDecision | None,
+                _empty_to_none(operator_decision),
+            ),
+            review_notes_summary=_empty_to_none(review_notes_summary),
+            reviewer_identity=_empty_to_none(reviewer_identity),
+            updated_at_epoch_ns=updated_at_epoch_ns,
+        )
+        update_operator_review_metadata_fn(
+            target_directory=detail_root,
+            run_id=run_id,
+            update_input=update_input,
+        )
+    except ValueError as exc:
+        return HTMLResponse(
+            content=render_error_page(
+                title="Review Update Error",
+                message=str(exc),
+                back_href=f"/runs/{run_id}",
+                back_label="Back to run",
+            ),
+            status_code=422,
+        )
+
+    redirect_url = f"/runs/{run_id}?updated=1"
+    if normalized_target_subdirectory is not None:
+        encoded_subdirectory = quote(normalized_target_subdirectory, safe="")
+        redirect_url = f"{redirect_url}&target_subdirectory={encoded_subdirectory}"
+    return RedirectResponse(url=redirect_url, status_code=303)
+
+
+def _empty_to_none(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip()
+    return normalized if normalized else None
+
+
 def discover_history_for_root_status(
     *,
     root_status: ArtifactsRootStatus,
@@ -251,5 +349,6 @@ __all__ = [
     "discover_history_for_root_status",
     "handle_list_runs_request",
     "handle_trigger_run_request",
+    "handle_update_operator_review_request",
     "handle_view_run_request",
 ]

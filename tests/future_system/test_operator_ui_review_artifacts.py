@@ -115,7 +115,8 @@ def test_operator_ui_shows_pending_review_metadata_in_list_and_detail(tmp_path: 
     assert "Review Status</dt><dd>pending" in detail_response.text
     assert "Operator Decision</dt><dd>none" in detail_response.text
     assert "Operator Review Edit Form" in detail_response.text
-    assert "Update Review Decision (disabled until 21D)" in detail_response.text
+    assert "Update Review Decision" in detail_response.text
+    assert "operator-review/update" in detail_response.text
 
 
 def test_operator_ui_shows_decided_review_metadata_in_list_and_detail(tmp_path: Path) -> None:
@@ -539,6 +540,144 @@ def test_operator_ui_handles_configured_but_unreadable_root_state(
         assert "Triggering is unavailable" in response.text
     finally:
         artifacts_root.chmod(0o700)
+
+
+
+def test_operator_ui_post_updates_existing_review_metadata_to_decided(
+    tmp_path: Path,
+) -> None:
+    run_id = _write_success_run(tmp_path)
+    _write_operator_review_metadata(
+        tmp_path,
+        run_id=run_id,
+        status="success",
+        review_status="pending",
+        updated_at_epoch_ns=1_800_000_000_000_000_000,
+    )
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.post(
+        f"/runs/{run_id}/operator-review/update",
+        data={
+            "review_status": "decided",
+            "operator_decision": "approve",
+            "review_notes_summary": "Approved for local review handoff.",
+            "reviewer_identity": "operator_c",
+            "updated_at_epoch_ns": "1900000000000000000",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/runs/{run_id}?updated=1"
+
+    payload = json.loads((tmp_path / f"{run_id}.operator_review.json").read_text())
+    assert payload["review_status"] == "decided"
+    assert payload["operator_decision"] == "approve"
+    assert payload["review_notes_summary"] == "Approved for local review handoff."
+    assert payload["reviewer_identity"] == "operator_c"
+    assert payload["decided_at_epoch_ns"] == 1_900_000_000_000_000_000
+    assert payload["updated_at_epoch_ns"] == 1_900_000_000_000_000_000
+    assert payload["artifact"]["run_id"] == run_id
+
+    detail = client.get(f"/runs/{run_id}")
+    assert detail.status_code == 200
+    assert "Review Status</dt><dd>decided" in detail.text
+    assert "Operator Decision</dt><dd>approve" in detail.text
+    assert "Approved for local review handoff." in detail.text
+    assert "operator_c" in detail.text
+
+
+def test_operator_ui_post_updates_existing_review_metadata_back_to_pending(
+    tmp_path: Path,
+) -> None:
+    run_id = _write_failure_run(tmp_path, failure_stage="analyst_timeout")
+    _write_operator_review_metadata(
+        tmp_path,
+        run_id=run_id,
+        status="failed",
+        failure_stage="analyst_timeout",
+        review_status="decided",
+        operator_decision="needs_follow_up",
+        decided_at_epoch_ns=1_800_000_000_000_000_000,
+        updated_at_epoch_ns=1_800_000_000_000_000_001,
+    )
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.post(
+        f"/runs/{run_id}/operator-review/update",
+        data={
+            "review_status": "pending",
+            "operator_decision": "",
+            "review_notes_summary": "",
+            "reviewer_identity": "",
+            "updated_at_epoch_ns": "1900000000000000000",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    payload = json.loads((tmp_path / f"{run_id}.operator_review.json").read_text())
+    assert payload["review_status"] == "pending"
+    assert payload["operator_decision"] is None
+    assert payload["decided_at_epoch_ns"] is None
+    assert payload["updated_at_epoch_ns"] == 1_900_000_000_000_000_000
+    assert payload["artifact"]["failure_stage"] == "analyst_timeout"
+
+
+def test_operator_ui_post_rejects_missing_review_metadata_without_touching_artifact(
+    tmp_path: Path,
+) -> None:
+    run_id = _write_success_run(tmp_path)
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.post(
+        f"/runs/{run_id}/operator-review/update",
+        data={
+            "review_status": "decided",
+            "operator_decision": "approve",
+            "updated_at_epoch_ns": "1900000000000000000",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "Review Update Error" in response.text
+    assert "operator_review_metadata_missing" in response.text
+    assert not (tmp_path / f"{run_id}.operator_review.json").exists()
+
+
+def test_operator_ui_post_preserves_target_subdirectory_redirect(
+    tmp_path: Path,
+) -> None:
+    target_root = tmp_path / "operator_runs"
+    target_root.mkdir()
+    run_id = _write_success_run(target_root)
+    _write_operator_review_metadata(
+        target_root,
+        run_id=run_id,
+        status="success",
+        review_status="pending",
+    )
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.post(
+        f"/runs/{run_id}/operator-review/update",
+        data={
+            "review_status": "decided",
+            "operator_decision": "reject",
+            "updated_at_epoch_ns": "1900000000000000000",
+            "target_subdirectory": "operator_runs",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == (
+        f"/runs/{run_id}?updated=1&target_subdirectory=operator_runs"
+    )
+    payload = json.loads((target_root / f"{run_id}.operator_review.json").read_text())
+    assert payload["operator_decision"] == "reject"
+
 
 
 def _write_success_run(root: Path) -> str:

@@ -253,7 +253,10 @@ def render_detail_page(
             f"showing first {DETAIL_JSON_MAX_CHARS} of {json_total_chars} characters.</p>"
         )
     operator_review_metadata_block = _render_operator_review_metadata_section(detail=detail)
-    operator_review_edit_form_block = _render_operator_review_edit_form_section(detail=detail)
+    operator_review_edit_form_block = _render_operator_review_edit_form_section(
+        detail=detail,
+        target_subdirectory=target_subdirectory,
+    )
     created_block = ""
     if created_via_trigger:
         created_block = (
@@ -419,7 +422,11 @@ def _render_operator_review_metadata_section(*, detail: ArtifactRunDetail) -> st
 
 
 
-def _render_operator_review_edit_form_section(*, detail: ArtifactRunDetail) -> str:
+def _render_operator_review_edit_form_section(
+    *,
+    detail: ArtifactRunDetail,
+    target_subdirectory: str | None,
+) -> str:
     record = detail.operator_review_decision
     if record is None:
         reason = "companion review metadata is missing"
@@ -447,12 +454,19 @@ def _render_operator_review_edit_form_section(*, detail: ArtifactRunDetail) -> s
     decision_options_html = "".join(decision_options)
     notes_value = record.review_notes_summary or ""
     reviewer_value = record.reviewer_identity or ""
+    next_updated_at_epoch_ns = _next_operator_review_updated_at_epoch_ns(detail=detail)
+    target_subdirectory_input = target_subdirectory or ""
 
     return (
         "<section class=\"section\">"
         "<h2>Operator Review Edit Form</h2>"
-        "<p>Preview only: decision update handling is not enabled in this phase.</p>"
-        "<form method=\"post\" action=\"#\">"
+        "<p>Update one local companion metadata file for this run.</p>"
+        "<form method=\"post\" "
+        f"action=\"/runs/{html.escape(detail.run.run_id)}/operator-review/update\">"
+        "<input type=\"hidden\" name=\"updated_at_epoch_ns\" "
+        f"value=\"{next_updated_at_epoch_ns}\">"
+        "<input type=\"hidden\" name=\"target_subdirectory\" "
+        f"value=\"{html.escape(target_subdirectory_input)}\">"
         "<div class=\"form-grid\">"
         "<div class=\"form-field\"><label for=\"review_status\">Review Status</label>"
         "<select id=\"review_status\" name=\"review_status\">"
@@ -470,9 +484,20 @@ def _render_operator_review_edit_form_section(*, detail: ArtifactRunDetail) -> s
         "<input id=\"reviewer_identity\" name=\"reviewer_identity\" type=\"text\" "
         f"value=\"{html.escape(reviewer_value)}\"></div>"
         "</div><div class=\"form-actions\">"
-        "<button type=\"submit\" disabled>Update Review Decision (disabled until 21D)</button>"
+        "<button type=\"submit\">Update Review Decision</button>"
         "</div></form></section>"
     )
+
+
+def _next_operator_review_updated_at_epoch_ns(*, detail: ArtifactRunDetail) -> int:
+    record = detail.operator_review_decision
+    candidates = [detail.run.updated_at_epoch_ns]
+    if record is not None:
+        if record.updated_at_epoch_ns is not None:
+            candidates.append(record.updated_at_epoch_ns)
+        if record.decided_at_epoch_ns is not None:
+            candidates.append(record.decided_at_epoch_ns)
+    return max(candidates) + 1
 
 
 def _failure_stage_description(

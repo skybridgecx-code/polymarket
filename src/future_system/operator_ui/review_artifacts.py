@@ -12,6 +12,7 @@ from fastapi.responses import HTMLResponse
 
 from future_system.context_bundle.models import OpportunityContextBundle
 from future_system.live_analyst.errors import LiveAnalystTimeoutError, LiveAnalystTransportError
+from future_system.operator_review_models import update_existing_operator_review_metadata_companion
 from future_system.reasoning_contracts.models import ReasoningInputPacket, RenderedPromptPacket
 from future_system.review_entrypoints.entry import run_analysis_and_write_review_artifacts
 from future_system.runtime.protocol import AnalystProtocol, AnalystResponsePayload
@@ -44,6 +45,9 @@ from .route_handlers import (
 )
 from .route_handlers import (
     handle_trigger_run_request as _handle_trigger_run_request,
+)
+from .route_handlers import (
+    handle_update_operator_review_request as _handle_update_operator_review_request,
 )
 from .route_handlers import (
     handle_view_run_request as _handle_view_run_request,
@@ -105,6 +109,30 @@ def create_review_artifacts_operator_app(
             trigger_analyst_mode_choices=config.trigger_analyst_mode_choices,
             trigger_review_artifact_run_fn=dependencies.trigger_review_artifact_run_fn,
             discover_review_artifact_history_fn=dependencies.discover_review_artifact_history_fn,
+        )
+
+
+    @app.post("/runs/{run_id}/operator-review/update")
+    async def update_operator_review(
+        run_id: str,
+        review_status: str = Form(...),
+        operator_decision: str | None = Form(None),
+        review_notes_summary: str | None = Form(None),
+        reviewer_identity: str | None = Form(None),
+        updated_at_epoch_ns: int = Form(...),
+        target_subdirectory: str | None = Form(None),
+    ) -> Response:
+        return _handle_update_operator_review_request(
+            root_status=root_status,
+            run_id=run_id,
+            review_status=review_status,
+            operator_decision=operator_decision,
+            review_notes_summary=review_notes_summary,
+            reviewer_identity=reviewer_identity,
+            updated_at_epoch_ns=updated_at_epoch_ns,
+            target_subdirectory=target_subdirectory,
+            update_operator_review_metadata_fn=update_existing_operator_review_metadata_companion,
+            resolve_target_subdirectory_fn=dependencies.resolve_target_subdirectory_fn,
         )
 
     @app.get("/runs/{run_id}", response_class=HTMLResponse)
