@@ -1,22 +1,22 @@
-# Current Phase — 22E Editable Workflow Verification Closeout
+# Current Phase — 23A Operator UI Copy/UX Polish Scope Lock
 
 ## Branch
 
-`phase-22e-editable-workflow-verification-closeout`
+`phase-23a-operator-ui-copy-ux-polish-scope-lock`
 
 ## Objective
 
-Close out the editable workflow runbook/manual-verification docs track.
+Lock a bounded copy/UX polish track for the local future_system operator UI.
 
 ## Scope
 
-- closeout documentation
+- scope-lock documentation
 - phase tracker update
 
 ## Explicit Non-Scope
 
 - no `src/polymarket_arb/*` changes
-- no `src/future_system/*` changes
+- no runtime behavior changes
 - no tests changed
 - no DB
 - no queues/jobs/scheduling
