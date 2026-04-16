@@ -1,23 +1,23 @@
-# Current Phase — 24E Accessibility Test Hardening
+# Current Phase — 24F Layout/Accessibility Closeout
 
 ## Branch
 
-`phase-24e-accessibility-test-hardening`
+`phase-24f-layout-accessibility-closeout`
 
 ## Objective
 
-Confirm and document focused test coverage for local operator UI layout/accessibility structure.
+Close out the local operator UI layout/accessibility polish track.
 
 ## Scope
 
-- accessibility/layout test coverage checkpoint
-- phase documentation
+- closeout documentation
+- phase tracker update
 
 ## Explicit Non-Scope
 
 - no `src/polymarket_arb/*` changes
-- no `src/future_system/*` behavior changes
-- no runtime behavior changes
+- no `src/future_system/*` changes
+- no tests changed
 - no DB
 - no queues/jobs/scheduling
 - no notifications/delivery
