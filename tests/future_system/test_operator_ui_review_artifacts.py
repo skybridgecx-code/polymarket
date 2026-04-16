@@ -59,6 +59,11 @@ def test_operator_ui_copy_contract_for_local_review_workflow(tmp_path: Path) -> 
     assert "Decision Notes" in detail_response.text
     assert "Reviewer" in detail_response.text
     assert "Save Local Decision" in detail_response.text
+    assert "<fieldset><legend>Decision update fields</legend>" in detail_response.text
+    assert "aria-describedby=\"review_status_help\"" in detail_response.text
+    assert "aria-describedby=\"operator_decision_help\"" in detail_response.text
+    assert "aria-describedby=\"review_notes_summary_help\"" in detail_response.text
+    assert "aria-describedby=\"reviewer_identity_help\"" in detail_response.text
     assert "Back to local review runs" in detail_response.text
 
 

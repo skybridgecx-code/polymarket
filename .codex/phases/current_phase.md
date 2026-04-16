@@ -1,16 +1,16 @@
-# Current Phase — 24C List Page Layout Polish
+# Current Phase — 24D Detail/Edit Page Layout Polish
 
 ## Branch
 
-`phase-24c-list-page-layout-polish`
+`phase-24d-detail-edit-page-layout-polish`
 
 ## Objective
 
-Improve local operator UI list-page layout/accessibility without changing behavior.
+Improve local operator UI detail/edit page layout/accessibility without changing behavior.
 
 ## Scope
 
-- list page rendered structure
+- detail/edit page rendered structure
 - focused rendered-structure tests
 - phase documentation
 
@@ -18,6 +18,7 @@ Improve local operator UI list-page layout/accessibility without changing behavi
 
 - no `src/polymarket_arb/*` changes
 - no new runtime behavior
+- no POST/update behavior changes
 - no DB
 - no queues/jobs/scheduling
 - no notifications/delivery
