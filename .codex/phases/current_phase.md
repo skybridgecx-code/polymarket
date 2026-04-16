@@ -1,23 +1,23 @@
-# Current Phase — 24B Layout/Accessibility Inventory
+# Current Phase — 24C List Page Layout Polish
 
 ## Branch
 
-`phase-24b-layout-accessibility-inventory`
+`phase-24c-list-page-layout-polish`
 
 ## Objective
 
-Inventory current local operator UI layout/accessibility surfaces before bounded polish.
+Improve local operator UI list-page layout/accessibility without changing behavior.
 
 ## Scope
 
-- layout/accessibility inventory documentation
-- phase tracker update
+- list page rendered structure
+- focused rendered-structure tests
+- phase documentation
 
 ## Explicit Non-Scope
 
 - no `src/polymarket_arb/*` changes
-- no `src/future_system/*` behavior changes
-- no tests changed
+- no new runtime behavior
 - no DB
 - no queues/jobs/scheduling
 - no notifications/delivery

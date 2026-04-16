@@ -45,6 +45,10 @@ def test_operator_ui_copy_contract_for_local_review_workflow(tmp_path: Path) -> 
     assert "Local Review Runs" in list_response.text
     assert "Create Local Review Run" in list_response.text
     assert "Artifacts Root Status" in list_response.text
+    assert "<caption>Local review runs</caption>" in list_response.text
+    assert "aria-describedby=\"context_source_help\"" in list_response.text
+    assert "aria-describedby=\"target_subdirectory_help\"" in list_response.text
+    assert "aria-describedby=\"analyst_mode_help\"" in list_response.text
 
     assert detail_response.status_code == 200
     assert "Local Review Run Detail" in detail_response.text
@@ -210,6 +214,7 @@ def test_operator_ui_bounds_malformed_review_metadata_without_breaking_artifact_
     assert "operator_review_metadata_invalid" in list_response.text
     assert "No review metadata" in list_response.text
     assert "Run File Issues" in list_response.text
+    assert "<caption>Run file issues</caption>" in list_response.text
 
     assert detail_response.status_code == 200
     assert "Operator Decision Review" in detail_response.text
@@ -421,6 +426,7 @@ def test_operator_ui_trigger_fails_safely_for_invalid_context_input(tmp_path: Pa
 
     assert response.status_code == 422
     assert "Trigger Error" in response.text
+    assert "role=\"alert\"" in response.text
     assert "Invalid trigger input:" in response.text
     assert "context_source file does not exist." in response.text
     assert "Local Review Runs" in response.text
