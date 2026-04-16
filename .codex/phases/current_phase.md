@@ -1,24 +1,10 @@
-# Current Phase — 24F Layout/Accessibility Closeout
+# Current Phase
+
+## Phase
+25A — local operator UI evidence / smoke-capture scope lock
 
 ## Branch
+phase-25a-local-operator-ui-evidence-scope-lock
 
-`phase-24f-layout-accessibility-closeout`
-
-## Objective
-
-Close out the local operator UI layout/accessibility polish track.
-
-## Scope
-
-- closeout documentation
-- phase tracker update
-
-## Explicit Non-Scope
-
-- no `src/polymarket_arb/*` changes
-- no `src/future_system/*` changes
-- no tests changed
-- no DB
-- no queues/jobs/scheduling
-- no notifications/delivery
-- no production trading/execution
+## Intent
+Docs-only scope lock for final evidence capture and manual smoke-check artifacts for the shipped future_system local operator UI workflow. No runtime behavior changes.
