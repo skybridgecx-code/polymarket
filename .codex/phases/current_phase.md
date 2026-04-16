@@ -1,16 +1,16 @@
-# Current Phase — 21F Editable Decision Workflow Closeout
+# Current Phase — 22A Editable Workflow Runbook Verification Scope Lock
 
 ## Branch
 
-`phase-21f-editable-decision-workflow-closeout`
+`phase-22a-editable-workflow-runbook-verification-scope-lock`
 
 ## Objective
 
-Close out the local editable operator decision workflow track as a bounded artifact-file-based checkpoint.
+Lock the next docs/manual-verification track for the local editable operator decision workflow.
 
 ## Scope
 
-- closeout documentation
+- scope-lock documentation
 - phase tracker update
 
 ## Explicit Non-Scope
