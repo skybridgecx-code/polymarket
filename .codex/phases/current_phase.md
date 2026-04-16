@@ -1,16 +1,16 @@
-# Current Phase — 22C Editable Workflow Manual Verification Checklist
+# Current Phase — 22D Editable Workflow Troubleshooting Notes
 
 ## Branch
 
-`phase-22c-editable-workflow-manual-verification-checklist`
+`phase-22d-editable-workflow-troubleshooting-notes`
 
 ## Objective
 
-Add a manual verification checklist for the local editable operator decision workflow.
+Add operator troubleshooting and recovery notes for the local editable decision workflow.
 
 ## Scope
 
-- manual verification documentation
+- troubleshooting documentation
 - phase tracker update
 
 ## Explicit Non-Scope
