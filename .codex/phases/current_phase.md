@@ -1,16 +1,16 @@
-# Current Phase — 22A Editable Workflow Runbook Verification Scope Lock
+# Current Phase — 22B Editable Workflow Runbook Polish
 
 ## Branch
 
-`phase-22a-editable-workflow-runbook-verification-scope-lock`
+`phase-22b-editable-workflow-runbook-polish`
 
 ## Objective
 
-Lock the next docs/manual-verification track for the local editable operator decision workflow.
+Update the local operator UI runbook with exact editable decision workflow steps.
 
 ## Scope
 
-- scope-lock documentation
+- `docs/FUTURE_SYSTEM_OPERATOR_UI_LOCAL_RUNBOOK.md`
 - phase tracker update
 
 ## Explicit Non-Scope

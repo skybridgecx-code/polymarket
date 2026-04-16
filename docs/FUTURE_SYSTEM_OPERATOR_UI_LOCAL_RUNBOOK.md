@@ -94,6 +94,41 @@ If `--initialize-operator-review` is enabled and `X.operator_review.json` alread
 fails with a deterministic validation error and does not overwrite the existing companion metadata
 file.
 
+## Editable Operator Review Workflow
+
+The editable decision workflow is local and file-based.
+
+Prerequisite:
+
+- the run must already have a companion metadata file named `X.operator_review.json`
+- use `--initialize-operator-review` during CLI generation to create it automatically
+
+Editable fields:
+
+- `review_status`
+- `operator_decision`
+- `review_notes_summary`
+- `reviewer_identity`
+
+Manual flow:
+
+1. Generate artifacts with companion review metadata:
+   python -m future_system.cli.review_artifacts --context-source /absolute/path/context_bundle.json --target-directory /absolute/path/review-artifacts --analyst-mode stub --initialize-operator-review
+2. Launch the operator UI with `FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT` pointing at the same artifacts directory.
+3. Open `http://127.0.0.1:8000/runs/X`.
+4. Use Operator Review Edit Form to update the review metadata.
+5. Submit the form.
+6. Confirm the detail page redirects back and shows the updated values.
+7. Confirm only `/absolute/path/review-artifacts/X.operator_review.json` changed.
+
+Important behavior:
+
+- update writes only `X.operator_review.json`
+- base artifact `.json` and `.md` files are not modified
+- missing companion metadata fails with `operator_review_metadata_missing`
+- malformed companion metadata fails with a bounded operator error page
+- target subdirectory context is preserved when provided
+
 ## Launch The Operator UI (Standalone)
 
 Use the app factory export with Uvicorn factory mode:
