@@ -1,22 +1,22 @@
-# Current Phase — 23A Operator UI Copy/UX Polish Scope Lock
+# Current Phase — 23B Operator UI Copy Inventory
 
 ## Branch
 
-`phase-23a-operator-ui-copy-ux-polish-scope-lock`
+`phase-23b-operator-ui-copy-inventory`
 
 ## Objective
 
-Lock a bounded copy/UX polish track for the local future_system operator UI.
+Inventory current local operator UI copy surfaces before bounded copy/UX polish.
 
 ## Scope
 
-- scope-lock documentation
+- copy inventory documentation
 - phase tracker update
 
 ## Explicit Non-Scope
 
 - no `src/polymarket_arb/*` changes
-- no runtime behavior changes
+- no `src/future_system/*` behavior changes
 - no tests changed
 - no DB
 - no queues/jobs/scheduling
