@@ -1,23 +1,23 @@
-# Current Phase — 23B Operator UI Copy Inventory
+# Current Phase — 23C List/Detail Page Copy Polish
 
 ## Branch
 
-`phase-23b-operator-ui-copy-inventory`
+`phase-23c-list-detail-page-copy-polish`
 
 ## Objective
 
-Inventory current local operator UI copy surfaces before bounded copy/UX polish.
+Polish local operator UI list/detail page copy without expanding behavior.
 
 ## Scope
 
-- copy inventory documentation
-- phase tracker update
+- operator UI render template copy
+- focused rendered-copy tests
+- phase documentation
 
 ## Explicit Non-Scope
 
 - no `src/polymarket_arb/*` changes
-- no `src/future_system/*` behavior changes
-- no tests changed
+- no new runtime behavior
 - no DB
 - no queues/jobs/scheduling
 - no notifications/delivery

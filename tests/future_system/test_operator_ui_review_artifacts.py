@@ -38,7 +38,7 @@ def test_operator_ui_lists_success_and_failure_runs_with_stage_context(tmp_path:
 
     assert response.status_code == 200
     body = response.text
-    assert "Review Artifacts" in body
+    assert "Local Review Runs" in body
     assert older_run in body
     assert newer_run in body
     assert body.index(newer_run) < body.index(older_run)
@@ -55,7 +55,7 @@ def test_operator_ui_detail_shows_markdown_and_json_content(tmp_path: Path) -> N
 
     assert response.status_code == 200
     body = response.text
-    assert "Review Artifact Detail" in body
+    assert "Local Review Run Detail" in body
     assert run_id in body
     assert "theme_ctx_strong" in body
     assert "reasoning_parse" in body
@@ -65,12 +65,12 @@ def test_operator_ui_detail_shows_markdown_and_json_content(tmp_path: Path) -> N
     assert "FAILED (reasoning_parse)" in body
     assert "Run Metadata" in body
     assert "Outcome Summary" in body
-    assert "Failure Context" in body
+    assert "Failure Explanation" in body
     assert "reasoning payload parsing failed" in body
     assert "Artifact Paths" in body
-    assert "Artifact Content" in body
-    assert "Markdown Content" in body
-    assert "JSON Content" in body
+    assert "Artifact Evidence" in body
+    assert "Markdown Evidence" in body
+    assert "JSON Evidence" in body
 
 
 def test_operator_ui_artifact_without_review_metadata_renders_normally(tmp_path: Path) -> None:
@@ -82,11 +82,11 @@ def test_operator_ui_artifact_without_review_metadata_renders_normally(tmp_path:
 
     assert list_response.status_code == 200
     assert run_id in list_response.text
-    assert "no-review-metadata" in list_response.text
+    assert "No review metadata" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Operator Review Metadata" in detail_response.text
-    assert "no-review-metadata" in detail_response.text
+    assert "Operator Decision Review" in detail_response.text
+    assert "No review metadata" in detail_response.text
     assert "Operator Review Edit Form" in detail_response.text
     assert "Edit form unavailable: companion review metadata is missing." in detail_response.text
     assert "No decision write route is enabled in this phase." in detail_response.text
@@ -111,7 +111,7 @@ def test_operator_ui_shows_pending_review_metadata_in_list_and_detail(tmp_path: 
     assert "pending" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Operator Review Metadata" in detail_response.text
+    assert "Operator Decision Review" in detail_response.text
     assert "Review Status</dt><dd>pending" in detail_response.text
     assert "Operator Decision</dt><dd>none" in detail_response.text
     assert "Operator Review Edit Form" in detail_response.text
@@ -170,12 +170,12 @@ def test_operator_ui_bounds_malformed_review_metadata_without_breaking_artifact_
     assert list_response.status_code == 200
     assert run_id in list_response.text
     assert "operator_review_metadata_invalid" in list_response.text
-    assert "no-review-metadata" in list_response.text
-    assert "Run Issues" in list_response.text
+    assert "No review metadata" in list_response.text
+    assert "Run File Issues" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Operator Review Metadata" in detail_response.text
-    assert "no-review-metadata" in detail_response.text
+    assert "Operator Decision Review" in detail_response.text
+    assert "No review metadata" in detail_response.text
     assert "operator_review_metadata_invalid" in detail_response.text
 
 
@@ -203,7 +203,7 @@ def test_operator_ui_does_not_read_review_metadata_outside_configured_root(
     assert "resolves outside artifacts root" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Operator Review Metadata" in detail_response.text
+    assert "Operator Decision Review" in detail_response.text
     assert "operator_review_metadata_invalid" in detail_response.text
     assert "resolves outside artifacts root" in detail_response.text
 
@@ -247,7 +247,7 @@ def test_operator_ui_list_shows_explicit_run_issues_for_invalid_files(tmp_path: 
     response = client.get("/")
 
     assert response.status_code == 200
-    assert "Run Issues" in response.text
+    assert "Run File Issues" in response.text
     assert "bad-run" in response.text
     assert "json_invalid" in response.text
     assert "markdown_missing" in response.text
@@ -289,7 +289,7 @@ def test_operator_ui_trigger_success_redirects_to_run_detail_and_writes_inside_r
 
     detail = client.get(location)
     assert detail.status_code == 200
-    assert "Review Artifact Detail" in detail.text
+    assert "Local Review Run Detail" in detail.text
     assert "Trigger Result Summary" in detail.text
     assert "Run created via trigger and loaded." in detail.text
     assert "Run Outcome" in detail.text
@@ -343,7 +343,7 @@ def test_operator_ui_trigger_failure_preserves_stage_and_handoff(
     detail = client.get(location)
     assert detail.status_code == 200
     assert "Outcome Summary" in detail.text
-    assert "Failure Context" in detail.text
+    assert "Failure Explanation" in detail.text
     assert expected_failure_stage in detail.text
     assert "failed" in detail.text
 
@@ -385,7 +385,7 @@ def test_operator_ui_trigger_fails_safely_for_invalid_context_input(tmp_path: Pa
     assert "Trigger Error" in response.text
     assert "Invalid trigger input:" in response.text
     assert "context_source file does not exist." in response.text
-    assert "Review Artifacts" in response.text
+    assert "Local Review Runs" in response.text
 
 
 def test_operator_ui_reports_configured_readable_root_status(tmp_path: Path) -> None:

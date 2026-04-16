@@ -85,18 +85,21 @@ def render_list_page(
     for run in history.runs:
         status_badge = _render_status_badge(status=run.status, failure_stage=run.failure_stage)
         failure_stage = run.failure_stage if run.failure_stage is not None else "none"
+        review_status_display = _review_status_display_label(run.review_status_label)
         rows.append(
             "<tr>"
             f"<td><a href=\"/runs/{html.escape(run.run_id)}\">{html.escape(run.run_id)}</a></td>"
             f"<td>{html.escape(run.theme_id)}</td>"
             f"<td>{status_badge}</td>"
             f"<td>{html.escape(failure_stage)}</td>"
-            f"<td>{html.escape(run.review_status_label)}</td>"
+            f"<td>{html.escape(review_status_display)}</td>"
             f"<td>{html.escape(run.updated_at_label)}</td>"
             "</tr>"
         )
 
-    table_rows = "".join(rows) if rows else "<tr><td colspan=\"6\">No runs found.</td></tr>"
+    table_rows = "".join(rows)
+    if not table_rows:
+        table_rows = "<tr><td colspan=\"6\">No local review runs found.</td></tr>"
     error_block = ""
     if trigger_error is not None:
         error_block = (
@@ -116,8 +119,8 @@ def render_list_page(
     issues_block = ""
     if issue_rows:
         issues_block = (
-            "<h2>Run Issues</h2>"
-            "<p>Some run files are incomplete or invalid and were safely skipped from details.</p>"
+            "<h2>Run File Issues</h2>"
+            "<p>Some local run files are incomplete or invalid. Valid runs are still available.</p>"
             "<table><thead><tr><th>Run</th><th>Issue</th><th>Message</th><th>JSON Path</th>"
             f"</tr></thead><tbody>{''.join(issue_rows)}</tbody></table>"
         )
@@ -161,11 +164,11 @@ def render_list_page(
 
     return (
         "<!doctype html>"
-        "<html><head><meta charset=\"utf-8\"><title>Review Artifacts</title>"
+        "<html><head><meta charset=\"utf-8\"><title>Local Review Runs</title>"
         f"<style>{LIST_PAGE_CSS}</style></head><body>"
-        "<h1>Review Artifacts</h1>"
+        "<h1>Local Review Runs</h1>"
         f"{root_block}"
-        "<h2>Trigger Run</h2>"
+        "<h2>Create Local Review Run</h2>"
         "<form action=\"/runs/trigger\" method=\"post\">"
         "<div class=\"form-grid\">"
         "<div class=\"form-field\">"
@@ -173,7 +176,7 @@ def render_list_page(
         "<input id=\"context_source\" type=\"text\" name=\"context_source\" "
         "placeholder=\"/absolute/path/context_bundle.json\" "
         f"value=\"{context_source_input}\" required{disable_trigger_attr}>"
-        "<p class=\"help\">Provide an existing OpportunityContextBundle JSON file path.</p>"
+        "<p class=\"help\">Provide an existing local OpportunityContextBundle JSON file path.</p>"
         "</div>"
         "<div class=\"form-field\">"
         "<label for=\"target_subdirectory\">Target Subdirectory</label>"
@@ -280,18 +283,18 @@ def render_detail_page(
 
     return (
         "<!doctype html>"
-        "<html><head><meta charset=\"utf-8\"><title>Review Artifact Detail</title>"
+        "<html><head><meta charset=\"utf-8\"><title>Local Review Run Detail</title>"
         f"<style>{DETAIL_PAGE_CSS}</style></head><body>"
         "<p><a href=\"/\">Back to runs</a></p>"
         f"{created_block}"
-        "<h1>Review Artifact Detail</h1>"
+        "<h1>Local Review Run Detail</h1>"
         f"<section class=\"section outcome {outcome_tone_class}\">"
         "<h2>Outcome Summary</h2>"
         f"<p class=\"outcome-label\">{html.escape(outcome_label_text)}</p>"
         "<dl class=\"meta-grid\">"
         f"<dt>Status Label</dt><dd>{html.escape(detail.run.status_label)}</dd>"
         f"<dt>Failure Stage</dt><dd>{html.escape(failure_stage)}</dd>"
-        f"<dt>Failure Context</dt><dd>{html.escape(failure_stage_description)}</dd>"
+        f"<dt>Failure Explanation</dt><dd>{html.escape(failure_stage_description)}</dd>"
         "</dl>"
         "</section>"
         "<section class=\"section\">"
@@ -301,7 +304,9 @@ def render_detail_page(
         f"<dt>Theme ID</dt><dd>{html.escape(detail.run.theme_id)}</dd>"
         f"<dt>Status</dt><dd>{status_badge}</dd>"
         f"<dt>Failure Stage</dt><dd>{html.escape(failure_stage)}</dd>"
-        f"<dt>Review Status</dt><dd>{html.escape(detail.run.review_status_label)}</dd>"
+        "<dt>Review Status</dt><dd>"
+        f"{html.escape(_review_status_display_label(detail.run.review_status_label))}"
+        "</dd>"
         f"<dt>Updated</dt><dd>{html.escape(detail.run.updated_at_label)}</dd>"
         "</dl>"
         "</section>"
@@ -321,11 +326,11 @@ def render_detail_page(
         "</dl>"
         "</section>"
         "<section class=\"section\">"
-        "<h2>Artifact Content</h2>"
-        "<h3>Markdown Content</h3>"
+        "<h2>Artifact Evidence</h2>"
+        "<h3>Markdown Evidence</h3>"
         f"{markdown_notice}"
         f"<pre>{markdown_block}</pre>"
-        "<h3>JSON Content</h3>"
+        "<h3>JSON Evidence</h3>"
         f"{json_notice}"
         f"<pre>{json_block}</pre>"
         "</section>"
@@ -382,9 +387,11 @@ def _render_operator_review_metadata_section(*, detail: ArtifactRunDetail) -> st
             issue_block = f"<p>{html.escape(detail.operator_review_issue)}</p>"
         return (
             "<section class=\"section\">"
-            "<h2>Operator Review Metadata</h2>"
+            "<h2>Operator Decision Review</h2>"
             "<dl class=\"meta-grid\">"
-            f"<dt>Review Status</dt><dd>{html.escape(detail.run.review_status_label)}</dd>"
+            "<dt>Review Status</dt><dd>"
+        f"{html.escape(_review_status_display_label(detail.run.review_status_label))}"
+        "</dd>"
             "<dt>Operator Decision</dt><dd>none</dd>"
             "<dt>Review Notes Summary</dt><dd>none</dd>"
             "<dt>Reviewer Identity</dt><dd>none</dd>"
@@ -408,7 +415,7 @@ def _render_operator_review_metadata_section(*, detail: ArtifactRunDetail) -> st
     )
     return (
         "<section class=\"section\">"
-        "<h2>Operator Review Metadata</h2>"
+        "<h2>Operator Decision Review</h2>"
         "<dl class=\"meta-grid\">"
         f"<dt>Review Status</dt><dd>{html.escape(record.review_status)}</dd>"
         f"<dt>Operator Decision</dt><dd>{html.escape(operator_decision)}</dd>"
@@ -498,6 +505,12 @@ def _next_operator_review_updated_at_epoch_ns(*, detail: ArtifactRunDetail) -> i
         if record.decided_at_epoch_ns is not None:
             candidates.append(record.decided_at_epoch_ns)
     return max(candidates) + 1
+
+
+def _review_status_display_label(value: str) -> str:
+    if value == "no-review-metadata":
+        return "No review metadata"
+    return value
 
 
 def _failure_stage_description(
