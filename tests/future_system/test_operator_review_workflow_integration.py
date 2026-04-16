@@ -53,8 +53,8 @@ def test_cli_default_path_writes_no_companion_metadata_and_ui_shows_no_review_st
     assert "No review metadata" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Operator Decision Review" in detail_response.text
-    assert "Review Status</dt><dd>No review metadata" in detail_response.text
+    assert "Decision Review" in detail_response.text
+    assert "Decision Status</dt><dd>No review metadata" in detail_response.text
 
 
 def test_cli_opt_in_writes_pending_companion_and_ui_renders_pending(
@@ -95,9 +95,9 @@ def test_cli_opt_in_writes_pending_companion_and_ui_renders_pending(
     assert "pending" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Operator Decision Review" in detail_response.text
-    assert "Review Status</dt><dd>pending" in detail_response.text
-    assert "Operator Decision</dt><dd>none" in detail_response.text
+    assert "Decision Review" in detail_response.text
+    assert "Decision Status</dt><dd>pending" in detail_response.text
+    assert "Decision</dt><dd>none" in detail_response.text
 
 
 def test_cli_failure_opt_in_preserves_failure_stage_through_file_and_ui(
@@ -139,7 +139,7 @@ def test_cli_failure_opt_in_preserves_failure_stage_through_file_and_ui(
 
     assert detail_response.status_code == 200
     assert "FAILED (reasoning_parse)" in detail_response.text
-    assert "Review Status</dt><dd>pending" in detail_response.text
+    assert "Decision Status</dt><dd>pending" in detail_response.text
     assert "reasoning_parse" in detail_response.text
 
 
@@ -209,7 +209,7 @@ def test_ui_bounds_malformed_companion_metadata_non_fatal_after_cli_generation(
     assert "No review metadata" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Operator Decision Review" in detail_response.text
+    assert "Decision Review" in detail_response.text
     assert "operator_review_metadata_invalid" in detail_response.text
     assert "No review metadata" in detail_response.text
 
@@ -293,7 +293,7 @@ def test_cli_initialized_metadata_can_be_updated_through_operator_ui(
     client = TestClient(create_operator_ui_app(artifacts_root=target_directory))
     detail_before = client.get(f"/runs/{run_id}")
     assert detail_before.status_code == 200
-    assert "Operator Review Edit Form" in detail_before.text
+    assert "Update Decision" in detail_before.text
     assert "operator-review/update" in detail_before.text
 
     update_response = client.post(
@@ -325,8 +325,8 @@ def test_cli_initialized_metadata_can_be_updated_through_operator_ui(
 
     detail_after = client.get(f"/runs/{run_id}")
     assert detail_after.status_code == 200
-    assert "Review Status</dt><dd>decided" in detail_after.text
-    assert "Operator Decision</dt><dd>approve" in detail_after.text
+    assert "Decision Status</dt><dd>decided" in detail_after.text
+    assert "Decision</dt><dd>approve" in detail_after.text
     assert "Approved after integrated local review." in detail_after.text
     assert "operator_integration" in detail_after.text
 
@@ -390,7 +390,7 @@ def test_failed_cli_initialized_metadata_can_be_returned_to_pending_through_ui(
     detail = client.get(f"/runs/{run_id}")
     assert detail.status_code == 200
     assert "FAILED (reasoning_parse)" in detail.text
-    assert "Review Status</dt><dd>pending" in detail.text
+    assert "Decision Status</dt><dd>pending" in detail.text
 
 
 def test_ui_update_rejects_missing_companion_after_default_cli_generation(
@@ -421,7 +421,7 @@ def test_ui_update_rejects_missing_companion_after_default_cli_generation(
     )
 
     assert response.status_code == 422
-    assert "Review Update Error" in response.text
+    assert "Decision Update Error" in response.text
     assert "operator_review_metadata_missing" in response.text
     assert not (target_directory / f"{run_id}.operator_review.json").exists()
 

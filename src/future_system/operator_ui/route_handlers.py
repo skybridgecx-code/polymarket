@@ -147,7 +147,7 @@ def handle_view_run_request(
                     f"{artifacts_root_unavailable_message(root_status=root_status)}"
                 ),
                 back_href="/",
-                back_label="Back to runs",
+                back_label="Back to local review runs",
             ),
             status_code=422,
         )
@@ -172,7 +172,7 @@ def handle_view_run_request(
                             detail_error=str(exc),
                         ),
                         back_href="/",
-                        back_label="Back to runs",
+                        back_label="Back to local review runs",
                     ),
                     status_code=422,
                 )
@@ -181,7 +181,7 @@ def handle_view_run_request(
                     title="Run Read Error",
                     message=str(exc),
                     back_href="/",
-                    back_label="Back to runs",
+                    back_label="Back to local review runs",
                 ),
                 status_code=422,
             )
@@ -202,7 +202,7 @@ def handle_view_run_request(
                         detail_error=str(exc),
                     ),
                     back_href="/",
-                    back_label="Back to runs",
+                    back_label="Back to local review runs",
                 ),
                 status_code=422,
             )
@@ -212,7 +212,7 @@ def handle_view_run_request(
                 title="Run Read Error",
                 message=str(exc),
                 back_href="/",
-                back_label="Back to runs",
+                back_label="Back to local review runs",
             ),
             status_code=status_code,
         )
@@ -245,13 +245,13 @@ def handle_update_operator_review_request(
     if not root_status.is_usable or root_status.resolved_root is None:
         return HTMLResponse(
             content=render_error_page(
-                title="Review Update Error",
+                title="Decision Update Error",
                 message=(
                     "artifacts_root_unavailable: "
                     f"{artifacts_root_unavailable_message(root_status=root_status)}"
                 ),
                 back_href="/",
-                back_label="Back to runs",
+                back_label="Back to local review runs",
             ),
             status_code=422,
         )
@@ -268,10 +268,10 @@ def handle_update_operator_review_request(
         except ValueError as exc:
             return HTMLResponse(
                 content=render_error_page(
-                    title="Review Update Error",
+                    title="Decision Update Error",
                     message=str(exc),
                     back_href="/",
-                    back_label="Back to runs",
+                    back_label="Back to local review runs",
                 ),
                 status_code=422,
             )
@@ -295,10 +295,10 @@ def handle_update_operator_review_request(
     except ValueError as exc:
         return HTMLResponse(
             content=render_error_page(
-                title="Review Update Error",
+                title="Decision Update Error",
                 message=str(exc),
                 back_href=f"/runs/{run_id}",
-                back_label="Back to run",
+                back_label="Back to run detail",
             ),
             status_code=422,
         )

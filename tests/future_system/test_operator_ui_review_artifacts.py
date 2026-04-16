@@ -61,7 +61,7 @@ def test_operator_ui_detail_shows_markdown_and_json_content(tmp_path: Path) -> N
     assert "reasoning_parse" in body
     assert "# Analysis Review Export" in body
     assert "&quot;failure_stage&quot;: &quot;reasoning_parse&quot;" in body
-    assert "Back to runs" in body
+    assert "Back to local review runs" in body
     assert "FAILED (reasoning_parse)" in body
     assert "Run Metadata" in body
     assert "Outcome Summary" in body
@@ -85,11 +85,17 @@ def test_operator_ui_artifact_without_review_metadata_renders_normally(tmp_path:
     assert "No review metadata" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Operator Decision Review" in detail_response.text
+    assert "Decision Review" in detail_response.text
     assert "No review metadata" in detail_response.text
-    assert "Operator Review Edit Form" in detail_response.text
-    assert "Edit form unavailable: companion review metadata is missing." in detail_response.text
-    assert "No decision write route is enabled in this phase." in detail_response.text
+    assert "Update Decision" in detail_response.text
+    assert (
+        "Decision form unavailable: this run does not have companion review metadata."
+        in detail_response.text
+    )
+    assert (
+        "Generate the run with --initialize-operator-review before editing decisions."
+        in detail_response.text
+    )
     assert "FAILED" not in detail_response.text
 
 
@@ -111,11 +117,11 @@ def test_operator_ui_shows_pending_review_metadata_in_list_and_detail(tmp_path: 
     assert "pending" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Operator Decision Review" in detail_response.text
-    assert "Review Status</dt><dd>pending" in detail_response.text
-    assert "Operator Decision</dt><dd>none" in detail_response.text
-    assert "Operator Review Edit Form" in detail_response.text
-    assert "Update Review Decision" in detail_response.text
+    assert "Decision Review" in detail_response.text
+    assert "Decision Status</dt><dd>pending" in detail_response.text
+    assert "Decision</dt><dd>none" in detail_response.text
+    assert "Update Decision" in detail_response.text
+    assert "Save Local Decision" in detail_response.text
     assert "operator-review/update" in detail_response.text
 
 
@@ -143,16 +149,16 @@ def test_operator_ui_shows_decided_review_metadata_in_list_and_detail(tmp_path: 
 
     assert detail_response.status_code == 200
     assert "FAILED (reasoning_parse)" in detail_response.text
-    assert "Review Status</dt><dd>decided" in detail_response.text
-    assert "Operator Decision</dt><dd>needs_follow_up" in detail_response.text
+    assert "Decision Status</dt><dd>decided" in detail_response.text
+    assert "Decision</dt><dd>needs_follow_up" in detail_response.text
     assert (
-        "Review Notes Summary</dt><dd>Escalate for analyst prompt quality review."
+        "Decision Notes</dt><dd>Escalate for analyst prompt quality review."
         in detail_response.text
     )
-    assert "Reviewer Identity</dt><dd>operator_b" in detail_response.text
+    assert "Reviewer</dt><dd>operator_b" in detail_response.text
     assert "Decided At (epoch ns)</dt><dd>1900000000000000000" in detail_response.text
     assert "Updated At (epoch ns)</dt><dd>1900000000000000001" in detail_response.text
-    assert "Operator Review Edit Form" in detail_response.text
+    assert "Update Decision" in detail_response.text
     assert "needs_follow_up\" selected" in detail_response.text
     assert "value=\"operator_b\"" in detail_response.text
 
@@ -174,7 +180,7 @@ def test_operator_ui_bounds_malformed_review_metadata_without_breaking_artifact_
     assert "Run File Issues" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Operator Decision Review" in detail_response.text
+    assert "Decision Review" in detail_response.text
     assert "No review metadata" in detail_response.text
     assert "operator_review_metadata_invalid" in detail_response.text
 
@@ -203,7 +209,7 @@ def test_operator_ui_does_not_read_review_metadata_outside_configured_root(
     assert "resolves outside artifacts root" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Operator Decision Review" in detail_response.text
+    assert "Decision Review" in detail_response.text
     assert "operator_review_metadata_invalid" in detail_response.text
     assert "resolves outside artifacts root" in detail_response.text
 
@@ -218,7 +224,7 @@ def test_operator_ui_detail_fails_safely_when_markdown_is_missing(tmp_path: Path
     assert response.status_code == 422
     assert "Run Read Error" in response.text
     assert "artifact_markdown_missing: markdown file is missing." in response.text
-    assert "Back to runs" in response.text
+    assert "Back to local review runs" in response.text
 
 
 def test_operator_ui_detail_fails_safely_for_invalid_json(tmp_path: Path) -> None:
@@ -582,8 +588,8 @@ def test_operator_ui_post_updates_existing_review_metadata_to_decided(
 
     detail = client.get(f"/runs/{run_id}")
     assert detail.status_code == 200
-    assert "Review Status</dt><dd>decided" in detail.text
-    assert "Operator Decision</dt><dd>approve" in detail.text
+    assert "Decision Status</dt><dd>decided" in detail.text
+    assert "Decision</dt><dd>approve" in detail.text
     assert "Approved for local review handoff." in detail.text
     assert "operator_c" in detail.text
 
@@ -641,7 +647,7 @@ def test_operator_ui_post_rejects_missing_review_metadata_without_touching_artif
     )
 
     assert response.status_code == 422
-    assert "Review Update Error" in response.text
+    assert "Decision Update Error" in response.text
     assert "operator_review_metadata_missing" in response.text
     assert not (tmp_path / f"{run_id}.operator_review.json").exists()
 

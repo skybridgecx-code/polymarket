@@ -1,16 +1,17 @@
-# Current Phase — 23C List/Detail Page Copy Polish
+# Current Phase — 23D Editable Decision Form Copy Polish
 
 ## Branch
 
-`phase-23c-list-detail-page-copy-polish`
+`phase-23d-editable-decision-form-copy-polish`
 
 ## Objective
 
-Polish local operator UI list/detail page copy without expanding behavior.
+Polish editable decision form and update-error copy without expanding behavior.
 
 ## Scope
 
-- operator UI render template copy
+- operator UI form copy
+- update error copy
 - focused rendered-copy tests
 - phase documentation
 
