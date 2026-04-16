@@ -1,22 +1,22 @@
-# Current Phase — 24A Operator UI Layout/Accessibility Scope Lock
+# Current Phase — 24B Layout/Accessibility Inventory
 
 ## Branch
 
-`phase-24a-operator-ui-layout-accessibility-scope-lock`
+`phase-24b-layout-accessibility-inventory`
 
 ## Objective
 
-Lock a bounded layout/accessibility polish track for the local future_system operator UI.
+Inventory current local operator UI layout/accessibility surfaces before bounded polish.
 
 ## Scope
 
-- scope-lock documentation
+- layout/accessibility inventory documentation
 - phase tracker update
 
 ## Explicit Non-Scope
 
 - no `src/polymarket_arb/*` changes
-- no runtime behavior changes
+- no `src/future_system/*` behavior changes
 - no tests changed
 - no DB
 - no queues/jobs/scheduling
