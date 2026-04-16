@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-25A — local operator UI evidence / smoke-capture scope lock
+25B — local operator UI evidence inventory
 
 ## Branch
-phase-25a-local-operator-ui-evidence-scope-lock
+phase-25b-local-operator-ui-evidence-inventory
 
 ## Intent
-Docs-only scope lock for final evidence capture and manual smoke-check artifacts for the shipped future_system local operator UI workflow. No runtime behavior changes.
+Docs-only inventory of the exact screenshots, walkthrough order, retained artifacts, and evidence completeness checklist for the shipped future_system local operator UI workflow. No runtime behavior changes.
