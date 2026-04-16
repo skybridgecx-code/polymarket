@@ -27,6 +27,38 @@ _ARTIFACTS_ROOT_ENV = "FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT"
 _DEFAULT_TRIGGER_TARGET_SUBDIRECTORY = "operator_runs"
 
 
+
+def test_operator_ui_copy_contract_for_local_review_workflow(tmp_path: Path) -> None:
+    run_id = _write_success_run(tmp_path)
+    _write_operator_review_metadata(
+        tmp_path,
+        run_id=run_id,
+        status="success",
+        review_status="pending",
+    )
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    list_response = client.get("/")
+    detail_response = client.get(f"/runs/{run_id}")
+
+    assert list_response.status_code == 200
+    assert "Local Review Runs" in list_response.text
+    assert "Create Local Review Run" in list_response.text
+    assert "Artifacts Root Status" in list_response.text
+
+    assert detail_response.status_code == 200
+    assert "Local Review Run Detail" in detail_response.text
+    assert "Operator Decision Review" in detail_response.text
+    assert "Update Decision" in detail_response.text
+    assert "Decision Status" in detail_response.text
+    assert "Decision" in detail_response.text
+    assert "Decision Notes" in detail_response.text
+    assert "Reviewer" in detail_response.text
+    assert "Save Local Decision" in detail_response.text
+    assert "Back to local review runs" in detail_response.text
+
+
+
 def test_operator_ui_lists_success_and_failure_runs_with_stage_context(tmp_path: Path) -> None:
     older_run = _write_success_run(tmp_path)
     newer_run = _write_failure_run(tmp_path, failure_stage="analyst_transport")
@@ -85,7 +117,7 @@ def test_operator_ui_artifact_without_review_metadata_renders_normally(tmp_path:
     assert "No review metadata" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Decision Review" in detail_response.text
+    assert "Operator Decision Review" in detail_response.text
     assert "No review metadata" in detail_response.text
     assert "Update Decision" in detail_response.text
     assert (
@@ -117,7 +149,7 @@ def test_operator_ui_shows_pending_review_metadata_in_list_and_detail(tmp_path: 
     assert "pending" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Decision Review" in detail_response.text
+    assert "Operator Decision Review" in detail_response.text
     assert "Decision Status</dt><dd>pending" in detail_response.text
     assert "Decision</dt><dd>none" in detail_response.text
     assert "Update Decision" in detail_response.text
@@ -180,7 +212,7 @@ def test_operator_ui_bounds_malformed_review_metadata_without_breaking_artifact_
     assert "Run File Issues" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Decision Review" in detail_response.text
+    assert "Operator Decision Review" in detail_response.text
     assert "No review metadata" in detail_response.text
     assert "operator_review_metadata_invalid" in detail_response.text
 
@@ -209,7 +241,7 @@ def test_operator_ui_does_not_read_review_metadata_outside_configured_root(
     assert "resolves outside artifacts root" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Decision Review" in detail_response.text
+    assert "Operator Decision Review" in detail_response.text
     assert "operator_review_metadata_invalid" in detail_response.text
     assert "resolves outside artifacts root" in detail_response.text
 

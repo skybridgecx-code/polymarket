@@ -1,18 +1,16 @@
-# Current Phase — 23D Editable Decision Form Copy Polish
+# Current Phase — 23E Copy/UX Test Hardening
 
 ## Branch
 
-`phase-23d-editable-decision-form-copy-polish`
+`phase-23e-copy-ux-test-hardening`
 
 ## Objective
 
-Polish editable decision form and update-error copy without expanding behavior.
+Harden focused rendered-copy tests for the local operator UI copy/UX polish track.
 
 ## Scope
 
-- operator UI form copy
-- update error copy
-- focused rendered-copy tests
+- focused UI copy tests
 - phase documentation
 
 ## Explicit Non-Scope

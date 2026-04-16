@@ -53,7 +53,7 @@ def test_cli_default_path_writes_no_companion_metadata_and_ui_shows_no_review_st
     assert "No review metadata" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Decision Review" in detail_response.text
+    assert "Operator Decision Review" in detail_response.text
     assert "Decision Status</dt><dd>No review metadata" in detail_response.text
 
 
@@ -95,7 +95,7 @@ def test_cli_opt_in_writes_pending_companion_and_ui_renders_pending(
     assert "pending" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Decision Review" in detail_response.text
+    assert "Operator Decision Review" in detail_response.text
     assert "Decision Status</dt><dd>pending" in detail_response.text
     assert "Decision</dt><dd>none" in detail_response.text
 
@@ -209,7 +209,7 @@ def test_ui_bounds_malformed_companion_metadata_non_fatal_after_cli_generation(
     assert "No review metadata" in list_response.text
 
     assert detail_response.status_code == 200
-    assert "Decision Review" in detail_response.text
+    assert "Operator Decision Review" in detail_response.text
     assert "operator_review_metadata_invalid" in detail_response.text
     assert "No review metadata" in detail_response.text
 

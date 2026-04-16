@@ -387,7 +387,7 @@ def _render_operator_review_metadata_section(*, detail: ArtifactRunDetail) -> st
             issue_block = f"<p>{html.escape(detail.operator_review_issue)}</p>"
         return (
             "<section class=\"section\">"
-            "<h2>Decision Review</h2>"
+            "<h2>Operator Decision Review</h2>"
             "<dl class=\"meta-grid\">"
             "<dt>Decision Status</dt><dd>"
         f"{html.escape(_review_status_display_label(detail.run.review_status_label))}"
@@ -415,7 +415,7 @@ def _render_operator_review_metadata_section(*, detail: ArtifactRunDetail) -> st
     )
     return (
         "<section class=\"section\">"
-        "<h2>Decision Review</h2>"
+        "<h2>Operator Decision Review</h2>"
         "<dl class=\"meta-grid\">"
         f"<dt>Decision Status</dt><dd>{html.escape(record.review_status)}</dd>"
         f"<dt>Decision</dt><dd>{html.escape(operator_decision)}</dd>"
