@@ -1,22 +1,23 @@
-# Current Phase — 23E Copy/UX Test Hardening
+# Current Phase — 23F UI Copy/UX Closeout
 
 ## Branch
 
-`phase-23e-copy-ux-test-hardening`
+`phase-23f-ui-copy-ux-closeout`
 
 ## Objective
 
-Harden focused rendered-copy tests for the local operator UI copy/UX polish track.
+Close out the local operator UI copy/UX polish track.
 
 ## Scope
 
-- focused UI copy tests
-- phase documentation
+- closeout documentation
+- phase tracker update
 
 ## Explicit Non-Scope
 
 - no `src/polymarket_arb/*` changes
-- no new runtime behavior
+- no `src/future_system/*` changes
+- no tests changed
 - no DB
 - no queues/jobs/scheduling
 - no notifications/delivery
