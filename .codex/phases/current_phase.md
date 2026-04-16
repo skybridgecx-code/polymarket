@@ -1,16 +1,16 @@
-# Current Phase — 22B Editable Workflow Runbook Polish
+# Current Phase — 22C Editable Workflow Manual Verification Checklist
 
 ## Branch
 
-`phase-22b-editable-workflow-runbook-polish`
+`phase-22c-editable-workflow-manual-verification-checklist`
 
 ## Objective
 
-Update the local operator UI runbook with exact editable decision workflow steps.
+Add a manual verification checklist for the local editable operator decision workflow.
 
 ## Scope
 
-- `docs/FUTURE_SYSTEM_OPERATOR_UI_LOCAL_RUNBOOK.md`
+- manual verification documentation
 - phase tracker update
 
 ## Explicit Non-Scope
