@@ -1,24 +1,23 @@
-# Current Phase — 24D Detail/Edit Page Layout Polish
+# Current Phase — 24E Accessibility Test Hardening
 
 ## Branch
 
-`phase-24d-detail-edit-page-layout-polish`
+`phase-24e-accessibility-test-hardening`
 
 ## Objective
 
-Improve local operator UI detail/edit page layout/accessibility without changing behavior.
+Confirm and document focused test coverage for local operator UI layout/accessibility structure.
 
 ## Scope
 
-- detail/edit page rendered structure
-- focused rendered-structure tests
+- accessibility/layout test coverage checkpoint
 - phase documentation
 
 ## Explicit Non-Scope
 
 - no `src/polymarket_arb/*` changes
-- no new runtime behavior
-- no POST/update behavior changes
+- no `src/future_system/*` behavior changes
+- no runtime behavior changes
 - no DB
 - no queues/jobs/scheduling
 - no notifications/delivery
