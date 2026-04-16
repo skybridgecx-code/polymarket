@@ -1,16 +1,16 @@
-# Current Phase — 22D Editable Workflow Troubleshooting Notes
+# Current Phase — 22E Editable Workflow Verification Closeout
 
 ## Branch
 
-`phase-22d-editable-workflow-troubleshooting-notes`
+`phase-22e-editable-workflow-verification-closeout`
 
 ## Objective
 
-Add operator troubleshooting and recovery notes for the local editable decision workflow.
+Close out the editable workflow runbook/manual-verification docs track.
 
 ## Scope
 
-- troubleshooting documentation
+- closeout documentation
 - phase tracker update
 
 ## Explicit Non-Scope
