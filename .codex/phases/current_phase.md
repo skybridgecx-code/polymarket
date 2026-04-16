@@ -1,22 +1,22 @@
-# Current Phase — 23F UI Copy/UX Closeout
+# Current Phase — 24A Operator UI Layout/Accessibility Scope Lock
 
 ## Branch
 
-`phase-23f-ui-copy-ux-closeout`
+`phase-24a-operator-ui-layout-accessibility-scope-lock`
 
 ## Objective
 
-Close out the local operator UI copy/UX polish track.
+Lock a bounded layout/accessibility polish track for the local future_system operator UI.
 
 ## Scope
 
-- closeout documentation
+- scope-lock documentation
 - phase tracker update
 
 ## Explicit Non-Scope
 
 - no `src/polymarket_arb/*` changes
-- no `src/future_system/*` changes
+- no runtime behavior changes
 - no tests changed
 - no DB
 - no queues/jobs/scheduling
