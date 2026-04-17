@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-32D — list/create UX manual smoke
+32E — list/create UX track closeout
 
 ## Branch
-phase-32d-list-create-ux-manual-smoke
+phase-32e-list-create-ux-track-closeout
 
 ## Intent
-Provide a docs-only manual smoke checklist for verifying Phase 32C list/create UX polish using the existing local demo launcher.
+Close out the 32A–32D list/create UX improvement track with a final docs-only summary, validation baseline, boundaries, and next-step recommendation.
