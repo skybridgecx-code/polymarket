@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-30A — operator UI launcher smoke tests
+31A — run detail UX improvement scope lock
 
 ## Branch
-phase-30a-operator-ui-launcher-smoke-tests
+phase-31a-run-detail-ux-improvement-scope-lock
 
 ## Intent
-Add focused smoke validation coverage for local operator UI demo launcher tooling (syntax, prepare artifacts, bounded cleanup, and evidence guardrails).
+Docs-only scope lock and inventory for future local operator UI run detail UX improvements. No implementation changes in this phase.
