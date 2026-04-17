@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-31A — run detail UX improvement scope lock
+31B — run detail UX contract tests
 
 ## Branch
-phase-31a-run-detail-ux-improvement-scope-lock
+phase-31b-run-detail-ux-contract-tests
 
 ## Intent
-Docs-only scope lock and inventory for future local operator UI run detail UX improvements. No implementation changes in this phase.
+Add focused contract tests for the current shipped future_system local operator UI run detail UX before later template polish. No runtime behavior changes.

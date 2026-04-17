@@ -67,6 +67,67 @@ def test_operator_ui_copy_contract_for_local_review_workflow(tmp_path: Path) -> 
     assert "Back to local review runs" in detail_response.text
 
 
+def test_operator_ui_run_detail_contract_sections_with_review_metadata(tmp_path: Path) -> None:
+    run_id = _write_success_run(tmp_path)
+    _write_operator_review_metadata(
+        tmp_path,
+        run_id=run_id,
+        status="success",
+        review_status="pending",
+        review_notes_summary="Contract coverage note.",
+        reviewer_identity="contract_tester",
+    )
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.get(f"/runs/{run_id}")
+
+    assert response.status_code == 200
+    body = response.text
+    assert "Local Review Run Detail" in body
+    assert "Back to local review runs" in body
+    assert "Operator Decision Review" in body
+    assert "Update Decision" in body
+    assert "Save Local Decision" in body
+    assert "Decision Notes" in body
+    assert "Reviewer" in body
+    assert "name=\"review_notes_summary\"" in body
+    assert "name=\"reviewer_identity\"" in body
+    assert "Artifact Paths" in body
+    assert "Markdown Path" in body
+    assert "JSON Path" in body
+    assert "Decision Metadata Path" in body
+    assert run_id in body
+
+
+def test_operator_ui_run_detail_contract_no_metadata_state(tmp_path: Path) -> None:
+    run_id = _write_success_run(tmp_path)
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.get(f"/runs/{run_id}")
+
+    assert response.status_code == 200
+    body = response.text
+    assert "Local Review Run Detail" in body
+    assert "Back to local review runs" in body
+    assert "Operator Decision Review" in body
+    assert "No review metadata" in body
+    assert "Update Decision" in body
+    assert (
+        "Decision form unavailable: this run does not have companion review metadata."
+        in body
+    )
+
+
+def test_operator_ui_run_detail_error_contract_for_missing_run(tmp_path: Path) -> None:
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.get("/runs/theme_ctx_missing.analysis_success_export")
+
+    assert response.status_code == 404
+    assert "Run Read Error" in response.text
+    assert "artifact_run_not_found: json file is missing." in response.text
+    assert "Back to local review runs" in response.text
+
 
 def test_operator_ui_lists_success_and_failure_runs_with_stage_context(tmp_path: Path) -> None:
     older_run = _write_success_run(tmp_path)
