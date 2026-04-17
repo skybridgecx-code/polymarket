@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-27A — operator review notes / reviewer persistence audit
+28A — future_system local operator UI release index / handoff
 
 ## Branch
-phase-27a-operator-review-notes-reviewer-persistence-audit
+phase-28a-local-operator-ui-release-index-handoff
 
 ## Intent
-Docs-only audit of the Phase 26A notes/reviewer persistence observation. No runtime behavior changes.
+Docs-only release/handoff index for the completed future_system local operator UI track. No runtime behavior changes.
