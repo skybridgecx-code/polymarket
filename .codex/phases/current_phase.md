@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-31D — run detail UX manual smoke
+31E — run detail UX track closeout
 
 ## Branch
-phase-31d-run-detail-ux-manual-smoke
+phase-31e-run-detail-ux-track-closeout
 
 ## Intent
-Provide a docs-only manual smoke checklist for verifying Phase 31C run detail UX polish using the existing local demo launcher without runtime or test changes.
+Close out the 31A–31D run detail UX improvement track with a final docs-only summary, validation baseline, boundaries, and next-step recommendation.
