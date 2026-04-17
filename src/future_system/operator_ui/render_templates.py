@@ -99,12 +99,19 @@ def render_list_page(
 
     table_rows = "".join(rows)
     if not table_rows:
-        table_rows = "<tr><td colspan=\"6\">No local review runs found.</td></tr>"
+        table_rows = (
+            "<tr><td colspan=\"6\">"
+            "No local review runs found. Create your first run above by providing "
+            "a context source path and selecting Run Analysis."
+            "</td></tr>"
+        )
     error_block = ""
     if trigger_error is not None:
         error_block = (
             f"<p role=\"alert\" style=\"{TRIGGER_ERROR_INLINE_STYLE}\">Trigger Error: "
             f"{html.escape(trigger_error)}</p>"
+            "<p class=\"help\">Recovery: verify artifact root status, confirm context source "
+            "path, adjust target subdirectory or analyst mode, then retry Run Analysis.</p>"
         )
     issue_rows: list[str] = []
     for issue in history.issues:
@@ -149,6 +156,8 @@ def render_list_page(
         f"<div class=\"root-status {root_status_css_class}\">"
         f"<p><strong>Status:</strong> {html.escape(root_status_label)}</p>"
         f"<p><strong>Configured Value:</strong> <code>{configured_value}</code></p>"
+        "<p><strong>Configured artifact root directory:</strong> "
+        "This local directory is used to read existing runs and write new trigger runs.</p>"
         f"<p>{root_message_html}</p>"
         "</div>"
     )
@@ -168,8 +177,12 @@ def render_list_page(
         "<html><head><meta charset=\"utf-8\"><title>Local Review Runs</title>"
         f"<style>{LIST_PAGE_CSS}</style></head><body>"
         "<h1>Local Review Runs</h1>"
+        "<p>This page is a local artifact-file workflow for creating and "
+        "reviewing run exports.</p>"
         f"{root_block}"
         "<h2>Create Local Review Run</h2>"
+        "<p>Use this form to create one local review run from a context bundle "
+        "under the configured artifact root.</p>"
         "<form action=\"/runs/trigger\" method=\"post\">"
         "<fieldset><legend>Decision update fields</legend>"
         "<div class=\"form-grid\">"
@@ -180,7 +193,8 @@ def render_list_page(
         "placeholder=\"/absolute/path/context_bundle.json\" "
         f"value=\"{context_source_input}\" required{disable_trigger_attr}>"
         "<p id=\"context_source_help\" class=\"help\">"
-        "Provide an existing local OpportunityContextBundle JSON file path.</p>"
+        "Provide an absolute path to an existing local OpportunityContextBundle "
+        "JSON file. Run Analysis reads this file to build one run.</p>"
         "</div>"
         "<div class=\"form-field\">"
         "<label for=\"target_subdirectory\">Target Subdirectory</label>"
@@ -188,8 +202,9 @@ def render_list_page(
         "aria-describedby=\"target_subdirectory_help\" "
         f"value=\"{target_subdirectory_input}\" required{disable_trigger_attr}>"
         "<p id=\"target_subdirectory_help\" class=\"help\">"
-        "Relative subdirectory under artifacts root; "
-        "safe default isolates UI-triggered runs.</p>"
+        "Relative subdirectory under the configured artifact root; "
+        "safe default isolates UI-triggered runs. "
+        "Run Analysis writes new .md/.json artifacts there.</p>"
         "</div>"
         "<div class=\"form-field\">"
         "<label for=\"analyst_mode\">Analyst Mode</label>"
@@ -197,13 +212,16 @@ def render_list_page(
         f"aria-describedby=\"analyst_mode_help\"{disable_trigger_attr}>"
         f"{mode_options_html}</select>"
         "<p id=\"analyst_mode_help\" class=\"help\">"
-        "Use `stub` for normal deterministic success or choose "
-        "a failure mode.</p>"
+        "Use `stub` for normal deterministic success. "
+        "Other modes intentionally simulate failure stages for local verification.</p>"
         "</div>"
         "</div>"
         "<div class=\"form-actions\">"
         f"<button type=\"submit\"{disable_trigger_attr}>Run Analysis</button>"
         "</div>"
+        "<p class=\"help\">Run Analysis creates local markdown and JSON export "
+        "artifacts for one run. Companion operator review metadata is expected "
+        "only for runs initialized with --initialize-operator-review.</p>"
         "</form>"
         f"{trigger_disabled_block}"
         f"{error_block}"

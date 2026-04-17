@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-32B — list/create UX contract tests
+32C — list/create template UX polish
 
 ## Branch
-phase-32b-list-create-ux-contract-tests
+phase-32c-list-create-template-ux-polish
 
 ## Intent
-Add focused list/create UX contract tests for the current shipped Local Review Runs page and Create Local Review Run form before template polish.
+Polish list/create template copy/layout for clearer local operator comprehension while preserving deterministic behavior and existing list/create contracts.

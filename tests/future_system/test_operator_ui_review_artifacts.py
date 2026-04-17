@@ -77,16 +77,32 @@ def test_operator_ui_list_create_contract_core_sections_and_fields(tmp_path: Pat
     body = response.text
     assert "Local Review Runs" in body
     assert "Create Local Review Run" in body
+    assert "local artifact-file workflow" in body
     assert "Artifacts Root Status" in body
     assert "Configured Value" in body
+    assert "Configured artifact root directory" in body
     assert "configured and readable" in body
     assert "Context Source JSON Path" in body
     assert "name=\"context_source\"" in body
+    assert (
+        "Provide an absolute path to an existing local OpportunityContextBundle "
+        "JSON file."
+        in body
+    )
+    assert "Run Analysis reads this file to build one run." in body
     assert "Target Subdirectory" in body
     assert "name=\"target_subdirectory\"" in body
+    assert "Run Analysis writes new .md/.json artifacts there." in body
     assert "Analyst Mode" in body
     assert "name=\"analyst_mode\"" in body
+    assert "Other modes intentionally simulate failure stages for local verification." in body
     assert "Run Analysis" in body
+    assert "Run Analysis creates local markdown and JSON export artifacts for one run." in body
+    assert (
+        "Companion operator review metadata is expected only for runs initialized "
+        "with --initialize-operator-review."
+        in body
+    )
     assert "<caption>Local review runs</caption>" in body
     assert run_id in body
 
@@ -102,6 +118,11 @@ def test_operator_ui_list_create_contract_empty_state_when_no_runs(tmp_path: Pat
     assert "Create Local Review Run" in body
     assert "Artifacts Root Status" in body
     assert "No local review runs found." in body
+    assert (
+        "Create your first run above by providing a context source path and selecting "
+        "Run Analysis."
+        in body
+    )
     assert "<caption>Local review runs</caption>" in body
 
 
@@ -136,6 +157,11 @@ def test_operator_ui_list_create_contract_trigger_error_preserves_recovery_conte
     assert "name=\"analyst_mode\"" in body
     assert "Run Analysis" in body
     assert "Artifacts Root Status" in body
+    assert (
+        "Recovery: verify artifact root status, confirm context source path, "
+        "adjust target subdirectory or analyst mode, then retry Run Analysis."
+        in body
+    )
     assert str(missing_context_source) in body
 
 
