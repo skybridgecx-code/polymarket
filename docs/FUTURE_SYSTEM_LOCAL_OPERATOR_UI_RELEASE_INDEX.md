@@ -25,6 +25,7 @@
 - Port override supported: `PORT=8001 make future-system-operator-ui-demo` (default port is `8000`)
 - Cleanup command: `make future-system-operator-ui-demo-clean` (removes only `.tmp/future-system-operator-ui-demo`)
 - Validation command: `make future-system-operator-ui-demo-validate`
+- Validation hardening status: Phase 34B strengthened launcher validation coverage for non-empty artifacts, metadata content contracts, and bounded `.tmp` cleanup checks; see [PHASE_34B_DEMO_WORKFLOW_VALIDATION_HARDENING.md](./PHASE_34B_DEMO_WORKFLOW_VALIDATION_HARDENING.md).
 - Demo launcher status: Phase 29A–29E tooling track is complete; see [PHASE_29E_DEMO_LAUNCHER_TRACK_CLOSEOUT.md](./PHASE_29E_DEMO_LAUNCHER_TRACK_CLOSEOUT.md).
 - Run detail UX manual smoke checklist: [PHASE_31D_RUN_DETAIL_UX_MANUAL_SMOKE.md](./PHASE_31D_RUN_DETAIL_UX_MANUAL_SMOKE.md)
 - Run detail UX track status: Phase 31A–31E is complete; see [PHASE_31E_RUN_DETAIL_UX_TRACK_CLOSEOUT.md](./PHASE_31E_RUN_DETAIL_UX_TRACK_CLOSEOUT.md).
