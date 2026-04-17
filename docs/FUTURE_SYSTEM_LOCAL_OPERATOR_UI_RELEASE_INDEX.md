@@ -25,6 +25,7 @@
 - Cleanup command: `make future-system-operator-ui-demo-clean` (removes only `.tmp/future-system-operator-ui-demo`)
 - Validation command: `make future-system-operator-ui-demo-validate`
 - Demo launcher status: Phase 29A–29E tooling track is complete; see [PHASE_29E_DEMO_LAUNCHER_TRACK_CLOSEOUT.md](./PHASE_29E_DEMO_LAUNCHER_TRACK_CLOSEOUT.md).
+- Run detail UX manual smoke checklist: [PHASE_31D_RUN_DETAIL_UX_MANUAL_SMOKE.md](./PHASE_31D_RUN_DETAIL_UX_MANUAL_SMOKE.md)
 - Phase handoff docs:
   - [PHASE_29A_LOCAL_OPERATOR_UI_DEMO_LAUNCHER.md](./PHASE_29A_LOCAL_OPERATOR_UI_DEMO_LAUNCHER.md)
   - [PHASE_29B_DEMO_LAUNCHER_PORT_HANDLING.md](./PHASE_29B_DEMO_LAUNCHER_PORT_HANDLING.md)

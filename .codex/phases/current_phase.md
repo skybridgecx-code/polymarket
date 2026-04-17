@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-31C — run detail template UX polish
+31D — run detail UX manual smoke
 
 ## Branch
-phase-31c-run-detail-template-ux-polish
+phase-31d-run-detail-ux-manual-smoke
 
 ## Intent
-Polish run detail template copy/layout for clearer local operator comprehension while preserving deterministic behavior and existing local metadata workflow contracts.
+Provide a docs-only manual smoke checklist for verifying Phase 31C run detail UX polish using the existing local demo launcher without runtime or test changes.
