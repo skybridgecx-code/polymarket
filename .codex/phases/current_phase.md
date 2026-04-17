@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-32C — list/create template UX polish
+32D — list/create UX manual smoke
 
 ## Branch
-phase-32c-list-create-template-ux-polish
+phase-32d-list-create-ux-manual-smoke
 
 ## Intent
-Polish list/create template copy/layout for clearer local operator comprehension while preserving deterministic behavior and existing list/create contracts.
+Provide a docs-only manual smoke checklist for verifying Phase 32C list/create UX polish using the existing local demo launcher.
