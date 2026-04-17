@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-32E — list/create UX track closeout
+33A — operator UI end-to-end runbook refresh
 
 ## Branch
-phase-32e-list-create-ux-track-closeout
+phase-33a-operator-ui-e2e-runbook-refresh
 
 ## Intent
-Close out the 32A–32D list/create UX improvement track with a final docs-only summary, validation baseline, boundaries, and next-step recommendation.
+Refresh the main future_system local operator UI runbook so the launcher-first end-to-end flow is clear after launcher tooling, UX polish tracks, and release-index handoff updates.

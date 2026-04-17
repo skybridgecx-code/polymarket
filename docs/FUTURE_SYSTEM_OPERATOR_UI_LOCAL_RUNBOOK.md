@@ -16,6 +16,74 @@ It is grounded in current code behavior in:
 
 This runbook does not describe background workers, persistence, remote delivery, or any behavior not currently shipped.
 
+## Recommended End-to-End Path (Primary)
+
+Use this path for local operator handoff and demo use.
+
+1. Validate launcher/tooling first:
+
+```bash
+make future-system-operator-ui-demo-validate
+```
+
+2. Prepare deterministic demo artifacts without starting Uvicorn:
+
+```bash
+make future-system-operator-ui-demo-prepare
+```
+
+Expected demo run id:
+- `theme_ctx_strong.analysis_success_export`
+
+Expected generated temp paths:
+- `.tmp/future-system-operator-ui-demo/context_bundle.json`
+- `.tmp/future-system-operator-ui-demo/operator_runs/`
+
+3. Launch the UI:
+
+```bash
+make future-system-operator-ui-demo
+```
+
+If port `8000` is already in use:
+
+```bash
+PORT=8010 make future-system-operator-ui-demo
+```
+
+4. Open list and detail pages:
+- List: `http://127.0.0.1:8000`
+- Detail: `http://127.0.0.1:8000/runs/theme_ctx_strong.analysis_success_export`
+
+5. Update local decision in detail page:
+- Open `Update Decision`.
+- Set `review_status` and optional decision/notes/reviewer fields.
+- Select `Save Local Decision`.
+- Confirm updated values render on detail page.
+
+6. Confirm write scope:
+- only companion metadata (`X.operator_review.json`) is rewritten
+- run export markdown/json files remain unchanged
+
+7. Clean demo temp artifacts:
+
+```bash
+make future-system-operator-ui-demo-clean
+```
+
+If launcher startup reports missing multipart form dependency, install:
+
+```bash
+.venv/bin/python -m pip install python-multipart
+```
+
+## Workflow Boundaries
+
+- local artifact-file workflow only
+- no production trading/execution behavior
+- no DB/queues/jobs/notifications/scheduling behavior
+- no `src/polymarket_arb/*` changes in this workflow
+
 ## Prerequisites
 
 From repo root:

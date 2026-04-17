@@ -16,6 +16,7 @@
 
 ## Runbook
 - [Future System Operator UI Local Runbook](./FUTURE_SYSTEM_OPERATOR_UI_LOCAL_RUNBOOK.md)
+- Runbook refresh status: Phase 33A refreshed the main local E2E runbook; see [PHASE_33A_OPERATOR_UI_E2E_RUNBOOK_REFRESH.md](./PHASE_33A_OPERATOR_UI_E2E_RUNBOOK_REFRESH.md).
 
 ## Local Demo Launcher
 - Launcher script: [scripts/launch_future_system_operator_ui_demo.sh](../scripts/launch_future_system_operator_ui_demo.sh)
