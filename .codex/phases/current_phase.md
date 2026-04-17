@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-25D — local operator UI release checklist
+25E — local operator UI evidence track closeout
 
 ## Branch
-phase-25d-local-operator-ui-release-checklist
+phase-25e-local-operator-ui-evidence-track-closeout
 
 ## Intent
-Docs-only final release-style checklist for the shipped future_system local operator UI evidence pass. No runtime behavior changes.
+Docs-only closeout for the completed 25A–25D local operator UI evidence planning track, including summary, preserved boundaries, and the next bounded recommended phase. No runtime behavior changes.
