@@ -34,44 +34,43 @@ The manual evidence pass should aim to collect:
 ## Checkpoint fields to fill during manual evidence capture
 
 ### Repo checkpoint
-- Branch used:
-- HEAD commit used:
-- Working tree clean before capture: yes / no
+- Branch used: `phase-26a-local-operator-ui-manual-evidence-pass`
+- HEAD commit used before capture: `11d976d`
+- Working tree clean before capture: yes
 
 ### Artifact/sample context
-- Artifact directory/path used:
-- Populated metadata sample used:
-- Empty metadata sample used, if any:
-- Commands used to launch or exercise the local UI:
+- Artifact directory/path used: `.tmp/operator-ui-artifacts/operator_runs`
+- Populated metadata sample used: `theme_ctx_strong.analysis_success_export.operator_review.json`
+- Empty metadata sample used, if any: same run before companion metadata initialization
+- Commands used to launch or exercise the local UI: recorded in `evidence/local-operator-ui/notes.md`
 
 ### Evidence captured
-- [ ] 01-list-page.png
-- [ ] 02-create-section.png
-- [ ] 03-detail-page.png
-- [ ] 04-populated-review.png
-- [ ] 05-empty-review.png
-- [ ] 06-update-decision-form.png
-- [ ] 07-post-update-state.png
+- [x] 01-list-page.png
+- [x] 02-create-section.png
+- [x] 03-detail-page.png
+- [x] 04-populated-review.png
+- [x] 05-empty-review.png
+- [x] 06-update-decision-form.png
+- [x] 07-post-update-state.png
 
 ### Skipped items
-- Item skipped:
-- Reason skipped:
+- None.
 
 ### Issues observed
-- Issue summary:
+- Issue summary: local environment/setup issues were encountered and resolved during evidence capture.
 - Classification:
-  - sample data gap
-  - local launch/setup issue
-  - genuine shipped UI issue
-- Follow-up needed:
-- Separate future phase required: yes / no
+  - [ ] sample data gap
+  - [x] local launch/setup issue
+  - [ ] genuine shipped UI issue
+- Follow-up needed: no runtime follow-up required from this evidence pass.
+- Separate future phase required: no
 
 ## Final checkpoint conclusion
-Use this section after manual capture to record:
-- whether the evidence pass is complete
-- whether the editable decision flow was exercised
-- whether any shipped UI issues were found
-- whether the track is ready for final archival / handoff
+- Evidence pass complete: yes.
+- Editable decision flow was exercised: yes.
+- Persisted companion metadata showed `review_status=decided` and `operator_decision=approve`.
+- No shipped UI fix was made in this phase.
+- Track is ready for final archival / handoff.
 
 ## Deliverable
 - A final checkpoint doc shell for the manual evidence pass.

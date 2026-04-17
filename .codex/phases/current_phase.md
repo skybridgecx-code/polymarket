@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-25F — local operator UI evidence final checkpoint
+26A — local operator UI manual evidence pass
 
 ## Branch
-phase-25f-local-operator-ui-evidence-final-checkpoint
+phase-26a-local-operator-ui-manual-evidence-pass
 
 ## Intent
-Docs-only final checkpoint shell and evidence notes scaffold for the shipped future_system local operator UI manual evidence pass. No runtime behavior changes.
+Manual evidence capture pass for the shipped future_system local operator UI workflow, including screenshot evidence, notes, and final checkpoint updates. No runtime behavior changes.
