@@ -27,6 +27,7 @@ else
 fi
 
 PORT="${PORT:-8000}"
+PREPARE_ONLY="${PREPARE_ONLY:-0}"
 
 if ! "$PYTHON_BIN" - "$PORT" <<'PY'
 import sys
@@ -145,6 +146,18 @@ export FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT="${ARTIFACTS_ROOT_ABS}"
 LIST_URL="http://127.0.0.1:${PORT}"
 DETAIL_URL="${LIST_URL}/runs/${RUN_ID}"
 
+echo ""
+echo "artifact root: ${FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT}"
+echo "run id: ${RUN_ID}"
+echo "selected port: ${PORT}"
+echo "list URL: ${LIST_URL}"
+echo "detail URL: ${DETAIL_URL}"
+
+if [[ "${PREPARE_ONLY}" == "1" ]]; then
+  echo "PREPARE_ONLY=1 set; Uvicorn was not started."
+  exit 0
+fi
+
 if ! "$PYTHON_BIN" - "$PORT" <<'PY'
 import socket
 import sys
@@ -163,12 +176,6 @@ then
   exit 1
 fi
 
-echo ""
-echo "artifact root: ${FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT}"
-echo "run id: ${RUN_ID}"
-echo "selected port: ${PORT}"
-echo "list URL: ${LIST_URL}"
-echo "detail URL: ${DETAIL_URL}"
 echo ""
 echo "starting uvicorn (ctrl+c to stop)..."
 

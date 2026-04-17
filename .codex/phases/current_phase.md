@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-29C — demo launcher cleanup target
+29D — demo launcher prepare-only mode
 
 ## Branch
-phase-29c-demo-launcher-cleanup-target
+phase-29d-demo-launcher-prepare-only-mode
 
 ## Intent
-Add a safe Makefile cleanup command for demo launcher artifacts under `.tmp/future-system-operator-ui-demo` only. No runtime app behavior changes.
+Add `PREPARE_ONLY=1` launcher mode and Makefile prepare target to generate deterministic demo artifacts without starting Uvicorn.
