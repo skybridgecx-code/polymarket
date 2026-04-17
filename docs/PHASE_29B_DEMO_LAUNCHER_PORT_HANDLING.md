@@ -24,6 +24,8 @@
   - `make future-system-operator-ui-demo`
 - Alternate port:
   - `PORT=8001 make future-system-operator-ui-demo`
+- Cleanup generated demo artifacts:
+  - `make future-system-operator-ui-demo-clean`
 
 ## Expected URLs
 - Default port:
