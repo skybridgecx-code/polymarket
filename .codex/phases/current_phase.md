@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-33A — operator UI end-to-end runbook refresh
+34A — future_system demo workflow reliability scope lock
 
 ## Branch
-phase-33a-operator-ui-e2e-runbook-refresh
+phase-34a-demo-workflow-reliability-scope-lock
 
 ## Intent
-Refresh the main future_system local operator UI runbook so the launcher-first end-to-end flow is clear after launcher tooling, UX polish tracks, and release-index handoff updates.
+Start a docs-only reliability scope lock and inventory for the local operator UI demo workflow before any reliability implementation changes.
