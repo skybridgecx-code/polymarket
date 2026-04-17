@@ -4,7 +4,7 @@ RUFF := .venv/bin/ruff
 MYPY := .venv/bin/mypy
 PYTEST := .venv/bin/pytest
 
-.PHONY: setup test lint typecheck validate scan wallet-backfill detect-copiers orchestrate-refresh paper-trade review-packet replay-evaluate api
+.PHONY: setup test lint typecheck validate scan wallet-backfill detect-copiers orchestrate-refresh paper-trade review-packet replay-evaluate api future-system-operator-ui-demo
 
 setup:
 	python3.11 -m venv .venv
@@ -46,3 +46,6 @@ replay-evaluate:
 
 api:
 	$(PYTHON) -m uvicorn polymarket_arb.api.main:app --reload
+
+future-system-operator-ui-demo:
+	bash scripts/launch_future_system_operator_ui_demo.sh

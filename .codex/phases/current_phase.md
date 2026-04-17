@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-28A — future_system local operator UI release index / handoff
+29A — local operator UI demo launcher
 
 ## Branch
-phase-28a-local-operator-ui-release-index-handoff
+phase-29a-local-operator-ui-demo-launcher
 
 ## Intent
-Docs-only release/handoff index for the completed future_system local operator UI track. No runtime behavior changes.
+Bounded local launcher for deterministic future_system operator UI demo startup and artifact prep. No src/polymarket_arb runtime behavior changes.
