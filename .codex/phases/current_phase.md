@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-29E — demo launcher track closeout
+30A — operator UI launcher smoke tests
 
 ## Branch
-phase-29e-demo-launcher-track-closeout
+phase-30a-operator-ui-launcher-smoke-tests
 
 ## Intent
-Docs-only closeout of the Phase 29A–29D local operator UI demo launcher tooling track with final status, boundaries, and next-step guidance.
+Add focused smoke validation coverage for local operator UI demo launcher tooling (syntax, prepare artifacts, bounded cleanup, and evidence guardrails).

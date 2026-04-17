@@ -2,9 +2,9 @@
 
 ## Repo / Checkpoint
 - Repo: `polymarket-arb`
-- Branch: `phase-29e-demo-launcher-track-closeout`
-- HEAD: `aa921188aa12b9d2c8365bcb3702f7748234530e`
-- Track covered: shipped local `future_system` operator UI workflow through Phase 29E
+- Branch: `phase-30a-operator-ui-launcher-smoke-tests`
+- HEAD: `742c1aab47a70cfe499a60b028e96db8c7612272`
+- Track covered: shipped local `future_system` operator UI workflow through Phase 30A
 
 ## Shipped Workflow Summary
 - Local review artifact workflow: CLI creates per-run markdown/json artifacts in a local artifacts directory.
@@ -23,6 +23,7 @@
 - Prepare-only command: `make future-system-operator-ui-demo-prepare`
 - Port override supported: `PORT=8001 make future-system-operator-ui-demo` (default port is `8000`)
 - Cleanup command: `make future-system-operator-ui-demo-clean` (removes only `.tmp/future-system-operator-ui-demo`)
+- Validation command: `make future-system-operator-ui-demo-validate`
 - Demo launcher status: Phase 29A–29E tooling track is complete; see [PHASE_29E_DEMO_LAUNCHER_TRACK_CLOSEOUT.md](./PHASE_29E_DEMO_LAUNCHER_TRACK_CLOSEOUT.md).
 - Phase handoff docs:
   - [PHASE_29A_LOCAL_OPERATOR_UI_DEMO_LAUNCHER.md](./PHASE_29A_LOCAL_OPERATOR_UI_DEMO_LAUNCHER.md)
@@ -30,6 +31,7 @@
   - [PHASE_29C_DEMO_LAUNCHER_CLEANUP_TARGET.md](./PHASE_29C_DEMO_LAUNCHER_CLEANUP_TARGET.md)
   - [PHASE_29D_DEMO_LAUNCHER_PREPARE_ONLY_MODE.md](./PHASE_29D_DEMO_LAUNCHER_PREPARE_ONLY_MODE.md)
   - [PHASE_29E_DEMO_LAUNCHER_TRACK_CLOSEOUT.md](./PHASE_29E_DEMO_LAUNCHER_TRACK_CLOSEOUT.md)
+  - [PHASE_30A_OPERATOR_UI_LAUNCHER_SMOKE_TESTS.md](./PHASE_30A_OPERATOR_UI_LAUNCHER_SMOKE_TESTS.md)
 
 ## Evidence Package
 - Evidence notes: [evidence/local-operator-ui/notes.md](../evidence/local-operator-ui/notes.md)
