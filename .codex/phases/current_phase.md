@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-26B — local operator UI evidence closeout
+27A — operator review notes / reviewer persistence audit
 
 ## Branch
-phase-26b-local-operator-ui-evidence-closeout
+phase-27a-operator-review-notes-reviewer-persistence-audit
 
 ## Intent
-Docs-only closeout for the completed manual evidence pass for the shipped future_system local operator UI workflow. No runtime behavior changes.
+Docs-only audit of the Phase 26A notes/reviewer persistence observation. No runtime behavior changes.
