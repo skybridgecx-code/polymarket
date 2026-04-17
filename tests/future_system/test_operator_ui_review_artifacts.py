@@ -85,17 +85,27 @@ def test_operator_ui_run_detail_contract_sections_with_review_metadata(tmp_path:
     body = response.text
     assert "Local Review Run Detail" in body
     assert "Back to local review runs" in body
+    assert "Run Context" in body
+    assert "Review Metadata State" in body
     assert "Operator Decision Review" in body
+    assert "local companion metadata is initialized" in body.lower()
+    assert "latest saved state" in body
     assert "Update Decision" in body
     assert "Save Local Decision" in body
+    assert (
+        "Save Local Decision rewrites only the local companion metadata file"
+        in body
+    )
     assert "Decision Notes" in body
     assert "Reviewer" in body
     assert "name=\"review_notes_summary\"" in body
     assert "name=\"reviewer_identity\"" in body
     assert "Artifact Paths" in body
+    assert "source of truth for this run detail" in body
     assert "Markdown Path" in body
     assert "JSON Path" in body
     assert "Decision Metadata Path" in body
+    assert "local companion metadata file that Update Decision rewrites" in body
     assert run_id in body
 
 
@@ -109,13 +119,17 @@ def test_operator_ui_run_detail_contract_no_metadata_state(tmp_path: Path) -> No
     body = response.text
     assert "Local Review Run Detail" in body
     assert "Back to local review runs" in body
+    assert "Run Context" in body
+    assert "Review Metadata State" in body
     assert "Operator Decision Review" in body
     assert "No review metadata" in body
+    assert "Local companion metadata is missing." in body
     assert "Update Decision" in body
     assert (
         "Decision form unavailable: this run does not have companion review metadata."
         in body
     )
+    assert "Local companion metadata is required before editing decisions." in body
 
 
 def test_operator_ui_run_detail_error_contract_for_missing_run(tmp_path: Path) -> None:

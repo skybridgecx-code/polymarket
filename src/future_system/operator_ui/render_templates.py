@@ -268,6 +268,23 @@ def render_detail_page(
         detail=detail,
         target_subdirectory=target_subdirectory,
     )
+    review_metadata_state = _review_status_display_label(detail.run.review_status_label)
+    if detail.operator_review_decision is None:
+        if detail.operator_review_issue is None:
+            review_metadata_detail = (
+                "Local companion metadata is missing. "
+                "This run remains read-only until --initialize-operator-review creates it."
+            )
+        else:
+            review_metadata_detail = (
+                "Local companion metadata is unavailable for editing: "
+                f"{detail.operator_review_issue}"
+            )
+    else:
+        review_metadata_detail = (
+            "Local companion metadata is initialized. "
+            "Saved values shown below are read from that local companion file."
+        )
     created_block = ""
     if created_via_trigger:
         created_block = (
@@ -296,6 +313,18 @@ def render_detail_page(
         "<p><a href=\"/\">Back to local review runs</a></p>"
         f"{created_block}"
         "<h1>Local Review Run Detail</h1>"
+        "<section class=\"section\">"
+        "<h2>Run Context</h2>"
+        "<p>Confirm run identity, status, and metadata state before reviewing evidence.</p>"
+        "<dl class=\"meta-grid\">"
+        f"<dt>Run ID</dt><dd>{html.escape(detail.run.run_id)}</dd>"
+        f"<dt>Status</dt><dd>{status_badge}</dd>"
+        "<dt>Review Metadata State</dt>"
+        f"<dd>{html.escape(review_metadata_state)}</dd>"
+        f"<dt>Artifact Directory</dt><dd>{html.escape(artifact_directory)}</dd>"
+        "</dl>"
+        f"<p>{html.escape(review_metadata_detail)}</p>"
+        "</section>"
         f"<section class=\"section outcome {outcome_tone_class}\">"
         "<h2>Outcome Summary</h2>"
         f"<p class=\"outcome-label\">{html.escape(outcome_label_text)}</p>"
@@ -322,6 +351,10 @@ def render_detail_page(
         f"{operator_review_edit_form_block}"
         "<section class=\"section\">"
         "<h2>Artifact Paths</h2>"
+        "<p>These local files are the source of truth for this run detail. "
+        "Markdown and JSON paths are evidence exports. "
+        "Decision Metadata Path is the local companion metadata file "
+        "that Update Decision rewrites.</p>"
         "<dl class=\"meta-grid\">"
         f"<dt>Target Subdirectory</dt><dd>{html.escape(target_subdirectory_display)}</dd>"
         f"<dt>Artifact Directory</dt><dd>{html.escape(artifact_directory)}</dd>"
@@ -393,6 +426,15 @@ def _render_operator_review_metadata_section(*, detail: ArtifactRunDetail) -> st
         issue_block = ""
         if detail.operator_review_issue is not None:
             issue_block = f"<p>{html.escape(detail.operator_review_issue)}</p>"
+        metadata_state_guidance = (
+            "<p>Local companion metadata is missing. "
+            "Initialize with --initialize-operator-review to enable editing.</p>"
+        )
+        if detail.operator_review_issue is not None:
+            metadata_state_guidance = (
+                "<p>Local companion metadata exists but could not be read safely. "
+                "Fix the metadata file before editing decisions.</p>"
+            )
         return (
             "<section class=\"section\">"
             "<h2>Operator Decision Review</h2>"
@@ -406,6 +448,7 @@ def _render_operator_review_metadata_section(*, detail: ArtifactRunDetail) -> st
             "<dt>Decided At (epoch ns)</dt><dd>none</dd>"
             "<dt>Updated At (epoch ns)</dt><dd>none</dd>"
             "</dl>"
+            f"{metadata_state_guidance}"
             f"{issue_block}"
             "</section>"
         )
@@ -432,6 +475,8 @@ def _render_operator_review_metadata_section(*, detail: ArtifactRunDetail) -> st
         f"<dt>Decided At (epoch ns)</dt><dd>{html.escape(decided_at_epoch_ns)}</dd>"
         f"<dt>Updated At (epoch ns)</dt><dd>{html.escape(updated_at_epoch_ns)}</dd>"
         "</dl>"
+        "<p>Displayed values are loaded from local companion metadata "
+        "and reflect the latest saved state.</p>"
         "</section>"
     )
 
@@ -452,6 +497,7 @@ def _render_operator_review_edit_form_section(
             "<h2>Update Decision</h2>"
             "<p>Decision form unavailable: "
             f"{html.escape(reason)}.</p>"
+            "<p>Local companion metadata is required before editing decisions.</p>"
             "<p>Generate the run with --initialize-operator-review before editing decisions.</p>"
             "</section>"
         )
@@ -475,8 +521,9 @@ def _render_operator_review_edit_form_section(
     return (
         "<section class=\"section\">"
         "<h2>Update Decision</h2>"
-        "<p>Update this run’s local operator decision. "
-        "This only rewrites the companion review file.</p>"
+        "<p>Update this run's local operator decision. "
+        "Save Local Decision rewrites only the local companion metadata file "
+        "and does not modify evidence exports.</p>"
         "<form method=\"post\" "
         f"action=\"/runs/{html.escape(detail.run.run_id)}/operator-review/update\">"
         "<input type=\"hidden\" name=\"updated_at_epoch_ns\" "

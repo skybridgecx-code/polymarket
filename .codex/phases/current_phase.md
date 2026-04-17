@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-31B — run detail UX contract tests
+31C — run detail template UX polish
 
 ## Branch
-phase-31b-run-detail-ux-contract-tests
+phase-31c-run-detail-template-ux-polish
 
 ## Intent
-Add focused contract tests for the current shipped future_system local operator UI run detail UX before later template polish. No runtime behavior changes.
+Polish run detail template copy/layout for clearer local operator comprehension while preserving deterministic behavior and existing local metadata workflow contracts.
