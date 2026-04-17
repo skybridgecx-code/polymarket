@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-25C — local operator UI manual smoke walkthrough
+25D — local operator UI release checklist
 
 ## Branch
-phase-25c-local-operator-ui-manual-smoke-walkthrough
+phase-25d-local-operator-ui-release-checklist
 
 ## Intent
-Docs-only step-by-step manual smoke walkthrough for capturing evidence of the shipped future_system local operator UI workflow. No runtime behavior changes.
+Docs-only final release-style checklist for the shipped future_system local operator UI evidence pass. No runtime behavior changes.
