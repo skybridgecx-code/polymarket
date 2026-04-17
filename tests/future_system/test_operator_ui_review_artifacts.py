@@ -67,6 +67,78 @@ def test_operator_ui_copy_contract_for_local_review_workflow(tmp_path: Path) -> 
     assert "Back to local review runs" in detail_response.text
 
 
+def test_operator_ui_list_create_contract_core_sections_and_fields(tmp_path: Path) -> None:
+    run_id = _write_success_run(tmp_path)
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    body = response.text
+    assert "Local Review Runs" in body
+    assert "Create Local Review Run" in body
+    assert "Artifacts Root Status" in body
+    assert "Configured Value" in body
+    assert "configured and readable" in body
+    assert "Context Source JSON Path" in body
+    assert "name=\"context_source\"" in body
+    assert "Target Subdirectory" in body
+    assert "name=\"target_subdirectory\"" in body
+    assert "Analyst Mode" in body
+    assert "name=\"analyst_mode\"" in body
+    assert "Run Analysis" in body
+    assert "<caption>Local review runs</caption>" in body
+    assert run_id in body
+
+
+def test_operator_ui_list_create_contract_empty_state_when_no_runs(tmp_path: Path) -> None:
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    body = response.text
+    assert "Local Review Runs" in body
+    assert "Create Local Review Run" in body
+    assert "Artifacts Root Status" in body
+    assert "No local review runs found." in body
+    assert "<caption>Local review runs</caption>" in body
+
+
+def test_operator_ui_list_create_contract_trigger_error_preserves_recovery_context(
+    tmp_path: Path,
+) -> None:
+    missing_context_source = tmp_path / "missing-context-bundle.json"
+    client = TestClient(create_review_artifacts_operator_app(artifacts_root=tmp_path))
+
+    response = client.post(
+        "/runs/trigger",
+        data={
+            "context_source": str(missing_context_source),
+            "analyst_mode": "stub",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 422
+    body = response.text
+    assert "Trigger Error" in body
+    assert "Invalid trigger input:" in body
+    assert "context_source file does not exist." in body
+    assert "role=\"alert\"" in body
+    assert "Local Review Runs" in body
+    assert "Create Local Review Run" in body
+    assert "Context Source JSON Path" in body
+    assert "name=\"context_source\"" in body
+    assert "Target Subdirectory" in body
+    assert "name=\"target_subdirectory\"" in body
+    assert "Analyst Mode" in body
+    assert "name=\"analyst_mode\"" in body
+    assert "Run Analysis" in body
+    assert "Artifacts Root Status" in body
+    assert str(missing_context_source) in body
+
+
 def test_operator_ui_run_detail_contract_sections_with_review_metadata(tmp_path: Path) -> None:
     run_id = _write_success_run(tmp_path)
     _write_operator_review_metadata(
