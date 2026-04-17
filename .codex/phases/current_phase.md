@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-29A — local operator UI demo launcher
+29B — demo launcher port handling
 
 ## Branch
-phase-29a-local-operator-ui-demo-launcher
+phase-29b-demo-launcher-port-handling
 
 ## Intent
-Bounded local launcher for deterministic future_system operator UI demo startup and artifact prep. No src/polymarket_arb runtime behavior changes.
+Launcher UX/docs polish for configurable local demo port selection and conflict handling. No runtime app behavior changes.

@@ -19,6 +19,7 @@
 ## Exact Launch Command
 - Script command: `bash scripts/launch_future_system_operator_ui_demo.sh`
 - Make command: `make future-system-operator-ui-demo`
+- Alternate port override: `PORT=8001 make future-system-operator-ui-demo`
 
 ## Deterministic Temp Paths
 - Demo root: `.tmp/future-system-operator-ui-demo/`
@@ -43,6 +44,7 @@
   - `--analyst-mode stub`
   - `--initialize-operator-review`
 - Exports `FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT` to generated `operator_runs` path.
+- Supports `PORT` environment override (default `8000`) for local Uvicorn launch.
 - Launches:
   - `python -m uvicorn future_system.operator_ui.app_entry:create_operator_ui_app --factory --reload`
 

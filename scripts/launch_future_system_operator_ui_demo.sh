@@ -26,6 +26,24 @@ else
   export PYTHONPATH="src"
 fi
 
+PORT="${PORT:-8000}"
+
+if ! "$PYTHON_BIN" - "$PORT" <<'PY'
+import sys
+
+try:
+    port = int(sys.argv[1])
+except Exception:
+    raise SystemExit(1)
+
+if port < 1 or port > 65535:
+    raise SystemExit(1)
+PY
+then
+  echo "error: PORT must be an integer between 1 and 65535." >&2
+  exit 1
+fi
+
 if ! "$PYTHON_BIN" - <<'PY'
 try:
     import python_multipart  # type: ignore[import-not-found]
@@ -102,21 +120,56 @@ PY
 echo "demo context bundle written to: ${CONTEXT_SOURCE}"
 echo "demo artifacts directory: ${ARTIFACTS_ROOT}"
 
-"${PYTHON_BIN}" -m future_system.cli.review_artifacts \
+CLI_SUMMARY="$("${PYTHON_BIN}" -m future_system.cli.review_artifacts \
   --context-source "${CONTEXT_SOURCE}" \
   --target-directory "${ARTIFACTS_ROOT}" \
   --analyst-mode stub \
-  --initialize-operator-review
+  --initialize-operator-review)"
+echo "${CLI_SUMMARY}"
+
+RUN_ID="$("$PYTHON_BIN" - "${CLI_SUMMARY}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+summary = json.loads(sys.argv[1])
+json_file_path = summary.get("json_file_path")
+if not isinstance(json_file_path, str) or not json_file_path:
+    raise SystemExit("error: cli summary missing json_file_path.")
+print(Path(json_file_path).stem)
+PY
+)"
 
 ARTIFACTS_ROOT_ABS="$(cd "${ARTIFACTS_ROOT}" && pwd)"
 export FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT="${ARTIFACTS_ROOT_ABS}"
+LIST_URL="http://127.0.0.1:${PORT}"
+DETAIL_URL="${LIST_URL}/runs/${RUN_ID}"
+
+if ! "$PYTHON_BIN" - "$PORT" <<'PY'
+import socket
+import sys
+
+port = int(sys.argv[1])
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        sock.bind(("127.0.0.1", port))
+    except OSError:
+        raise SystemExit(1)
+PY
+then
+  echo "Port ${PORT} is already in use." >&2
+  echo "Try: PORT=8001 make future-system-operator-ui-demo" >&2
+  exit 1
+fi
 
 echo ""
-echo "FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT=${FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT}"
-echo "open:"
-echo "http://127.0.0.1:8000"
-echo "http://127.0.0.1:8000/runs/theme_ctx_strong.analysis_success_export"
+echo "artifact root: ${FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT}"
+echo "run id: ${RUN_ID}"
+echo "selected port: ${PORT}"
+echo "list URL: ${LIST_URL}"
+echo "detail URL: ${DETAIL_URL}"
 echo ""
 echo "starting uvicorn (ctrl+c to stop)..."
 
-exec "${PYTHON_BIN}" -m uvicorn future_system.operator_ui.app_entry:create_operator_ui_app --factory --reload
+exec "${PYTHON_BIN}" -m uvicorn future_system.operator_ui.app_entry:create_operator_ui_app --factory --reload --port "${PORT}"

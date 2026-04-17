@@ -2,9 +2,9 @@
 
 ## Repo / Checkpoint
 - Repo: `polymarket-arb`
-- Branch: `phase-29a-local-operator-ui-demo-launcher`
-- HEAD: `45e25bacfa9d1b97f9fbcf83303882085cc975f8`
-- Track covered: shipped local `future_system` operator UI workflow through Phase 29A
+- Branch: `phase-29b-demo-launcher-port-handling`
+- HEAD: `7f3f52377dc31c8f2121800e613da55e6369ab9d`
+- Track covered: shipped local `future_system` operator UI workflow through Phase 29B
 
 ## Shipped Workflow Summary
 - Local review artifact workflow: CLI creates per-run markdown/json artifacts in a local artifacts directory.
@@ -20,7 +20,10 @@
 ## Local Demo Launcher
 - Launcher script: [scripts/launch_future_system_operator_ui_demo.sh](../scripts/launch_future_system_operator_ui_demo.sh)
 - Convenience command: `make future-system-operator-ui-demo`
-- Phase handoff doc: [PHASE_29A_LOCAL_OPERATOR_UI_DEMO_LAUNCHER.md](./PHASE_29A_LOCAL_OPERATOR_UI_DEMO_LAUNCHER.md)
+- Port override supported: `PORT=8001 make future-system-operator-ui-demo` (default port is `8000`)
+- Phase handoff docs:
+  - [PHASE_29A_LOCAL_OPERATOR_UI_DEMO_LAUNCHER.md](./PHASE_29A_LOCAL_OPERATOR_UI_DEMO_LAUNCHER.md)
+  - [PHASE_29B_DEMO_LAUNCHER_PORT_HANDLING.md](./PHASE_29B_DEMO_LAUNCHER_PORT_HANDLING.md)
 
 ## Evidence Package
 - Evidence notes: [evidence/local-operator-ui/notes.md](../evidence/local-operator-ui/notes.md)
