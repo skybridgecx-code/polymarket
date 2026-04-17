@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-31E — run detail UX track closeout
+32A — local review runs list/create UX scope lock
 
 ## Branch
-phase-31e-run-detail-ux-track-closeout
+phase-32a-list-create-ux-scope-lock
 
 ## Intent
-Close out the 31A–31D run detail UX improvement track with a final docs-only summary, validation baseline, boundaries, and next-step recommendation.
+Start a docs-only scope lock and inventory for improving the shipped future_system local operator UI list page and Create Local Review Run form UX.
