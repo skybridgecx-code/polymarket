@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+section() {
+  echo ""
+  echo "== $* =="
+}
+
 if [[ ! -f "pyproject.toml" ]]; then
   echo "error: run this script from the repo root (missing pyproject.toml)." >&2
   exit 1
@@ -8,6 +13,7 @@ fi
 
 if [[ ! -f "tests/fixtures/future_system/context_bundle/context_bundle_inputs.json" ]]; then
   echo "error: missing fixture input file tests/fixtures/future_system/context_bundle/context_bundle_inputs.json." >&2
+  echo "error: this launcher requires fixture input to build a deterministic context bundle." >&2
   exit 1
 fi
 
@@ -55,8 +61,8 @@ except Exception:
         raise SystemExit(1)
 PY
 then
-  echo "error: missing required package python-multipart for local Uvicorn form handling." >&2
-  echo "install command:" >&2
+  echo "error: missing required package python-multipart for local operator UI form handling." >&2
+  echo "error: install dependency with:" >&2
   echo ".venv/bin/python -m pip install python-multipart" >&2
   exit 1
 fi
@@ -65,10 +71,14 @@ DEMO_ROOT=".tmp/future-system-operator-ui-demo"
 ARTIFACTS_ROOT="${DEMO_ROOT}/operator_runs"
 CONTEXT_SOURCE="${DEMO_ROOT}/context_bundle.json"
 
+section "Prepare"
+echo "Preparing deterministic local demo artifacts."
+echo "Demo root: ${DEMO_ROOT}"
+
 rm -rf "${DEMO_ROOT}"
 mkdir -p "${ARTIFACTS_ROOT}"
 
-"${PYTHON_BIN}" - <<'PY'
+if ! "${PYTHON_BIN}" - <<'PY'
 import json
 from pathlib import Path
 
@@ -117,15 +127,23 @@ context_source_path.write_text(
     encoding="utf-8",
 )
 PY
+then
+  echo "error: failed to generate context bundle from fixture input." >&2
+  echo "error: verify tests/fixtures/future_system/context_bundle/context_bundle_inputs.json includes case 'strong_complete'." >&2
+  exit 1
+fi
 
-echo "demo context bundle written to: ${CONTEXT_SOURCE}"
-echo "demo artifacts directory: ${ARTIFACTS_ROOT}"
+section "Artifacts"
+echo "Context bundle: ${CONTEXT_SOURCE}"
+echo "Artifacts directory: ${ARTIFACTS_ROOT}"
 
 CLI_SUMMARY="$("${PYTHON_BIN}" -m future_system.cli.review_artifacts \
   --context-source "${CONTEXT_SOURCE}" \
   --target-directory "${ARTIFACTS_ROOT}" \
   --analyst-mode stub \
   --initialize-operator-review)"
+
+echo "CLI summary:"
 echo "${CLI_SUMMARY}"
 
 RUN_ID="$("$PYTHON_BIN" - "${CLI_SUMMARY}" <<'PY'
@@ -146,7 +164,7 @@ export FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT="${ARTIFACTS_ROOT_ABS}"
 LIST_URL="http://127.0.0.1:${PORT}"
 DETAIL_URL="${LIST_URL}/runs/${RUN_ID}"
 
-echo ""
+section "URLs"
 echo "artifact root: ${FUTURE_SYSTEM_REVIEW_ARTIFACTS_ROOT}"
 echo "run id: ${RUN_ID}"
 echo "selected port: ${PORT}"
@@ -154,7 +172,9 @@ echo "list URL: ${LIST_URL}"
 echo "detail URL: ${DETAIL_URL}"
 
 if [[ "${PREPARE_ONLY}" == "1" ]]; then
-  echo "PREPARE_ONLY=1 set; Uvicorn was not started."
+  section "Prepare-Only Complete"
+  echo "PREPARE_ONLY=1 set; demo artifacts are ready and Uvicorn was not started."
+  echo "Next step: make future-system-operator-ui-demo"
   exit 0
 fi
 
@@ -171,12 +191,14 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         raise SystemExit(1)
 PY
 then
-  echo "Port ${PORT} is already in use." >&2
+  echo "error: Port ${PORT} is already in use." >&2
   echo "Try: PORT=8001 make future-system-operator-ui-demo" >&2
   exit 1
 fi
 
-echo ""
-echo "starting uvicorn (ctrl+c to stop)..."
+section "Launch"
+echo "Ready to start local operator UI."
+echo "Press Ctrl+C to stop Uvicorn."
+echo "Starting Uvicorn now..."
 
 exec "${PYTHON_BIN}" -m uvicorn future_system.operator_ui.app_entry:create_operator_ui_app --factory --reload --port "${PORT}"

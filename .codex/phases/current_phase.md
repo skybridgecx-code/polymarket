@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-34B — demo workflow validation hardening
+34C — launcher output / failure-message polish
 
 ## Branch
-phase-34b-demo-workflow-validation-hardening
+phase-34c-launcher-output-failure-message-polish
 
 ## Intent
-Harden the local operator UI demo launcher validation flow so prepare-only artifacts, metadata contracts, and bounded cleanup behavior are verified more explicitly.
+Polish launcher output and failure-message clarity for local operators while preserving demo launcher behavior, paths, and controls.
