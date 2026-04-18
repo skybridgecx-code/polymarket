@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-36A — packaging entrypoint scope lock
+36B — CLI packaging contract
 
 ## Branch
-phase-36a-packaging-entrypoint-scope-lock
+phase-36b-cli-packaging-contract
 
 ## Intent
-Docs-only scope lock for the first operator-facing entrypoint to review outcome packaging. Recommendation: CLI first, UI later. No runtime behavior changes.
+Docs-only contract definition for the first operator-facing packaging CLI entrypoint, including module shape, arguments, stdout, exit behavior, and failure handling. No runtime behavior changes.
