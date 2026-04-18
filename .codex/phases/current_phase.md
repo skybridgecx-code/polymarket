@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-36B — CLI packaging contract
+36C — CLI packaging implementation
 
 ## Branch
-phase-36b-cli-packaging-contract
+phase-36c-cli-packaging-implementation
 
 ## Intent
-Docs-only contract definition for the first operator-facing packaging CLI entrypoint, including module shape, arguments, stdout, exit behavior, and failure handling. No runtime behavior changes.
+Implement the first operator-facing CLI entrypoint for bounded local review outcome packaging, reusing the existing packaging module. No production behavior changes.
