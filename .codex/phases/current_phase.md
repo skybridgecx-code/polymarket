@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-34C — launcher output / failure-message polish
+34D — demo workflow end-to-end smoke checklist
 
 ## Branch
-phase-34c-launcher-output-failure-message-polish
+phase-34d-demo-workflow-e2e-smoke-checklist
 
 ## Intent
-Polish launcher output and failure-message clarity for local operators while preserving demo launcher behavior, paths, and controls.
+Create a docs-only end-to-end smoke checklist for the full local operator UI demo workflow from validate through cleanup.
