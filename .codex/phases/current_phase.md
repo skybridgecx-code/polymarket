@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-35C — review outcome packaging shape choice
+35D — review outcome packaging implementation
 
 ## Branch
-phase-35c-review-outcome-packaging-shape-choice
+phase-35d-review-outcome-packaging-implementation
 
 ## Intent
-Docs-only choice of the first implementation shape for review outcome packaging: deterministic local markdown + JSON handoff artifacts for a single reviewed run. No runtime behavior changes.
+Implement the first bounded local review outcome packaging flow for a single reviewed run, producing deterministic markdown and JSON handoff artifacts. No production behavior changes.
