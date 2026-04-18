@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-35F — review outcome packaging track closeout
+36A — packaging entrypoint scope lock
 
 ## Branch
-phase-35f-review-outcome-packaging-track-closeout
+phase-36a-packaging-entrypoint-scope-lock
 
 ## Intent
-Docs-only closeout for the completed 35A–35E review outcome packaging track. No runtime behavior changes.
+Docs-only scope lock for the first operator-facing entrypoint to review outcome packaging. Recommendation: CLI first, UI later. No runtime behavior changes.
