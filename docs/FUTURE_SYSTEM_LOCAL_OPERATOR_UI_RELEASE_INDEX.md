@@ -83,3 +83,10 @@ mypy src/future_system/operator_ui
 ## Exact Next Recommended Step
 - No more UI evidence planning docs are needed for this completed local operator UI track.
 - Open a separate runtime/product phase only if there is a specific new operator workflow requirement.
+
+## Demo workflow reliability track status
+Phase 34A–34E is complete for the `future_system` local operator UI demo workflow reliability track.
+
+See:
+- `docs/PHASE_34E_DEMO_WORKFLOW_RELIABILITY_TRACK_CLOSEOUT.md`
+
