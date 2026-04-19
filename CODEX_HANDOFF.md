@@ -20,6 +20,8 @@ The repo is a shipped read-only Polymarket analytics and paper-trade research ba
 - local Phase 37D operator CLI wrapper over the intake/export surface with deterministic accepted/rejected export artifacts
 - local Phase 37E operator docs covering exact execution-boundary intake CLI usage and artifact outputs
 - local Phase 37F deterministic handoff-request envelope builder from package artifacts and operator metadata
+- local Phase 37G operator CLI wrapper for the handoff-request envelope builder
+- local Phase 37H end-to-end operator handoff docs for package -> handoff_request build -> intake -> ack/reject artifacts
 
 Not shipped:
 
@@ -33,9 +35,9 @@ Not shipped:
 
 This frozen baseline does not add:
 
-- Python behavior changes
-- new routes
-- new CLI commands
+- new `src/polymarket_arb/*` runtime behavior
+- new `polymarket_arb` routes
+- new `polymarket_arb` CLI commands
 - scoring changes
 - policy changes
 - live trading behavior
@@ -82,6 +84,8 @@ python -m future_system.cli.review_outcome_package \
   --run-id theme_ctx_strong.analysis_success_export \
   --artifacts-root .tmp/future-system-operator-ui-demo/operator_runs \
   --target-root .tmp/future-system-operator-ui-demo/packages
+python -m future_system.cli.execution_boundary_handoff_request \
+  --package-dir /absolute/path/theme_ctx_strong.analysis_success_export.package
 python -m future_system.cli.execution_boundary_intake \
   --handoff-request-path /absolute/path/handoff_request.json \
   --export-root /absolute/path/execution-boundary-exports
@@ -170,14 +174,15 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 
 ## Recommended Next Step
 
-Phase 37G execution-boundary handoff request builder CLI wrapper is now shipped:
+Phase 37H execution-boundary end-to-end operator handoff docs are now shipped:
 
 - shipped local operator path is:
   validate -> prepare -> launch/review -> save local decision -> package -> builder -> intake -> cleanup
 - packaged handoff boundary to `cryp` now has local-only validator + deterministic intake/export + operator CLI wrapper
-- operator docs now define the explicit intake CLI step and ack/reject artifact locations
+- operator docs now define both builder and intake CLI steps with deterministic artifact locations
 - local builder now produces deterministic full `handoff_request.json` envelopes from package artifacts
+- local builder CLI now provides deterministic package-dir to handoff-request generation
 - keep local artifact-file boundaries intact
-- open the next phase only for explicit builder CLI/operator wrapper or transport-scope work
+- open the next phase only for explicit handoff contract/schema evolution or bounded transport/integration scope
 
 If a future prompt asks for larger product changes, challenge scope first against this frozen baseline.

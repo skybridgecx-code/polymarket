@@ -2,7 +2,9 @@
 
 ## Status
 
-The repo is currently in Phase 37F with a deterministic local handoff-request envelope builder for the execution-boundary contract between `polymarket-arb` (producer) and `cryp` (consumer).
+The repo is currently in Phase 37H with end-to-end operator docs for the local execution-boundary handoff flow between `polymarket-arb` (producer) and `cryp` (consumer):
+
+`package -> build handoff_request.json -> intake -> ack/reject artifact`
 
 The Phase 11 baseline is still the core `polymarket_arb` runtime foundation; later phases added `future_system` local operator UI workflow, demo-launcher reliability hardening, and local review outcome packaging.
 
@@ -165,24 +167,24 @@ Delivered:
 
 ## Current
 
-### Phase 37F
+### Phase 37H
 
-Execution-boundary handoff request envelope builder (local-only).
+Execution-boundary end-to-end operator handoff docs (local-only).
 
 Deliverables:
 
-- deterministic builder from review-outcome package artifacts to full `handoff_request.json` envelope
-- deterministic output path (`<package_dir>/handoff_request.json` by default)
-- explicit failure behavior for missing or incomplete source artifacts/metadata
-- focused tests for valid output and invalid/missing-input paths
+- operator-facing end-to-end doc with exact package/build/intake commands
+- explicit distinction between package artifacts and full handoff envelope
+- documented success/failure behavior for builder and intake CLI steps
+- runbook/release-index/handoff/roadmap/current-phase reconciliation to shipped 37A-37G2 behavior
 - no runtime behavior changes
 
 ## Recommended Next Step
 
-After Phase 37F, the next step should be a new separately scoped track only if there is a specific requirement:
+After Phase 37H, the next step should be a new separately scoped track only if there is a specific requirement:
 
-- operator CLI wrapper for the new handoff-request builder
 - handoff schema evolution only with explicit contract updates
+- bounded integration/transport work only with explicit non-live-execution constraints
 - keep no-live-execution/no-auth/no-db-queue boundaries intact
 
 ## Later

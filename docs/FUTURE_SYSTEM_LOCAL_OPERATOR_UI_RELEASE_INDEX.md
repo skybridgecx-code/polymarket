@@ -3,8 +3,8 @@
 ## Repo / Checkpoint
 - Repo: `polymarket-arb`
 - Branch: `phase-37a-execution-boundary-contract`
-- HEAD: `3194471`
-- Track covered: shipped local `future_system` operator UI workflow through Phase 37E execution-boundary intake CLI operator docs
+- HEAD: `c50ef54`
+- Track covered: shipped local `future_system` operator UI workflow through Phase 37H end-to-end execution-boundary handoff docs
 
 ## Shipped Workflow Summary
 - Local review artifact workflow: CLI creates per-run markdown/json artifacts in a local artifacts directory.
@@ -26,7 +26,9 @@
 - Cleanup command: `make future-system-operator-ui-demo-clean` (removes only `.tmp/future-system-operator-ui-demo`)
 - Validation command: `make future-system-operator-ui-demo-validate`
 - Packaging command: `python -m future_system.cli.review_outcome_package --run-id theme_ctx_strong.analysis_success_export --artifacts-root .tmp/future-system-operator-ui-demo/operator_runs --target-root .tmp/future-system-operator-ui-demo/packages`
+- Handoff request builder command: `python -m future_system.cli.execution_boundary_handoff_request --package-dir /absolute/path/theme_ctx_strong.analysis_success_export.package`
 - Execution-boundary intake command: `python -m future_system.cli.execution_boundary_intake --handoff-request-path /absolute/path/handoff_request.json --export-root /absolute/path/execution-boundary-exports`
+- End-to-end operator handoff docs status: Phase 37H documents package -> handoff_request.json build -> intake -> ack/reject export flow; see [PHASE_37H_END_TO_END_HANDOFF_OPERATOR_DOCS.md](./PHASE_37H_END_TO_END_HANDOFF_OPERATOR_DOCS.md).
 - Validation hardening status: Phase 34B strengthened launcher validation coverage for non-empty artifacts, metadata content contracts, and bounded `.tmp` cleanup checks; see [PHASE_34B_DEMO_WORKFLOW_VALIDATION_HARDENING.md](./PHASE_34B_DEMO_WORKFLOW_VALIDATION_HARDENING.md).
 - Launcher output/failure-message polish status: Phase 34C improved launcher stdout sectioning and failure clarity without behavior changes; see [PHASE_34C_LAUNCHER_OUTPUT_FAILURE_MESSAGE_POLISH.md](./PHASE_34C_LAUNCHER_OUTPUT_FAILURE_MESSAGE_POLISH.md).
 - End-to-end smoke checklist status: Phase 34D provides the full demo workflow smoke checklist; see [PHASE_34D_DEMO_WORKFLOW_E2E_SMOKE_CHECKLIST.md](./PHASE_34D_DEMO_WORKFLOW_E2E_SMOKE_CHECKLIST.md).

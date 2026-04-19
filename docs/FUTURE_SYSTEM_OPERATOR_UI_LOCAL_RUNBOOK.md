@@ -81,7 +81,25 @@ Expected package files:
 - `handoff_summary.md`
 - `handoff_payload.json`
 
-8. Run local execution-boundary intake/export CLI:
+8. Build the full execution-boundary handoff request envelope:
+
+```bash
+python -m future_system.cli.execution_boundary_handoff_request \
+  --package-dir .tmp/future-system-operator-ui-demo/packages/theme_ctx_strong.analysis_success_export.package
+```
+
+Default builder output:
+- `.tmp/future-system-operator-ui-demo/packages/theme_ctx_strong.analysis_success_export.package/handoff_request.json`
+
+Optional explicit output path:
+
+```bash
+python -m future_system.cli.execution_boundary_handoff_request \
+  --package-dir .tmp/future-system-operator-ui-demo/packages/theme_ctx_strong.analysis_success_export.package \
+  --output-path .tmp/future-system-operator-ui-demo/execution_boundary_exports/theme_ctx_strong.analysis_success_export.handoff_request.json
+```
+
+9. Run local execution-boundary intake/export CLI:
 
 ```bash
 python -m future_system.cli.execution_boundary_intake \
@@ -106,7 +124,7 @@ Important:
 - `--handoff-request-path` must point to a full execution-boundary request envelope JSON.
 - this is not the same file as package output `handoff_payload.json`.
 
-9. Clean demo temp artifacts:
+10. Clean demo temp artifacts:
 
 ```bash
 make future-system-operator-ui-demo-clean
