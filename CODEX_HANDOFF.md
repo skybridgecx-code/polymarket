@@ -16,6 +16,7 @@ The repo is a shipped read-only Polymarket analytics and paper-trade research ba
 - operator runbook, examples, checklists, failure-mode guidance, and validation guide
 - shipped local `future_system` operator UI workflow for local artifact review/edit
 - shipped local review outcome packaging flow with CLI entrypoint
+- docs-locked execution boundary contract for handing approved packages to `cryp` execution review surfaces
 
 Not shipped:
 
@@ -83,6 +84,9 @@ make future-system-operator-ui-demo-clean
 
 Packaging track closeout reference:
 - [docs/PHASE_36E_CLI_PACKAGING_TRACK_CLOSEOUT.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_36E_CLI_PACKAGING_TRACK_CLOSEOUT.md)
+
+Execution boundary contract reference:
+- [docs/PHASE_37A_EXECUTION_BOUNDARY_CONTRACT.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37A_EXECUTION_BOUNDARY_CONTRACT.md)
 
 API:
 
@@ -159,11 +163,12 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 
 ## Recommended Next Step
 
-Phase 36 packaging track is complete (36A–36E):
+Phase 37A execution boundary contract is now defined:
 
 - shipped local operator path is:
   validate -> prepare -> launch/review -> save local decision -> package -> cleanup
+- packaged handoff boundary to `cryp` is docs-locked; no runtime coupling was added
 - keep local artifact-file boundaries intact
-- open a new phase only for a specific additional requirement (for example packaging UI integration or handoff schema evolution)
+- open the next phase only for explicit contract implementation work (for example schema validators or bounded intake/export wiring)
 
 If a future prompt asks for larger product changes, challenge scope first against this frozen baseline.

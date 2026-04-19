@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-36E — CLI packaging track closeout
+37A — execution boundary contract (polymarket-arb -> cryp)
 
 ## Branch
-phase-36d-cli-packaging-manual-smoke
+phase-37a-execution-boundary-contract
 
 ## Intent
-Formally close the CLI packaging track with reconciled contract/manual-smoke docs and a final operator workflow closeout, without runtime behavior changes.
+Define a docs-only, concrete handoff contract for approved local review outcome packages from `polymarket-arb` into bounded `cryp` execution review artifacts, without runtime behavior changes in either repo.

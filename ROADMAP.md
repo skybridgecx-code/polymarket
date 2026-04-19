@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 36E with CLI packaging track closeout and final packaging-doc consistency reconciliation.
+The repo is currently in Phase 37A with a docs-only execution boundary contract between `polymarket-arb` (producer) and `cryp` (consumer).
 
 The Phase 11 baseline is still the core `polymarket_arb` runtime foundation; later phases added `future_system` local operator UI workflow, demo-launcher reliability hardening, and local review outcome packaging.
 
@@ -165,23 +165,23 @@ Delivered:
 
 ## Current
 
-### Phase 36E
+### Phase 37A
 
-CLI packaging track closeout.
+Execution boundary contract between `polymarket-arb` and `cryp` (docs/design only).
 
 Deliverables:
 
-- formal closeout of 36A–36D packaging track
-- repaired/reconciled packaging contract/manual-smoke docs
-- explicit final shipped operator sequence:
-  validate -> prepare -> launch/review -> save local decision -> package -> cleanup
+- concrete producer/consumer contract for approved local package handoff
+- canonical artifact names/locations and required/optional schema fields
+- approval, idempotency, ack/reject, and evidence-loop requirements
+- explicit non-goals preserving system separation and bounded runtime authority
 - no runtime behavior changes
 
 ## Recommended Next Step
 
-After Phase 36E closeout, the next step should be a new separately scoped track only if there is a specific requirement:
+After Phase 37A, the next step should be a new separately scoped track only if there is a specific requirement:
 
-- package workflow expansion (for example UI integration) only if explicitly required
+- contract implementation hardening (for example schema validators and bounded intake/export tooling)
 - handoff schema evolution only with explicit contract updates
 - keep no-live-execution/no-auth/no-db-queue boundaries intact
 
