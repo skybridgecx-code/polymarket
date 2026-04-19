@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-37M — section-level docs parity gate for local transport contract
+37N — execution-boundary track closeout and merge prep
 
 ## Branch
 phase-37a-execution-boundary-contract
 
 ## Intent
-Add a tiny deterministic read-only parity enhancement that fails when section-level local transport contract anchors drift between producer (`37I`) and consumer (`37J`) docs for pickup fields, idempotency/duplicates, and non-goal boundaries.
+Close out the shipped 37A-37M execution-boundary track with a bounded merge-readiness summary, final operator workflow, preserved boundaries, and recommended post-merge next step.

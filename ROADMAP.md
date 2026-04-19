@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 37M with a docs-only section-level parity gate for producer/consumer local transport contract alignment:
+The repo is currently in Phase 37N with docs-only execution-boundary track closeout and merge-prep documentation for Phases 37A-37M:
 
 `package -> build handoff_request.json -> intake -> ack/reject artifact`
 
@@ -167,22 +167,22 @@ Delivered:
 
 ## Current
 
-### Phase 37M
+### Phase 37N
 
-Section-level docs parity gate for local transport contract alignment (local-only, docs-only).
+Execution-boundary track closeout and merge prep (local-only, docs-only).
 
 Deliverables:
 
-- deterministic read-only checks for section-level alignment on:
-  - required pickup receipt fields
-  - duplicate/retry/idempotency rules
-  - explicit non-goals/boundary rules
-- explicit fail behavior when section-level anchors drift
+- closeout summary for shipped 37A-37M execution-boundary work
+- final local operator workflow statement for the handoff boundary
+- explicit current boundaries/non-goals restatement
+- merge-readiness notes (including duplicate intermediate commit context)
+- recommended next step after merge
 - no runtime behavior changes
 
 ## Recommended Next Step
 
-After Phase 37M, the next step should be a new separately scoped track only if there is a specific requirement:
+After Phase 37N merge prep, the next step should be a new separately scoped track only if there is a specific requirement:
 
 - handoff schema evolution only with explicit contract updates
 - bounded consumer pickup/receipt tooling only with explicit non-live-execution constraints

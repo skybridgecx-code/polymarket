@@ -22,6 +22,11 @@ The repo is a shipped read-only Polymarket analytics and paper-trade research ba
 - local Phase 37F deterministic handoff-request envelope builder from package artifacts and operator metadata
 - local Phase 37G operator CLI wrapper for the handoff-request envelope builder
 - local Phase 37H end-to-end operator handoff docs for package -> handoff_request build -> intake -> ack/reject artifacts
+- local Phase 37I docs-only local transport workflow contract between producer and consumer
+- local Phase 37K cross-repo contract drift checklist for 37I/37J synchronization
+- local Phase 37L deterministic anchor-level cross-repo parity check
+- local Phase 37M section-level cross-repo parity gate for pickup fields, idempotency/duplicates, and non-goal boundaries
+- local Phase 37N execution-boundary track closeout and merge-prep documentation
 
 Not shipped:
 
@@ -98,6 +103,10 @@ Packaging track closeout reference:
 Execution boundary contract reference:
 - [docs/PHASE_37A_EXECUTION_BOUNDARY_CONTRACT.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37A_EXECUTION_BOUNDARY_CONTRACT.md)
 - [docs/PHASE_37E_EXECUTION_BOUNDARY_CLI_OPERATOR_DOCS.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37E_EXECUTION_BOUNDARY_CLI_OPERATOR_DOCS.md)
+- [docs/PHASE_37H_END_TO_END_HANDOFF_OPERATOR_DOCS.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37H_END_TO_END_HANDOFF_OPERATOR_DOCS.md)
+- [docs/PHASE_37I_LOCAL_TRANSPORT_WORKFLOW_CONTRACT.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37I_LOCAL_TRANSPORT_WORKFLOW_CONTRACT.md)
+- [docs/PHASE_37K_CROSS_REPO_CONTRACT_DRIFT_CHECKLIST.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37K_CROSS_REPO_CONTRACT_DRIFT_CHECKLIST.md)
+- [docs/PHASE_37N_EXECUTION_BOUNDARY_TRACK_CLOSEOUT.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37N_EXECUTION_BOUNDARY_TRACK_CLOSEOUT.md)
 
 API:
 
@@ -174,15 +183,15 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 
 ## Recommended Next Step
 
-Phase 37H execution-boundary end-to-end operator handoff docs are now shipped:
+Execution-boundary Phase 37A-37M is closed out for merge prep in Phase 37N:
 
-- shipped local operator path is:
-  validate -> prepare -> launch/review -> save local decision -> package -> builder -> intake -> cleanup
-- packaged handoff boundary to `cryp` now has local-only validator + deterministic intake/export + operator CLI wrapper
-- operator docs now define both builder and intake CLI steps with deterministic artifact locations
-- local builder now produces deterministic full `handoff_request.json` envelopes from package artifacts
-- local builder CLI now provides deterministic package-dir to handoff-request generation
-- keep local artifact-file boundaries intact
-- open the next phase only for explicit handoff contract/schema evolution or bounded transport/integration scope
+- local operator path now spans package -> handoff request build -> canonical local transport placement -> pickup/ack-reject boundary -> archive
+- producer/consumer contract sync guardrails now include:
+  - docs contract source (`37I`)
+  - cross-repo drift checklist (`37K`)
+  - deterministic parity gates (`37L`, `37M`)
+- merge-readiness summary is documented in:
+  - [docs/PHASE_37N_EXECUTION_BOUNDARY_TRACK_CLOSEOUT.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37N_EXECUTION_BOUNDARY_TRACK_CLOSEOUT.md)
+- after merge, open a new bounded phase only for explicit schema evolution or consumer-side tooling under the same no-live-expansion boundaries
 
 If a future prompt asks for larger product changes, challenge scope first against this frozen baseline.
