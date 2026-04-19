@@ -26,4 +26,52 @@ class ExecutionBoundaryHandoffRequest(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
-__all__ = ["ExecutionBoundaryHandoffRequest"]
+class ExecutionBoundaryIntakeAckArtifact(BaseModel):
+    """Deterministic local acknowledgment artifact for a valid handoff request."""
+
+    artifact_kind: Literal["execution_boundary_intake_ack"] = "execution_boundary_intake_ack"
+    contract_version: Literal["37A.v1"] = "37A.v1"
+    producer_system: Literal["polymarket-arb"] = "polymarket-arb"
+    consumer_system: Literal["cryp"] = "cryp"
+    correlation_id: str
+    idempotency_key: str
+    run_id: str
+    submission_status: Literal["accepted_for_local_execution_review"] = (
+        "accepted_for_local_execution_review"
+    )
+    reason_codes: list[str] = Field(default_factory=list)
+    source_handoff_request_path: str
+
+
+class ExecutionBoundaryIntakeRejectArtifact(BaseModel):
+    """Deterministic local reject artifact for an invalid handoff request."""
+
+    artifact_kind: Literal["execution_boundary_intake_reject"] = "execution_boundary_intake_reject"
+    contract_version: Literal["37A.v1"] = "37A.v1"
+    producer_system: Literal["polymarket-arb"] = "polymarket-arb"
+    consumer_system: Literal["cryp"] = "cryp"
+    correlation_id: str | None = None
+    idempotency_key: str | None = None
+    submission_status: Literal["rejected_for_local_execution_review"] = (
+        "rejected_for_local_execution_review"
+    )
+    reason_codes: list[str] = Field(default_factory=list)
+    validation_error: str
+    source_handoff_request_path: str
+
+
+class ExecutionBoundaryIntakeExportResult(BaseModel):
+    """Result envelope describing where deterministic intake artifacts were written."""
+
+    source_handoff_request_path: str
+    accepted: bool
+    ack_artifact_path: str | None = None
+    reject_artifact_path: str | None = None
+
+
+__all__ = [
+    "ExecutionBoundaryHandoffRequest",
+    "ExecutionBoundaryIntakeAckArtifact",
+    "ExecutionBoundaryIntakeRejectArtifact",
+    "ExecutionBoundaryIntakeExportResult",
+]

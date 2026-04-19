@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 37B with a local fixture + validator surface for the execution boundary contract between `polymarket-arb` (producer) and `cryp` (consumer).
+The repo is currently in Phase 37C with a local intake/export surface for the execution boundary contract between `polymarket-arb` (producer) and `cryp` (consumer).
 
 The Phase 11 baseline is still the core `polymarket_arb` runtime foundation; later phases added `future_system` local operator UI workflow, demo-launcher reliability hardening, and local review outcome packaging.
 
@@ -165,22 +165,24 @@ Delivered:
 
 ## Current
 
-### Phase 37B
+### Phase 37C
 
-Execution boundary contract fixture + validator surface (local-only).
+Execution boundary contract intake/export surface (local-only).
 
 Deliverables:
 
-- canonical approved handoff request fixture
-- local validator for required fields, approval gates, correlation/idempotency rules, and artifact-path assumptions
-- focused tests for valid and invalid handoff payloads
+- load/read one local handoff request artifact
+- validate via the existing 37B validator surface
+- emit deterministic local ack artifact for valid requests
+- emit deterministic local reject artifact for invalid requests
+- focused tests for valid ack and invalid reject flows
 - no runtime behavior changes
 
 ## Recommended Next Step
 
-After Phase 37B, the next step should be a new separately scoped track only if there is a specific requirement:
+After Phase 37C, the next step should be a new separately scoped track only if there is a specific requirement:
 
-- bounded intake/export implementation that consumes this validator surface
+- bounded CLI/operator wrapper around the intake/export surface
 - handoff schema evolution only with explicit contract updates
 - keep no-live-execution/no-auth/no-db-queue boundaries intact
 
