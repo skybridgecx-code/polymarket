@@ -47,7 +47,12 @@ def screen(
 ) -> None:
     settings = get_settings()
     configure_logging(settings.log_level)
-    rows = asyncio.run(ScreenService(settings).build_screen_rows(limit=limit, min_spread=min_spread))
+    rows = asyncio.run(
+        ScreenService(settings).build_screen_rows(
+            limit=limit,
+            min_spread=min_spread,
+        )
+    )
     typer.echo(json.dumps(rows, indent=2, sort_keys=True))
 
 

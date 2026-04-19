@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-36C — CLI packaging implementation
+37N — execution-boundary track closeout and merge prep
 
 ## Branch
-phase-36c-cli-packaging-implementation
+phase-37a-execution-boundary-contract
 
 ## Intent
-Implement the first operator-facing CLI entrypoint for bounded local review outcome packaging, reusing the existing packaging module. No production behavior changes.
+Close out the shipped 37A-37M execution-boundary track with a bounded merge-readiness summary, final operator workflow, preserved boundaries, and recommended post-merge next step.

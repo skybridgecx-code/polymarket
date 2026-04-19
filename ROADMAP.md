@@ -2,7 +2,11 @@
 
 ## Status
 
-The repo is currently in Phase 11 with bounded operator validation discipline layered on top of the frozen shipped baseline.
+The repo is currently in Phase 37N with docs-only execution-boundary track closeout and merge-prep documentation for Phases 37A-37M:
+
+`package -> build handoff_request.json -> intake -> ack/reject artifact`
+
+The Phase 11 baseline is still the core `polymarket_arb` runtime foundation; later phases added `future_system` local operator UI workflow, demo-launcher reliability hardening, and local review outcome packaging.
 
 ## Completed
 
@@ -163,26 +167,26 @@ Delivered:
 
 ## Current
 
-### Phase 11
+### Phase 37N
 
-Bounded operator validation discipline.
+Execution-boundary track closeout and merge prep (local-only, docs-only).
 
 Deliverables:
 
-- compact operator validation guide for the shipped commands
-- fixture-backed verification guidance where available
-- explicit validation flow for refresh, checkpoint, `/health`, paper-trade, review-packet, and replay-evaluate
-- exact sanity checks for output structures
-- docs aligned to shipped Phase 11 validation discipline
+- closeout summary for shipped 37A-37M execution-boundary work
+- final local operator workflow statement for the handoff boundary
+- explicit current boundaries/non-goals restatement
+- merge-readiness notes (including duplicate intermediate commit context)
+- recommended next step after merge
+- no runtime behavior changes
 
 ## Recommended Next Step
 
-After the validation guide is in place, the next step should be bounded operator validation execution:
+After Phase 37N merge prep, the next step should be a new separately scoped track only if there is a specific requirement:
 
-- bounded smoke-test checklist for operator flows
-- fixture-backed verification of the runbook commands
-- checkpoint and `/health` verification discipline
-- no new routes, scoring, or live behavior
+- handoff schema evolution only with explicit contract updates
+- bounded consumer pickup/receipt tooling only with explicit non-live-execution constraints
+- keep no-live-execution/no-auth/no-db-queue boundaries intact
 
 ## Later
 

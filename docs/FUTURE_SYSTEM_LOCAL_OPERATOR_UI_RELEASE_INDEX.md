@@ -2,9 +2,9 @@
 
 ## Repo / Checkpoint
 - Repo: `polymarket-arb`
-- Branch: `phase-30a-operator-ui-launcher-smoke-tests`
-- HEAD: `742c1aab47a70cfe499a60b028e96db8c7612272`
-- Track covered: shipped local `future_system` operator UI workflow through Phase 30A
+- Branch: `phase-37a-execution-boundary-contract`
+- HEAD: `c50ef54`
+- Track covered: shipped local `future_system` operator UI workflow through Phase 37H end-to-end execution-boundary handoff docs
 
 ## Shipped Workflow Summary
 - Local review artifact workflow: CLI creates per-run markdown/json artifacts in a local artifacts directory.
@@ -25,9 +25,16 @@
 - Port override supported: `PORT=8001 make future-system-operator-ui-demo` (default port is `8000`)
 - Cleanup command: `make future-system-operator-ui-demo-clean` (removes only `.tmp/future-system-operator-ui-demo`)
 - Validation command: `make future-system-operator-ui-demo-validate`
+- Packaging command: `python -m future_system.cli.review_outcome_package --run-id theme_ctx_strong.analysis_success_export --artifacts-root .tmp/future-system-operator-ui-demo/operator_runs --target-root .tmp/future-system-operator-ui-demo/packages`
+- Handoff request builder command: `python -m future_system.cli.execution_boundary_handoff_request --package-dir /absolute/path/theme_ctx_strong.analysis_success_export.package`
+- Execution-boundary intake command: `python -m future_system.cli.execution_boundary_intake --handoff-request-path /absolute/path/handoff_request.json --export-root /absolute/path/execution-boundary-exports`
+- End-to-end operator handoff docs status: Phase 37H documents package -> handoff_request.json build -> intake -> ack/reject export flow; see [PHASE_37H_END_TO_END_HANDOFF_OPERATOR_DOCS.md](./PHASE_37H_END_TO_END_HANDOFF_OPERATOR_DOCS.md).
 - Validation hardening status: Phase 34B strengthened launcher validation coverage for non-empty artifacts, metadata content contracts, and bounded `.tmp` cleanup checks; see [PHASE_34B_DEMO_WORKFLOW_VALIDATION_HARDENING.md](./PHASE_34B_DEMO_WORKFLOW_VALIDATION_HARDENING.md).
 - Launcher output/failure-message polish status: Phase 34C improved launcher stdout sectioning and failure clarity without behavior changes; see [PHASE_34C_LAUNCHER_OUTPUT_FAILURE_MESSAGE_POLISH.md](./PHASE_34C_LAUNCHER_OUTPUT_FAILURE_MESSAGE_POLISH.md).
 - End-to-end smoke checklist status: Phase 34D provides the full demo workflow smoke checklist; see [PHASE_34D_DEMO_WORKFLOW_E2E_SMOKE_CHECKLIST.md](./PHASE_34D_DEMO_WORKFLOW_E2E_SMOKE_CHECKLIST.md).
+- CLI packaging manual smoke status: Phase 36D documents the full operator path through package generation; see [PHASE_36D_CLI_PACKAGING_MANUAL_SMOKE.md](./PHASE_36D_CLI_PACKAGING_MANUAL_SMOKE.md).
+- CLI packaging closeout status: Phase 36E formally closes the packaging entrypoint track and reconciles packaging docs; see [PHASE_36E_CLI_PACKAGING_TRACK_CLOSEOUT.md](./PHASE_36E_CLI_PACKAGING_TRACK_CLOSEOUT.md).
+- Execution-boundary intake CLI docs status: Phase 37E documents operator usage, output artifacts, and workflow placement for `python -m future_system.cli.execution_boundary_intake`; see [PHASE_37E_EXECUTION_BOUNDARY_CLI_OPERATOR_DOCS.md](./PHASE_37E_EXECUTION_BOUNDARY_CLI_OPERATOR_DOCS.md).
 - Demo launcher status: Phase 29A–29E tooling track is complete; see [PHASE_29E_DEMO_LAUNCHER_TRACK_CLOSEOUT.md](./PHASE_29E_DEMO_LAUNCHER_TRACK_CLOSEOUT.md).
 - Run detail UX manual smoke checklist: [PHASE_31D_RUN_DETAIL_UX_MANUAL_SMOKE.md](./PHASE_31D_RUN_DETAIL_UX_MANUAL_SMOKE.md)
 - Run detail UX track status: Phase 31A–31E is complete; see [PHASE_31E_RUN_DETAIL_UX_TRACK_CLOSEOUT.md](./PHASE_31E_RUN_DETAIL_UX_TRACK_CLOSEOUT.md).
@@ -81,8 +88,8 @@ mypy src/future_system/operator_ui
 - Notes/reviewer persistence observation was audited in Phase 27A and was not confirmed as a runtime bug.
 
 ## Exact Next Recommended Step
-- No more UI evidence planning docs are needed for this completed local operator UI track.
-- Open a separate runtime/product phase only if there is a specific new operator workflow requirement.
+- Phase 37E operator docs for execution-boundary intake CLI are complete.
+- Open a new phase only for a specific additional requirement (for example deterministic handoff-request envelope generation or handoff schema evolution), while preserving current local-only boundaries.
 
 ## Demo workflow reliability track status
 Phase 34A–34E is complete for the `future_system` local operator UI demo workflow reliability track.
@@ -90,3 +97,16 @@ Phase 34A–34E is complete for the `future_system` local operator UI demo workf
 See:
 - `docs/PHASE_34E_DEMO_WORKFLOW_RELIABILITY_TRACK_CLOSEOUT.md`
 
+## Review Outcome Packaging Track Status
+Phase 35A–35F is complete for local review outcome packaging flow definition and implementation.
+
+CLI entrypoint implementation status:
+- Phase 36C implemented `python -m future_system.cli.review_outcome_package`
+- Phase 36D documents manual smoke and operator workflow integration
+- Phase 36E closes out the CLI packaging track and reconciles packaging documentation consistency
+
+Core packaging docs:
+- [PHASE_35E_REVIEW_OUTCOME_PACKAGING_MANUAL_SMOKE_CHECKLIST.md](./PHASE_35E_REVIEW_OUTCOME_PACKAGING_MANUAL_SMOKE_CHECKLIST.md)
+- [PHASE_36B_CLI_PACKAGING_CONTRACT.md](./PHASE_36B_CLI_PACKAGING_CONTRACT.md)
+- [PHASE_36D_CLI_PACKAGING_MANUAL_SMOKE.md](./PHASE_36D_CLI_PACKAGING_MANUAL_SMOKE.md)
+- [PHASE_36E_CLI_PACKAGING_TRACK_CLOSEOUT.md](./PHASE_36E_CLI_PACKAGING_TRACK_CLOSEOUT.md)

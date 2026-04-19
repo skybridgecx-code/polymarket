@@ -25,7 +25,7 @@ def test_mount_operator_ui_app_uses_default_mount_path(tmp_path: Path) -> None:
     response = client.get(f"{DEFAULT_OPERATOR_UI_MOUNT_PATH}/")
 
     assert response.status_code == 200
-    assert "Review Artifacts" in response.text
+    assert "Local Review Runs" in response.text
 
 
 def test_mount_operator_ui_app_supports_custom_mount_path(tmp_path: Path) -> None:
@@ -40,7 +40,7 @@ def test_mount_operator_ui_app_supports_custom_mount_path(tmp_path: Path) -> Non
     response = client.get("/ops/review-console/")
 
     assert response.status_code == 200
-    assert "Review Artifacts" in response.text
+    assert "Local Review Runs" in response.text
 
 
 def test_mount_operator_ui_app_rejects_invalid_mount_path(tmp_path: Path) -> None:

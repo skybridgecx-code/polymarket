@@ -47,7 +47,7 @@ def test_mount_operator_ui_app_default_path_serves_operator_ui(tmp_path: Path) -
     response = client.get(f"{DEFAULT_OPERATOR_UI_MOUNT_PATH}/")
 
     assert response.status_code == 200
-    assert "Review Artifacts" in response.text
+    assert "Local Review Runs" in response.text
 
 
 def test_get_root_renders_configured_readable_list_state(tmp_path: Path) -> None:
@@ -81,7 +81,7 @@ def test_trigger_success_redirects_and_hands_off_to_detail_with_default_subdirec
 
     detail = client.get(location)
     assert detail.status_code == 200
-    assert "Review Artifact Detail" in detail.text
+    assert "Local Review Run Detail" in detail.text
     assert "Run created via trigger and loaded." in detail.text
     assert _DEFAULT_TRIGGER_TARGET_SUBDIRECTORY in detail.text
 
@@ -121,7 +121,7 @@ def test_triggered_runs_in_operator_runs_are_not_auto_listed_at_root(tmp_path: P
 
     root_list = client.get("/")
     assert root_list.status_code == 200
-    assert "No runs found." in root_list.text
+    assert "No local review runs found." in root_list.text
     assert triggered_run_id not in root_list.text
 
     root_run_id = _write_failure_run(tmp_path, failure_stage="reasoning_parse")
