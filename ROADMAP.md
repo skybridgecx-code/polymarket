@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 37E with operator-facing documentation for the local execution-boundary intake CLI between `polymarket-arb` (producer) and `cryp` (consumer).
+The repo is currently in Phase 37F with a deterministic local handoff-request envelope builder for the execution-boundary contract between `polymarket-arb` (producer) and `cryp` (consumer).
 
 The Phase 11 baseline is still the core `polymarket_arb` runtime foundation; later phases added `future_system` local operator UI workflow, demo-launcher reliability hardening, and local review outcome packaging.
 
@@ -165,24 +165,23 @@ Delivered:
 
 ## Current
 
-### Phase 37E
+### Phase 37F
 
-Execution boundary intake CLI operator docs (local-only).
+Execution-boundary handoff request envelope builder (local-only).
 
 Deliverables:
 
-- operator-facing usage doc for `python -m future_system.cli.execution_boundary_intake`
-- required argument documentation (`--handoff-request-path`, `--export-root`, optional `--require-local-artifacts`)
-- deterministic ack/reject artifact location documentation
-- success/reject/CLI-error behavior documentation
-- runbook + release-index + status reconciliation
+- deterministic builder from review-outcome package artifacts to full `handoff_request.json` envelope
+- deterministic output path (`<package_dir>/handoff_request.json` by default)
+- explicit failure behavior for missing or incomplete source artifacts/metadata
+- focused tests for valid output and invalid/missing-input paths
 - no runtime behavior changes
 
 ## Recommended Next Step
 
-After Phase 37E, the next step should be a new separately scoped track only if there is a specific requirement:
+After Phase 37F, the next step should be a new separately scoped track only if there is a specific requirement:
 
-- deterministic handoff-request envelope builder flow (still local-only)
+- operator CLI wrapper for the new handoff-request builder
 - handoff schema evolution only with explicit contract updates
 - keep no-live-execution/no-auth/no-db-queue boundaries intact
 
