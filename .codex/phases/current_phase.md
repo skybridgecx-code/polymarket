@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-37A — execution boundary contract (polymarket-arb -> cryp)
+37B — execution boundary contract fixture + validator surface
 
 ## Branch
 phase-37a-execution-boundary-contract
 
 ## Intent
-Define a docs-only, concrete handoff contract for approved local review outcome packages from `polymarket-arb` into bounded `cryp` execution review artifacts, without runtime behavior changes in either repo.
+Implement a local fixture-backed validator surface for the Phase 37A handoff contract, including required-field checks, approval gating, correlation/idempotency validation, and artifact-path assumptions, without runtime integration changes.

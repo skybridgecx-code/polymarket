@@ -1,0 +1,45 @@
+{
+  "contract_version": "37A.v1",
+  "producer_system": "polymarket-arb",
+  "consumer_system": "cryp",
+  "correlation_id": "theme_ctx_strong.analysis_success_export",
+  "idempotency_key": "theme_ctx_strong.analysis_success_export:1700000000000000000:approve",
+  "handoff_payload": {
+    "package_version": "v1",
+    "local_only": true,
+    "run_id": "theme_ctx_strong.analysis_success_export",
+    "run_status": "success",
+    "export_kind": "analysis_success_export",
+    "markdown_artifact_path": "/tmp/future-system-operator-ui-demo/operator_runs/theme_ctx_strong.analysis_success_export.md",
+    "json_artifact_path": "/tmp/future-system-operator-ui-demo/operator_runs/theme_ctx_strong.analysis_success_export.json",
+    "operator_review_metadata_path": "/tmp/future-system-operator-ui-demo/operator_runs/theme_ctx_strong.analysis_success_export.operator_review.json",
+    "review_status": "decided",
+    "operator_decision": "approve",
+    "review_notes_summary": "Approved for bounded execution review handoff.",
+    "reviewer_identity": "operator_a",
+    "package_marker": "deterministic_local_review_outcome_package"
+  },
+  "operator_review_metadata": {
+    "record_kind": "operator_review_decision_record",
+    "record_version": 1,
+    "artifact": {
+      "run_id": "theme_ctx_strong.analysis_success_export",
+      "theme_id": "theme_ctx_strong",
+      "status": "success",
+      "export_kind": "analysis_success_export",
+      "failure_stage": null,
+      "json_file_path": "/tmp/future-system-operator-ui-demo/operator_runs/theme_ctx_strong.analysis_success_export.json",
+      "markdown_file_path": "/tmp/future-system-operator-ui-demo/operator_runs/theme_ctx_strong.analysis_success_export.md"
+    },
+    "review_status": "decided",
+    "operator_decision": "approve",
+    "review_notes_summary": "Approved for bounded execution review handoff.",
+    "reviewer_identity": "operator_a",
+    "decided_at_epoch_ns": 1699999999000000000,
+    "updated_at_epoch_ns": 1700000000000000000,
+    "run_flags_snapshot": []
+  },
+  "notes": [
+    "phase_37b_fixture"
+  ]
+}

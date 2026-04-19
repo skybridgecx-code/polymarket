@@ -17,6 +17,7 @@ The repo is a shipped read-only Polymarket analytics and paper-trade research ba
 - shipped local `future_system` operator UI workflow for local artifact review/edit
 - shipped local review outcome packaging flow with CLI entrypoint
 - docs-locked execution boundary contract for handing approved packages to `cryp` execution review surfaces
+- local Phase 37B fixture + validator surface for execution-boundary handoff contract checks
 
 Not shipped:
 
