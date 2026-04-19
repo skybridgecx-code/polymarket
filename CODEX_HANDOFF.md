@@ -81,6 +81,9 @@ python -m future_system.cli.review_outcome_package \
 make future-system-operator-ui-demo-clean
 ```
 
+Packaging track closeout reference:
+- [docs/PHASE_36E_CLI_PACKAGING_TRACK_CLOSEOUT.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_36E_CLI_PACKAGING_TRACK_CLOSEOUT.md)
+
 API:
 
 ```bash
@@ -156,11 +159,11 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 
 ## Recommended Next Step
 
-Bounded packaging manual smoke execution and closeout:
+Phase 36 packaging track is complete (36A–36E):
 
-- execute the full local operator path:
+- shipped local operator path is:
   validate -> prepare -> launch/review -> save local decision -> package -> cleanup
 - keep local artifact-file boundaries intact
-- close out Phase 36 track in a separate 36E closeout step
+- open a new phase only for a specific additional requirement (for example packaging UI integration or handoff schema evolution)
 
 If a future prompt asks for larger product changes, challenge scope first against this frozen baseline.

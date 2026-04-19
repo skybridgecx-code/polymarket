@@ -3,8 +3,8 @@
 ## Repo / Checkpoint
 - Repo: `polymarket-arb`
 - Branch: `phase-36d-cli-packaging-manual-smoke`
-- HEAD: `f1a6d5fc0c2ca21a842355606ed5aaf9466c5c1f`
-- Track covered: shipped local `future_system` operator UI workflow through Phase 36D manual-smoke documentation
+- HEAD: `571be74d1b66f622b947097962086a64174f3f17`
+- Track covered: shipped local `future_system` operator UI workflow through Phase 36E CLI packaging track closeout
 
 ## Shipped Workflow Summary
 - Local review artifact workflow: CLI creates per-run markdown/json artifacts in a local artifacts directory.
@@ -30,6 +30,7 @@
 - Launcher output/failure-message polish status: Phase 34C improved launcher stdout sectioning and failure clarity without behavior changes; see [PHASE_34C_LAUNCHER_OUTPUT_FAILURE_MESSAGE_POLISH.md](./PHASE_34C_LAUNCHER_OUTPUT_FAILURE_MESSAGE_POLISH.md).
 - End-to-end smoke checklist status: Phase 34D provides the full demo workflow smoke checklist; see [PHASE_34D_DEMO_WORKFLOW_E2E_SMOKE_CHECKLIST.md](./PHASE_34D_DEMO_WORKFLOW_E2E_SMOKE_CHECKLIST.md).
 - CLI packaging manual smoke status: Phase 36D documents the full operator path through package generation; see [PHASE_36D_CLI_PACKAGING_MANUAL_SMOKE.md](./PHASE_36D_CLI_PACKAGING_MANUAL_SMOKE.md).
+- CLI packaging closeout status: Phase 36E formally closes the packaging entrypoint track and reconciles packaging docs; see [PHASE_36E_CLI_PACKAGING_TRACK_CLOSEOUT.md](./PHASE_36E_CLI_PACKAGING_TRACK_CLOSEOUT.md).
 - Demo launcher status: Phase 29A–29E tooling track is complete; see [PHASE_29E_DEMO_LAUNCHER_TRACK_CLOSEOUT.md](./PHASE_29E_DEMO_LAUNCHER_TRACK_CLOSEOUT.md).
 - Run detail UX manual smoke checklist: [PHASE_31D_RUN_DETAIL_UX_MANUAL_SMOKE.md](./PHASE_31D_RUN_DETAIL_UX_MANUAL_SMOKE.md)
 - Run detail UX track status: Phase 31A–31E is complete; see [PHASE_31E_RUN_DETAIL_UX_TRACK_CLOSEOUT.md](./PHASE_31E_RUN_DETAIL_UX_TRACK_CLOSEOUT.md).
@@ -83,9 +84,8 @@ mypy src/future_system/operator_ui
 - Notes/reviewer persistence observation was audited in Phase 27A and was not confirmed as a runtime bug.
 
 ## Exact Next Recommended Step
-- Complete Phase 36D manual smoke execution in local operator flow:
-  validate -> prepare -> launch/review -> save local decision -> package -> cleanup.
-- After manual smoke execution, close out the packaging entrypoint track in a separate 36E closeout phase.
+- Phase 36 packaging track is complete.
+- Open a new phase only for a specific additional requirement (for example packaging UI integration or handoff schema expansion), while preserving current local-only boundaries.
 
 ## Demo workflow reliability track status
 Phase 34A–34E is complete for the `future_system` local operator UI demo workflow reliability track.
@@ -99,3 +99,10 @@ Phase 35A–35F is complete for local review outcome packaging flow definition a
 CLI entrypoint implementation status:
 - Phase 36C implemented `python -m future_system.cli.review_outcome_package`
 - Phase 36D documents manual smoke and operator workflow integration
+- Phase 36E closes out the CLI packaging track and reconciles packaging documentation consistency
+
+Core packaging docs:
+- [PHASE_35E_REVIEW_OUTCOME_PACKAGING_MANUAL_SMOKE_CHECKLIST.md](./PHASE_35E_REVIEW_OUTCOME_PACKAGING_MANUAL_SMOKE_CHECKLIST.md)
+- [PHASE_36B_CLI_PACKAGING_CONTRACT.md](./PHASE_36B_CLI_PACKAGING_CONTRACT.md)
+- [PHASE_36D_CLI_PACKAGING_MANUAL_SMOKE.md](./PHASE_36D_CLI_PACKAGING_MANUAL_SMOKE.md)
+- [PHASE_36E_CLI_PACKAGING_TRACK_CLOSEOUT.md](./PHASE_36E_CLI_PACKAGING_TRACK_CLOSEOUT.md)

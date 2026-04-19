@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 36D with bounded local operator packaging manual-smoke and documentation reconciliation work.
+The repo is currently in Phase 36E with CLI packaging track closeout and final packaging-doc consistency reconciliation.
 
 The Phase 11 baseline is still the core `polymarket_arb` runtime foundation; later phases added `future_system` local operator UI workflow, demo-launcher reliability hardening, and local review outcome packaging.
 
@@ -165,24 +165,24 @@ Delivered:
 
 ## Current
 
-### Phase 36D
+### Phase 36E
 
-CLI packaging manual smoke and repo-status reconciliation.
+CLI packaging track closeout.
 
 Deliverables:
 
-- docs-only manual smoke path for CLI packaging entrypoint
-- explicit end-to-end operator sequence:
+- formal closeout of 36A–36D packaging track
+- repaired/reconciled packaging contract/manual-smoke docs
+- explicit final shipped operator sequence:
   validate -> prepare -> launch/review -> save local decision -> package -> cleanup
-- roadmap/handoff/release-index/runbook status reconciliation to current shipped state
 - no runtime behavior changes
 
 ## Recommended Next Step
 
-After Phase 36D docs/manual-smoke reconciliation, the next step should be Phase 36E closeout:
+After Phase 36E closeout, the next step should be a new separately scoped track only if there is a specific requirement:
 
-- track closeout for CLI packaging entrypoint
-- capture final validation baseline and known warnings
+- package workflow expansion (for example UI integration) only if explicitly required
+- handoff schema evolution only with explicit contract updates
 - keep no-live-execution/no-auth/no-db-queue boundaries intact
 
 ## Later
