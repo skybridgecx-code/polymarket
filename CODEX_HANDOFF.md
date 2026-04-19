@@ -17,7 +17,7 @@ The repo is a shipped read-only Polymarket analytics and paper-trade research ba
 - shipped local `future_system` operator UI workflow for local artifact review/edit
 - shipped local review outcome packaging flow with CLI entrypoint
 - docs-locked execution boundary contract for handing approved packages to `cryp` execution review surfaces
-- local Phase 37C intake/export surface that validates and writes deterministic ack/reject handoff artifacts
+- local Phase 37D operator CLI wrapper over the intake/export surface with deterministic accepted/rejected export artifacts
 
 Not shipped:
 
@@ -164,12 +164,12 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 
 ## Recommended Next Step
 
-Phase 37C execution boundary intake/export surface is now shipped:
+Phase 37D execution boundary operator CLI wrapper is now shipped:
 
 - shipped local operator path is:
   validate -> prepare -> launch/review -> save local decision -> package -> cleanup
-- packaged handoff boundary to `cryp` now has local-only validator + deterministic ack/reject export
+- packaged handoff boundary to `cryp` now has local-only validator + deterministic intake/export + operator CLI wrapper
 - keep local artifact-file boundaries intact
-- open the next phase only for explicit operator wrapper or transport-scope work
+- open the next phase only for explicit docs/runbook integration or transport-scope work
 
 If a future prompt asks for larger product changes, challenge scope first against this frozen baseline.
