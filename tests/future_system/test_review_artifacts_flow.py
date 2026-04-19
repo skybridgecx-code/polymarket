@@ -233,6 +233,7 @@ def test_write_initialized_operator_review_metadata_companion_bounds_writes_to_t
     tmp_path: Path,
 ) -> None:
     outside_path = tmp_path.parent / "outside.operator_review.json"
+    outside_path.unlink(missing_ok=True)
 
     with pytest.raises(ValueError, match="run_id contains invalid characters"):
         write_initialized_operator_review_metadata_companion(
