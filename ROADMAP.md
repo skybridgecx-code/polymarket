@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 37L with a docs-only scripted parity check for key producer/consumer local transport contract anchors:
+The repo is currently in Phase 37M with a docs-only section-level parity gate for producer/consumer local transport contract alignment:
 
 `package -> build handoff_request.json -> intake -> ack/reject artifact`
 
@@ -167,19 +167,22 @@ Delivered:
 
 ## Current
 
-### Phase 37L
+### Phase 37M
 
-Scripted docs parity check for local transport contract anchors (local-only, docs-only).
+Section-level docs parity gate for local transport contract alignment (local-only, docs-only).
 
 Deliverables:
 
-- deterministic read-only check that compares key shared 37I/37J anchors
-- explicit fail behavior when required path/semantic anchors drift
+- deterministic read-only checks for section-level alignment on:
+  - required pickup receipt fields
+  - duplicate/retry/idempotency rules
+  - explicit non-goals/boundary rules
+- explicit fail behavior when section-level anchors drift
 - no runtime behavior changes
 
 ## Recommended Next Step
 
-After Phase 37L, the next step should be a new separately scoped track only if there is a specific requirement:
+After Phase 37M, the next step should be a new separately scoped track only if there is a specific requirement:
 
 - handoff schema evolution only with explicit contract updates
 - bounded consumer pickup/receipt tooling only with explicit non-live-execution constraints
