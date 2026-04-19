@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 37K with a docs-only cross-repo contract drift checklist that keeps the local transport workflow contract synchronized between `polymarket-arb` (producer) and `cryp` (consumer):
+The repo is currently in Phase 37L with a docs-only scripted parity check for key producer/consumer local transport contract anchors:
 
 `package -> build handoff_request.json -> intake -> ack/reject artifact`
 
@@ -167,21 +167,19 @@ Delivered:
 
 ## Current
 
-### Phase 37K
+### Phase 37L
 
-Cross-repo local transport contract drift checklist (local-only, docs-only).
+Scripted docs parity check for local transport contract anchors (local-only, docs-only).
 
 Deliverables:
 
-- canonical source-of-truth designation (`37I`) and consumer mirror reference (`37J`)
-- required cross-repo parity checklist for paths, fields, idempotency, and ack/reject semantics
-- update-together rule for producer and consumer docs
-- pre-close checklist for future local transport contract edits
+- deterministic read-only check that compares key shared 37I/37J anchors
+- explicit fail behavior when required path/semantic anchors drift
 - no runtime behavior changes
 
 ## Recommended Next Step
 
-After Phase 37K, the next step should be a new separately scoped track only if there is a specific requirement:
+After Phase 37L, the next step should be a new separately scoped track only if there is a specific requirement:
 
 - handoff schema evolution only with explicit contract updates
 - bounded consumer pickup/receipt tooling only with explicit non-live-execution constraints

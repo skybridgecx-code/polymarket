@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-37K — cross-repo contract drift checklist for local transport workflow
+37L — scripted docs parity check for local transport contract
 
 ## Branch
 phase-37a-execution-boundary-contract
 
 ## Intent
-Define a small docs-only gate that keeps producer and consumer local transport workflow contract docs synchronized across `polymarket-arb` and `cryp`, without runtime integration, networking, or live execution expansion.
+Add a tiny deterministic read-only parity check that fails when key local transport contract anchors drift between producer (`37I`) and consumer (`37J`) docs.
