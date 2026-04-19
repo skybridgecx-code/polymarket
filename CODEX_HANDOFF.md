@@ -170,10 +170,10 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 
 ## Recommended Next Step
 
-Phase 37E execution boundary intake CLI operator docs are now shipped:
+Phase 37G execution-boundary handoff request builder CLI wrapper is now shipped:
 
 - shipped local operator path is:
-  validate -> prepare -> launch/review -> save local decision -> package -> intake -> cleanup
+  validate -> prepare -> launch/review -> save local decision -> package -> builder -> intake -> cleanup
 - packaged handoff boundary to `cryp` now has local-only validator + deterministic intake/export + operator CLI wrapper
 - operator docs now define the explicit intake CLI step and ack/reject artifact locations
 - local builder now produces deterministic full `handoff_request.json` envelopes from package artifacts
