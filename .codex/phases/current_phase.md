@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-36C — CLI packaging implementation
+36D — CLI packaging manual smoke and repo-status reconciliation
 
 ## Branch
-phase-36c-cli-packaging-implementation
+phase-36d-cli-packaging-manual-smoke
 
 ## Intent
-Implement the first operator-facing CLI entrypoint for bounded local review outcome packaging, reusing the existing packaging module. No production behavior changes.
+Document and verify the end-to-end manual smoke path for CLI packaging, and reconcile roadmap/handoff/release docs to current shipped state without runtime behavior changes.

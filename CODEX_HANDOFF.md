@@ -14,12 +14,14 @@ The repo is a shipped read-only Polymarket analytics and paper-trade research ba
 - read-only FastAPI operator API
 - bounded real-time refresh orchestration with checkpointing
 - operator runbook, examples, checklists, failure-mode guidance, and validation guide
+- shipped local `future_system` operator UI workflow for local artifact review/edit
+- shipped local review outcome packaging flow with CLI entrypoint
 
 Not shipped:
 
 - trading or order placement
 - auth or private key work
-- UI
+- production-facing UI for `polymarket_arb` core
 - broad persistence or database work
 - background workers
 - execution automation
@@ -64,6 +66,19 @@ python -m polymarket_arb.cli paper-trade --limit 5
 python -m polymarket_arb.cli review-packet --packet-type opportunities --limit 5
 python -m polymarket_arb.cli replay-evaluate --baseline-path /tmp/baseline.json --candidate-path /tmp/candidate.json
 python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
+```
+
+Future system local operator workflow:
+
+```bash
+make future-system-operator-ui-demo-validate
+make future-system-operator-ui-demo-prepare
+make future-system-operator-ui-demo
+python -m future_system.cli.review_outcome_package \
+  --run-id theme_ctx_strong.analysis_success_export \
+  --artifacts-root .tmp/future-system-operator-ui-demo/operator_runs \
+  --target-root .tmp/future-system-operator-ui-demo/packages
+make future-system-operator-ui-demo-clean
 ```
 
 API:
@@ -141,12 +156,11 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 
 ## Recommended Next Step
 
-Bounded operator validation execution:
+Bounded packaging manual smoke execution and closeout:
 
-- verify the runbook commands against fixture-backed flows
-- verify checkpoint and `/health` inspection flow
-- add no new routes
-- add no new scoring logic
-- add no live execution logic
+- execute the full local operator path:
+  validate -> prepare -> launch/review -> save local decision -> package -> cleanup
+- keep local artifact-file boundaries intact
+- close out Phase 36 track in a separate 36E closeout step
 
 If a future prompt asks for larger product changes, challenge scope first against this frozen baseline.

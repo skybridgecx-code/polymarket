@@ -65,7 +65,23 @@ PORT=8010 make future-system-operator-ui-demo
 - only companion metadata (`X.operator_review.json`) is rewritten
 - run export markdown/json files remain unchanged
 
-7. Clean demo temp artifacts:
+7. Package reviewed run outcome:
+
+```bash
+python -m future_system.cli.review_outcome_package \
+  --run-id theme_ctx_strong.analysis_success_export \
+  --artifacts-root .tmp/future-system-operator-ui-demo/operator_runs \
+  --target-root .tmp/future-system-operator-ui-demo/packages
+```
+
+Expected package directory:
+- `.tmp/future-system-operator-ui-demo/packages/theme_ctx_strong.analysis_success_export.package/`
+
+Expected package files:
+- `handoff_summary.md`
+- `handoff_payload.json`
+
+8. Clean demo temp artifacts:
 
 ```bash
 make future-system-operator-ui-demo-clean
@@ -76,6 +92,10 @@ If launcher startup reports missing multipart form dependency, install:
 ```bash
 .venv/bin/python -m pip install python-multipart
 ```
+
+If packaging CLI reports missing review metadata, confirm the run has:
+- `<run_id>.operator_review.json`
+- matching `artifact.run_id` for the run being packaged
 
 ## Workflow Boundaries
 

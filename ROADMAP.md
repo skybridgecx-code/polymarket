@@ -2,7 +2,9 @@
 
 ## Status
 
-The repo is currently in Phase 11 with bounded operator validation discipline layered on top of the frozen shipped baseline.
+The repo is currently in Phase 36D with bounded local operator packaging manual-smoke and documentation reconciliation work.
+
+The Phase 11 baseline is still the core `polymarket_arb` runtime foundation; later phases added `future_system` local operator UI workflow, demo-launcher reliability hardening, and local review outcome packaging.
 
 ## Completed
 
@@ -163,26 +165,25 @@ Delivered:
 
 ## Current
 
-### Phase 11
+### Phase 36D
 
-Bounded operator validation discipline.
+CLI packaging manual smoke and repo-status reconciliation.
 
 Deliverables:
 
-- compact operator validation guide for the shipped commands
-- fixture-backed verification guidance where available
-- explicit validation flow for refresh, checkpoint, `/health`, paper-trade, review-packet, and replay-evaluate
-- exact sanity checks for output structures
-- docs aligned to shipped Phase 11 validation discipline
+- docs-only manual smoke path for CLI packaging entrypoint
+- explicit end-to-end operator sequence:
+  validate -> prepare -> launch/review -> save local decision -> package -> cleanup
+- roadmap/handoff/release-index/runbook status reconciliation to current shipped state
+- no runtime behavior changes
 
 ## Recommended Next Step
 
-After the validation guide is in place, the next step should be bounded operator validation execution:
+After Phase 36D docs/manual-smoke reconciliation, the next step should be Phase 36E closeout:
 
-- bounded smoke-test checklist for operator flows
-- fixture-backed verification of the runbook commands
-- checkpoint and `/health` verification discipline
-- no new routes, scoring, or live behavior
+- track closeout for CLI packaging entrypoint
+- capture final validation baseline and known warnings
+- keep no-live-execution/no-auth/no-db-queue boundaries intact
 
 ## Later
 
