@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 37H with end-to-end operator docs for the local execution-boundary handoff flow between `polymarket-arb` (producer) and `cryp` (consumer):
+The repo is currently in Phase 37K with a docs-only cross-repo contract drift checklist that keeps the local transport workflow contract synchronized between `polymarket-arb` (producer) and `cryp` (consumer):
 
 `package -> build handoff_request.json -> intake -> ack/reject artifact`
 
@@ -167,24 +167,24 @@ Delivered:
 
 ## Current
 
-### Phase 37H
+### Phase 37K
 
-Execution-boundary end-to-end operator handoff docs (local-only).
+Cross-repo local transport contract drift checklist (local-only, docs-only).
 
 Deliverables:
 
-- operator-facing end-to-end doc with exact package/build/intake commands
-- explicit distinction between package artifacts and full handoff envelope
-- documented success/failure behavior for builder and intake CLI steps
-- runbook/release-index/handoff/roadmap/current-phase reconciliation to shipped 37A-37G2 behavior
+- canonical source-of-truth designation (`37I`) and consumer mirror reference (`37J`)
+- required cross-repo parity checklist for paths, fields, idempotency, and ack/reject semantics
+- update-together rule for producer and consumer docs
+- pre-close checklist for future local transport contract edits
 - no runtime behavior changes
 
 ## Recommended Next Step
 
-After Phase 37H, the next step should be a new separately scoped track only if there is a specific requirement:
+After Phase 37K, the next step should be a new separately scoped track only if there is a specific requirement:
 
 - handoff schema evolution only with explicit contract updates
-- bounded integration/transport work only with explicit non-live-execution constraints
+- bounded consumer pickup/receipt tooling only with explicit non-live-execution constraints
 - keep no-live-execution/no-auth/no-db-queue boundaries intact
 
 ## Later
