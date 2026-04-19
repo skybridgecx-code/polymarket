@@ -18,6 +18,7 @@ The repo is a shipped read-only Polymarket analytics and paper-trade research ba
 - shipped local review outcome packaging flow with CLI entrypoint
 - docs-locked execution boundary contract for handing approved packages to `cryp` execution review surfaces
 - local Phase 37D operator CLI wrapper over the intake/export surface with deterministic accepted/rejected export artifacts
+- local Phase 37E operator docs covering exact execution-boundary intake CLI usage and artifact outputs
 
 Not shipped:
 
@@ -80,6 +81,9 @@ python -m future_system.cli.review_outcome_package \
   --run-id theme_ctx_strong.analysis_success_export \
   --artifacts-root .tmp/future-system-operator-ui-demo/operator_runs \
   --target-root .tmp/future-system-operator-ui-demo/packages
+python -m future_system.cli.execution_boundary_intake \
+  --handoff-request-path /absolute/path/handoff_request.json \
+  --export-root /absolute/path/execution-boundary-exports
 make future-system-operator-ui-demo-clean
 ```
 
@@ -88,6 +92,7 @@ Packaging track closeout reference:
 
 Execution boundary contract reference:
 - [docs/PHASE_37A_EXECUTION_BOUNDARY_CONTRACT.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37A_EXECUTION_BOUNDARY_CONTRACT.md)
+- [docs/PHASE_37E_EXECUTION_BOUNDARY_CLI_OPERATOR_DOCS.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37E_EXECUTION_BOUNDARY_CLI_OPERATOR_DOCS.md)
 
 API:
 
@@ -164,12 +169,13 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 
 ## Recommended Next Step
 
-Phase 37D execution boundary operator CLI wrapper is now shipped:
+Phase 37E execution boundary intake CLI operator docs are now shipped:
 
 - shipped local operator path is:
-  validate -> prepare -> launch/review -> save local decision -> package -> cleanup
+  validate -> prepare -> launch/review -> save local decision -> package -> intake -> cleanup
 - packaged handoff boundary to `cryp` now has local-only validator + deterministic intake/export + operator CLI wrapper
+- operator docs now define the explicit intake CLI step and ack/reject artifact locations
 - keep local artifact-file boundaries intact
-- open the next phase only for explicit docs/runbook integration or transport-scope work
+- open the next phase only for explicit handoff-request builder or transport-scope work
 
 If a future prompt asks for larger product changes, challenge scope first against this frozen baseline.

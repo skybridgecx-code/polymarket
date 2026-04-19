@@ -2,7 +2,7 @@
 
 ## Status
 
-The repo is currently in Phase 37D with a local operator CLI wrapper over the execution boundary intake/export surface between `polymarket-arb` (producer) and `cryp` (consumer).
+The repo is currently in Phase 37E with operator-facing documentation for the local execution-boundary intake CLI between `polymarket-arb` (producer) and `cryp` (consumer).
 
 The Phase 11 baseline is still the core `polymarket_arb` runtime foundation; later phases added `future_system` local operator UI workflow, demo-launcher reliability hardening, and local review outcome packaging.
 
@@ -165,24 +165,24 @@ Delivered:
 
 ## Current
 
-### Phase 37D
+### Phase 37E
 
-Execution boundary contract operator CLI wrapper (local-only).
+Execution boundary intake CLI operator docs (local-only).
 
 Deliverables:
 
-- operator-facing CLI command for one handoff request artifact path
-- reuse existing 37B validator + 37C intake/export flow
-- deterministic ack/reject artifact exports
-- machine-readable CLI status output for accepted/rejected outcomes
-- focused CLI tests for valid and invalid flows
+- operator-facing usage doc for `python -m future_system.cli.execution_boundary_intake`
+- required argument documentation (`--handoff-request-path`, `--export-root`, optional `--require-local-artifacts`)
+- deterministic ack/reject artifact location documentation
+- success/reject/CLI-error behavior documentation
+- runbook + release-index + status reconciliation
 - no runtime behavior changes
 
 ## Recommended Next Step
 
-After Phase 37D, the next step should be a new separately scoped track only if there is a specific requirement:
+After Phase 37E, the next step should be a new separately scoped track only if there is a specific requirement:
 
-- docs/runbook integration for the new CLI wrapper
+- deterministic handoff-request envelope builder flow (still local-only)
 - handoff schema evolution only with explicit contract updates
 - keep no-live-execution/no-auth/no-db-queue boundaries intact
 
