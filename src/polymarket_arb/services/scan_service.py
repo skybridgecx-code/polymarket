@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from polymarket_arb.clients.clob import ClobClient
@@ -48,7 +49,11 @@ class ScanService:
             await gamma_client.aclose()
             await clob_client.aclose()
 
-    async def _fetch_in_batches(self, token_ids: list[str], fetch_fn) -> list:
+    async def _fetch_in_batches(
+        self,
+        token_ids: list[str],
+        fetch_fn: Callable[[str], Awaitable[Any]],
+    ) -> list[Any]:
         results: list[Any] = []
         batch_size = 10
 

@@ -9,9 +9,9 @@ class TradeService:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
 
-    def _build_clob_client(self):
-        from py_clob_client.client import ClobClient as PyClobClient
-        from py_clob_client.clob_types import ApiCreds
+    def _build_clob_client(self) -> Any:
+        from py_clob_client.client import ClobClient as PyClobClient  # type: ignore[import-untyped]
+        from py_clob_client.clob_types import ApiCreds  # type: ignore[import-untyped]
 
         s = self._settings
         if not s.poly_private_key:
@@ -35,7 +35,10 @@ class TradeService:
         return client
 
     def derive_api_credentials(self) -> dict[str, Any]:
-        """Derive API credentials from private key. Run this once to get your API key/secret/passphrase."""
+        """Derive API credentials from private key.
+
+        Run this once to get your API key/secret/passphrase.
+        """
         from py_clob_client.client import ClobClient as PyClobClient
 
         s = self._settings
@@ -53,7 +56,10 @@ class TradeService:
             "api_secret": creds.api_secret,
             "api_passphrase": creds.api_passphrase,
             "status": "success",
-            "message": "Add these to your .env file as POLY_API_KEY, POLY_API_SECRET, POLY_PASSPHRASE",
+            "message": (
+                "Add these to your .env file as POLY_API_KEY, "
+                "POLY_API_SECRET, POLY_PASSPHRASE"
+            ),
         }
 
     def get_balance(self) -> dict[str, Any]:
@@ -68,7 +74,7 @@ class TradeService:
     def buy(self, *, token_id: str, price: float, size: float) -> dict[str, Any]:
         """Place a limit buy order."""
         from py_clob_client.clob_types import OrderArgs
-        from py_clob_client.order_builder.constants import BUY
+        from py_clob_client.order_builder.constants import BUY  # type: ignore[import-untyped]
 
         if price <= 0 or price >= 1:
             raise ValueError("Price must be between 0 and 1 (exclusive)")
