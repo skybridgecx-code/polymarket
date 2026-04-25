@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from future_system.operator_review_models import OperatorReviewDecisionRecord
+from future_system.operator_review_models.models import OperatorReviewDecisionRecord
 from future_system.review_outcome_packaging.models import ReviewOutcomePackagePayload
 
 

@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from typing import Literal
 
 from future_system.context_bundle.models import OpportunityContextBundle
-from future_system.execution_boundary_contract.cryp_confirmation_export import (
+from future_system.cryp_external_confirmation_signal import (
     ReviewedPolymarketExternalConfirmationSignal,
 )
 from future_system.review_bundles.models import (

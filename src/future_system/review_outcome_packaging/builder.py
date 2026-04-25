@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from future_system.execution_boundary_contract.cryp_confirmation_export import (
+from future_system.cryp_external_confirmation_signal import (
     ReviewedPolymarketExternalConfirmationSignal,
 )
 from future_system.operator_review_models.models import OperatorReviewDecisionRecord
