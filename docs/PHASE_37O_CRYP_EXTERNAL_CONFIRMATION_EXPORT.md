@@ -224,29 +224,36 @@ Output asset: `SOLUSD`.
 Required context field:
 
 ```json
-{"candidate": {"primary_symbol": "XRP-PERP"}}
+{"candidate": {"primary_symbol": "XRP"}}
 ```
 
 Commands:
 
 ```bash
+mkdir -p .tmp/cryp-xrp-bridge-demo/operator_runs/xrp
+
 .venv/bin/python -m future_system.cli.review_artifacts \
-  --context-source /absolute/path/xrp_context_bundle.json \
-  --target-directory /absolute/path/operator_runs/xrp \
+  --context-source tests/fixtures/future_system/context_bundle/xrp_bridge_context_bundle.json \
+  --target-directory .tmp/cryp-xrp-bridge-demo/operator_runs/xrp \
   --analyst-mode stub \
   --initialize-operator-review
 
 .venv/bin/python -m future_system.cli.review_outcome_package \
-  --run-id <xrp_run_id> \
-  --artifacts-root /absolute/path/operator_runs/xrp \
-  --target-root /absolute/path/packages
+  --run-id theme_ctx_xrp_bullish.analysis_success_export \
+  --artifacts-root .tmp/cryp-xrp-bridge-demo/operator_runs/xrp \
+  --target-root .tmp/cryp-xrp-bridge-demo/packages
 
 .venv/bin/python -m future_system.cli.cryp_external_confirmation_export \
-  --package-dir /absolute/path/packages/<xrp_run_id>.package \
-  --output-path /absolute/path/exports/xrp_external_confirmation.json
+  --package-dir .tmp/cryp-xrp-bridge-demo/packages/theme_ctx_xrp_bullish.analysis_success_export.package \
+  --output-path .tmp/cryp-xrp-bridge-demo/exports/xrp_external_confirmation.json
 ```
 
 Output asset: `XRPUSD`.
+
+The included XRP fixture sets `candidate.primary_symbol=XRP` and
+`comparison.polymarket_summary.direction=bullish`, so the exported advisory has
+`directional_bias=buy`. Package only after the operator review companion has been
+approved; the exporter itself does not bypass the review gate.
 
 ## cryp Consumption Command
 

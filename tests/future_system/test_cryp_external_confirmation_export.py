@@ -9,6 +9,7 @@ from typing import Any, Literal
 import pytest
 from future_system.candidates.models import CandidateSignalPacket
 from future_system.cli.cryp_external_confirmation_export import main as export_cli_main
+from future_system.cli.review_artifacts import main as review_artifacts_cli_main
 from future_system.comparison.models import ThemeComparisonPacket
 from future_system.context_bundle.builder import build_opportunity_context_bundle
 from future_system.cryp_external_confirmation_signal import (
@@ -30,6 +31,9 @@ from future_system.theme_graph.models import ThemeLinkPacket
 _CRYP_SRC = Path("/Users/muhammadaatif/cryp/src")
 _CONTEXT_FIXTURE_PATH = Path(
     "tests/fixtures/future_system/context_bundle/context_bundle_inputs.json"
+)
+_XRP_BRIDGE_CONTEXT_FIXTURE_PATH = Path(
+    "tests/fixtures/future_system/context_bundle/xrp_bridge_context_bundle.json"
 )
 
 
@@ -111,6 +115,89 @@ def test_generated_review_artifact_maps_supported_assets_to_cryp_json(
     assert exported_payload["artifact_kind"] == "external_confirmation_advisory_v1"
     assert exported_payload["asset"] == expected_cryp_asset
     assert exported_payload["directional_bias"] == "buy"
+    assert exported_payload["veto_trade"] is False
+
+
+@pytest.mark.parametrize(
+    ("direction", "expected_signal", "expected_bias"),
+    [
+        ("bullish", "buy", "buy"),
+        ("bearish", "sell", "sell"),
+    ],
+)
+def test_xrp_bridge_fixture_reviews_packages_and_exports_cryp_artifact(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    direction: Literal["bullish", "bearish"],
+    expected_signal: Literal["buy", "sell"],
+    expected_bias: Literal["buy", "sell"],
+) -> None:
+    context_source = _xrp_bridge_context_source(tmp_path=tmp_path, direction=direction)
+    context_payload = json.loads(context_source.read_text(encoding="utf-8"))
+    assert context_payload["candidate"]["primary_symbol"] == "XRP"
+    assert context_payload["comparison"]["polymarket_summary"]["direction"] == direction
+
+    target_directory = tmp_path / f"operator_runs_xrp_{direction}"
+    target_directory.mkdir()
+    review_exit_code = review_artifacts_cli_main(
+        [
+            "--context-source",
+            str(context_source),
+            "--target-directory",
+            str(target_directory),
+            "--analyst-mode",
+            "stub",
+        ]
+    )
+    review_captured = capsys.readouterr()
+
+    assert review_exit_code == 0
+    assert review_captured.err == ""
+    review_summary = json.loads(review_captured.out)
+    json_path = Path(review_summary["json_file_path"])
+    markdown_path = Path(review_summary["markdown_file_path"])
+    run_id = json_path.stem
+    reviewed_payload = json.loads(json_path.read_text(encoding="utf-8"))
+    assert reviewed_payload["cryp_external_confirmation_signal"]["asset"] == "XRP"
+    assert reviewed_payload["cryp_external_confirmation_signal"]["signal"] == expected_signal
+
+    metadata_path = _write_approved_operator_review_metadata(
+        target_directory=target_directory,
+        run_id=run_id,
+        json_path=json_path,
+        markdown_path=markdown_path,
+        theme_id=review_summary["theme_id"],
+    )
+    package = write_review_outcome_package(
+        run_id=run_id,
+        markdown_artifact_path=markdown_path,
+        json_artifact_path=json_path,
+        operator_review_metadata_path=metadata_path,
+        target_root=tmp_path / f"packages_xrp_{direction}",
+    )
+    package_dir = Path(package.paths.package_dir)
+    handoff_payload = json.loads(
+        (package_dir / "handoff_payload.json").read_text(encoding="utf-8")
+    )
+    assert handoff_payload["cryp_external_confirmation_signal"]["asset"] == "XRP"
+    assert handoff_payload["cryp_external_confirmation_signal"]["signal"] == expected_signal
+
+    output_path = tmp_path / "exports" / f"xrp_{direction}_external_confirmation.json"
+    export_exit_code = export_cli_main(
+        [
+            "--package-dir",
+            str(package_dir),
+            "--output-path",
+            str(output_path),
+        ]
+    )
+    export_captured = capsys.readouterr()
+
+    assert export_exit_code == 0
+    assert export_captured.err == ""
+    exported_payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert exported_payload["asset"] == "XRPUSD"
+    assert exported_payload["directional_bias"] == expected_bias
     assert exported_payload["veto_trade"] is False
 
 
@@ -549,6 +636,47 @@ def _bundle_for_asset(asset: str) -> Any:
         news_evidence_packet=ThemeNewsEvidencePacket.model_validate(case["news_evidence"]),
         candidate_packet=CandidateSignalPacket.model_validate(case["candidate"]),
     )
+
+
+def _xrp_bridge_context_source(
+    *,
+    tmp_path: Path,
+    direction: Literal["bullish", "bearish"],
+) -> Path:
+    if direction == "bullish":
+        return _XRP_BRIDGE_CONTEXT_FIXTURE_PATH
+
+    payload = json.loads(_XRP_BRIDGE_CONTEXT_FIXTURE_PATH.read_text(encoding="utf-8"))
+    payload["theme_id"] = "theme_ctx_xrp_bearish"
+    payload["title"] = "XRP Bearish Bridge Signal"
+    payload["operator_summary"] = payload["operator_summary"].replace(
+        "theme_ctx_xrp_bullish",
+        "theme_ctx_xrp_bearish",
+    )
+    for component in (
+        "theme_link",
+        "polymarket_evidence",
+        "divergence",
+        "crypto_evidence",
+        "comparison",
+        "news_evidence",
+        "candidate",
+    ):
+        payload[component]["theme_id"] = "theme_ctx_xrp_bearish"
+
+    payload["comparison"]["polymarket_summary"]["direction"] = "bearish"
+    payload["comparison"]["crypto_summary"]["direction"] = "bearish"
+    payload["comparison"]["explanation"] = "XRP bearish aligned comparison packet."
+    payload["candidate"]["title"] = "XRP Bearish Bridge Signal"
+    payload["candidate"]["explanation"] = "XRP bearish candidate signal packet."
+    payload["theme_link"]["explanation"] = "Deterministic XRP bearish bridge fixture."
+
+    context_source = tmp_path / "xrp_bearish_context_bundle.json"
+    context_source.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return context_source
 
 
 def _raw_context_case(case_name: str) -> dict[str, Any]:
