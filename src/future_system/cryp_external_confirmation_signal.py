@@ -12,6 +12,21 @@ SUPPORTED_CRYP_EXTERNAL_CONFIRMATION_ASSET_MAP = {
     "SOL": "SOLUSD",
     "XRP": "XRPUSD",
 }
+SUPPORTED_CRYP_EXTERNAL_CONFIRMATION_ASSETS = tuple(SUPPORTED_CRYP_EXTERNAL_CONFIRMATION_ASSET_MAP)
+
+PolymarketExternalConfirmationSignalIntent = Literal[
+    "bullish",
+    "bearish",
+    "neutral",
+    "veto",
+]
+
+_POLYMARKET_INTENT_TO_REVIEWED_SIGNAL: dict[str, Literal["buy", "sell", "veto"]] = {
+    "bullish": "buy",
+    "bearish": "sell",
+    "neutral": "veto",
+    "veto": "veto",
+}
 
 
 class ReviewedPolymarketExternalConfirmationSignal(BaseModel):
@@ -75,7 +90,65 @@ class ReviewedPolymarketExternalConfirmationSignal(BaseModel):
         return normalized or None
 
 
+def resolve_supported_cryp_confirmation_asset(
+    *,
+    asset_symbol: str | None,
+    source_field: str,
+) -> str:
+    """Resolve the explicit structured asset source into a supported cryp base asset."""
+
+    normalized_source_field = _normalize_source_field(source_field)
+    if asset_symbol is None:
+        raise ValueError(f"missing_cryp_confirmation_asset:{normalized_source_field}")
+    if not isinstance(asset_symbol, str):
+        raise ValueError(f"invalid_cryp_confirmation_asset:{normalized_source_field}")
+
+    normalized_symbol = asset_symbol.strip().upper()
+    if not normalized_symbol:
+        raise ValueError(f"missing_cryp_confirmation_asset:{normalized_source_field}")
+
+    for asset in SUPPORTED_CRYP_EXTERNAL_CONFIRMATION_ASSETS:
+        if normalized_symbol == asset:
+            return asset
+        if normalized_symbol.startswith(f"{asset}-"):
+            return asset
+        if normalized_symbol in {f"{asset}USD", f"{asset}USDT"}:
+            return asset
+
+    supported = ",".join(SUPPORTED_CRYP_EXTERNAL_CONFIRMATION_ASSETS)
+    raise ValueError(
+        "unsupported_cryp_confirmation_asset:"
+        f"{normalized_symbol}:source={normalized_source_field}:supported={supported}"
+    )
+
+
+def map_polymarket_intent_to_reviewed_signal(
+    intent: str,
+) -> Literal["buy", "sell", "veto"]:
+    normalized_intent = intent.strip().lower() if isinstance(intent, str) else ""
+    signal = _POLYMARKET_INTENT_TO_REVIEWED_SIGNAL.get(normalized_intent)
+    if signal is None:
+        supported = ",".join(_POLYMARKET_INTENT_TO_REVIEWED_SIGNAL)
+        raise ValueError(
+            f"unsupported_polymarket_confirmation_intent:{intent}:supported={supported}"
+        )
+    return signal
+
+
+def _normalize_source_field(source_field: str) -> str:
+    if not isinstance(source_field, str):
+        raise ValueError("source_field_must_be_string")
+    normalized = source_field.strip()
+    if not normalized:
+        raise ValueError("source_field_must_be_non_empty")
+    return normalized
+
+
 __all__ = [
+    "PolymarketExternalConfirmationSignalIntent",
     "ReviewedPolymarketExternalConfirmationSignal",
+    "SUPPORTED_CRYP_EXTERNAL_CONFIRMATION_ASSETS",
     "SUPPORTED_CRYP_EXTERNAL_CONFIRMATION_ASSET_MAP",
+    "map_polymarket_intent_to_reviewed_signal",
+    "resolve_supported_cryp_confirmation_asset",
 ]

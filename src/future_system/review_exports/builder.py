@@ -8,6 +8,8 @@ from typing import Literal
 from future_system.context_bundle.models import OpportunityContextBundle
 from future_system.cryp_external_confirmation_signal import (
     ReviewedPolymarketExternalConfirmationSignal,
+    map_polymarket_intent_to_reviewed_signal,
+    resolve_supported_cryp_confirmation_asset,
 )
 from future_system.review_bundles.models import (
     AnalysisFailureReviewBundle,
@@ -24,12 +26,13 @@ from future_system.review_packets.models import (
     AnalysisSuccessReviewPacket,
 )
 
-_SUPPORTED_CRYP_SIGNAL_ASSETS = ("BTC", "ETH", "SOL", "XRP")
-_COMPARISON_DIRECTION_SIGNAL_MAP: dict[str, Literal["buy", "sell", "veto"]] = {
-    "bullish": "buy",
-    "bearish": "sell",
-    "mixed": "veto",
-    "unknown": "veto",
+_CRYP_SIGNAL_ASSET_SOURCE_FIELD = "candidate.primary_symbol"
+_CRYP_SIGNAL_DIRECTION_SOURCE_FIELD = "comparison.polymarket_summary.direction"
+_COMPARISON_DIRECTION_INTENT_MAP: dict[str, Literal["bullish", "bearish", "neutral"]] = {
+    "bullish": "bullish",
+    "bearish": "bearish",
+    "mixed": "neutral",
+    "unknown": "neutral",
 }
 
 
@@ -111,17 +114,14 @@ def _success_cryp_signal_payload(
         raise ValueError("review_export_success_runtime_payload_missing")
 
     context_bundle = success.context_bundle
-    asset = _supported_cryp_asset(context_bundle)
-    if asset is None:
-        return None
+    asset = _required_cryp_signal_asset(context_bundle)
 
     comparison_direction = context_bundle.comparison.polymarket_summary.direction
-    signal = _signal_for_policy_decision(
+    signal_intent = _intent_for_policy_decision(
         comparison_direction=comparison_direction,
         policy_decision=success.policy_decision.decision,
     )
-    if signal is None:
-        return None
+    signal = map_polymarket_intent_to_reviewed_signal(signal_intent)
 
     reviewed_signal = ReviewedPolymarketExternalConfirmationSignal(
         asset=asset,
@@ -146,44 +146,11 @@ def _success_cryp_signal_payload(
     return reviewed_signal.model_dump(mode="json", exclude_none=True)
 
 
-def _supported_cryp_asset(context_bundle: OpportunityContextBundle) -> str | None:
-    symbol_candidates: list[str | None] = [
-        context_bundle.candidate.primary_symbol,
-        context_bundle.crypto_evidence.primary_symbol,
-    ]
-    symbol_candidates.extend(
-        proxy.symbol for proxy in context_bundle.crypto_evidence.proxy_evidence if proxy.is_primary
+def _required_cryp_signal_asset(context_bundle: OpportunityContextBundle) -> str:
+    return resolve_supported_cryp_confirmation_asset(
+        asset_symbol=context_bundle.candidate.primary_symbol,
+        source_field=_CRYP_SIGNAL_ASSET_SOURCE_FIELD,
     )
-    symbol_candidates.extend(
-        asset.symbol
-        for asset in context_bundle.theme_link.matched_assets
-        if asset.role == "primary_proxy"
-    )
-    symbol_candidates.extend(context_bundle.crypto_evidence.matched_symbols)
-
-    for symbol in symbol_candidates:
-        supported_asset = _normalize_supported_cryp_asset(symbol)
-        if supported_asset is not None:
-            return supported_asset
-    return None
-
-
-def _normalize_supported_cryp_asset(symbol: str | None) -> str | None:
-    if symbol is None:
-        return None
-
-    normalized = symbol.strip().upper()
-    if not normalized:
-        return None
-
-    for asset in _SUPPORTED_CRYP_SIGNAL_ASSETS:
-        if normalized == asset:
-            return asset
-        if normalized.startswith(f"{asset}-"):
-            return asset
-        if normalized in {f"{asset}USD", f"{asset}USDT"}:
-            return asset
-    return None
 
 
 def _confidence_adjustment_for_signal(
@@ -196,14 +163,14 @@ def _confidence_adjustment_for_signal(
     return round(min(0.2, max(0.0, (candidate_confidence - 0.5) / 3.0)), 3)
 
 
-def _signal_for_policy_decision(
+def _intent_for_policy_decision(
     *,
     comparison_direction: str,
     policy_decision: str,
-) -> Literal["buy", "sell", "veto"] | None:
+) -> Literal["bullish", "bearish", "neutral", "veto"]:
     if policy_decision != "allow":
         return "veto"
-    return _COMPARISON_DIRECTION_SIGNAL_MAP.get(comparison_direction)
+    return _COMPARISON_DIRECTION_INTENT_MAP.get(comparison_direction, "neutral")
 
 
 def _cryp_signal_rationale(
@@ -229,7 +196,8 @@ def _cryp_signal_supporting_tags(
         "polymarket",
         "reviewed",
         "bridge_export",
-        "direction_source:comparison.polymarket_summary.direction",
+        f"asset_source:{_CRYP_SIGNAL_ASSET_SOURCE_FIELD}",
+        f"direction_source:{_CRYP_SIGNAL_DIRECTION_SOURCE_FIELD}",
         f"comparison_direction:{comparison_direction}",
         f"comparison_alignment:{context_bundle.comparison.alignment}",
         f"candidate_posture:{context_bundle.candidate.posture}",

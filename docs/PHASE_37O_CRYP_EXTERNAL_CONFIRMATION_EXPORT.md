@@ -58,13 +58,24 @@ that carries structured asset and Polymarket direction fields:
 
 The signal block is derived only from structured fields, not markdown prose:
 
-- asset source: `candidate.primary_symbol`, falling back to structured crypto asset links
+- asset source: `candidate.primary_symbol`
 - signal source: `comparison.polymarket_summary.direction`
 - `bullish -> buy`
 - `bearish -> sell`
-- `mixed` or `unknown` -> `veto`
+- `mixed` or `unknown` -> `neutral` source intent -> `veto`
 - any non-`allow` policy decision -> `veto`
 - confidence adjustment: bounded from `candidate.confidence_score`
+
+The asset source is explicit and bounded. The producer accepts a `candidate.primary_symbol`
+that resolves to `BTC`, `ETH`, `SOL`, or `XRP` only. Examples:
+
+- `BTC`, `BTC-PERP`, `BTCUSD`, `BTCUSDT` -> `BTC`
+- `ETH`, `ETH-PERP`, `ETHUSD`, `ETHUSDT` -> `ETH`
+- `SOL`, `SOL-PERP`, `SOLUSD`, `SOLUSDT` -> `SOL`
+- `XRP`, `XRP-PERP`, `XRPUSD`, `XRPUSDT` -> `XRP`
+
+Missing or unsupported values fail explicitly. They are not inferred from prose, markdown,
+market titles, or broad matched-symbol lists.
 
 After operator approval, package the same reviewed run:
 
@@ -116,6 +127,127 @@ Run from `/Users/muhammadaatif/polymarket-arb`:
   --output-path /absolute/path/btc_external_confirmation.json
 ```
 
+## Per-Asset Operator Flow
+
+Each asset uses the same three producer steps. The only asset-specific requirement is that
+the context bundle's `candidate.primary_symbol` resolves to the intended asset.
+
+### BTC
+
+Required context field:
+
+```json
+{"candidate": {"primary_symbol": "BTC-PERP"}}
+```
+
+Commands:
+
+```bash
+.venv/bin/python -m future_system.cli.review_artifacts \
+  --context-source /absolute/path/btc_context_bundle.json \
+  --target-directory /absolute/path/operator_runs/btc \
+  --analyst-mode stub \
+  --initialize-operator-review
+
+.venv/bin/python -m future_system.cli.review_outcome_package \
+  --run-id <btc_run_id> \
+  --artifacts-root /absolute/path/operator_runs/btc \
+  --target-root /absolute/path/packages
+
+.venv/bin/python -m future_system.cli.cryp_external_confirmation_export \
+  --package-dir /absolute/path/packages/<btc_run_id>.package \
+  --output-path /absolute/path/exports/btc_external_confirmation.json
+```
+
+Output asset: `BTCUSD`.
+
+### ETH
+
+Required context field:
+
+```json
+{"candidate": {"primary_symbol": "ETH-PERP"}}
+```
+
+Commands:
+
+```bash
+.venv/bin/python -m future_system.cli.review_artifacts \
+  --context-source /absolute/path/eth_context_bundle.json \
+  --target-directory /absolute/path/operator_runs/eth \
+  --analyst-mode stub \
+  --initialize-operator-review
+
+.venv/bin/python -m future_system.cli.review_outcome_package \
+  --run-id <eth_run_id> \
+  --artifacts-root /absolute/path/operator_runs/eth \
+  --target-root /absolute/path/packages
+
+.venv/bin/python -m future_system.cli.cryp_external_confirmation_export \
+  --package-dir /absolute/path/packages/<eth_run_id>.package \
+  --output-path /absolute/path/exports/eth_external_confirmation.json
+```
+
+Output asset: `ETHUSD`.
+
+### SOL
+
+Required context field:
+
+```json
+{"candidate": {"primary_symbol": "SOL-PERP"}}
+```
+
+Commands:
+
+```bash
+.venv/bin/python -m future_system.cli.review_artifacts \
+  --context-source /absolute/path/sol_context_bundle.json \
+  --target-directory /absolute/path/operator_runs/sol \
+  --analyst-mode stub \
+  --initialize-operator-review
+
+.venv/bin/python -m future_system.cli.review_outcome_package \
+  --run-id <sol_run_id> \
+  --artifacts-root /absolute/path/operator_runs/sol \
+  --target-root /absolute/path/packages
+
+.venv/bin/python -m future_system.cli.cryp_external_confirmation_export \
+  --package-dir /absolute/path/packages/<sol_run_id>.package \
+  --output-path /absolute/path/exports/sol_external_confirmation.json
+```
+
+Output asset: `SOLUSD`.
+
+### XRP
+
+Required context field:
+
+```json
+{"candidate": {"primary_symbol": "XRP-PERP"}}
+```
+
+Commands:
+
+```bash
+.venv/bin/python -m future_system.cli.review_artifacts \
+  --context-source /absolute/path/xrp_context_bundle.json \
+  --target-directory /absolute/path/operator_runs/xrp \
+  --analyst-mode stub \
+  --initialize-operator-review
+
+.venv/bin/python -m future_system.cli.review_outcome_package \
+  --run-id <xrp_run_id> \
+  --artifacts-root /absolute/path/operator_runs/xrp \
+  --target-root /absolute/path/packages
+
+.venv/bin/python -m future_system.cli.cryp_external_confirmation_export \
+  --package-dir /absolute/path/packages/<xrp_run_id>.package \
+  --output-path /absolute/path/exports/xrp_external_confirmation.json
+```
+
+Output asset: `XRPUSD`.
+
 ## cryp Consumption Command
 
 Run from `/Users/muhammadaatif/cryp`:
@@ -141,5 +273,5 @@ Run from `/Users/muhammadaatif/cryp`:
 ```bash
 .venv/bin/pytest -q tests/future_system/test_cryp_external_confirmation_export.py
 .venv/bin/pytest -q tests/future_system/test_review_cli_review_artifacts.py tests/future_system/test_operator_review_outcome_packaging.py
-.venv/bin/ruff check src/future_system/execution_boundary_contract/cryp_confirmation_export.py src/future_system/cli/cryp_external_confirmation_export.py tests/future_system/test_cryp_external_confirmation_export.py
+.venv/bin/ruff check src/future_system/cryp_external_confirmation_signal.py src/future_system/review_exports/builder.py src/future_system/execution_boundary_contract/cryp_confirmation_export.py src/future_system/cli/cryp_external_confirmation_export.py tests/future_system/test_cryp_external_confirmation_export.py
 ```

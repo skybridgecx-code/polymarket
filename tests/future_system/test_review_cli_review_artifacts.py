@@ -82,6 +82,7 @@ def test_cli_review_artifacts_success_outputs_deterministic_summary_and_paths(
             "polymarket",
             "reviewed",
             "bridge_export",
+            "asset_source:candidate.primary_symbol",
             "direction_source:comparison.polymarket_summary.direction",
             "comparison_direction:bullish",
             "comparison_alignment:aligned",
