@@ -80,9 +80,13 @@ def write_review_export_files(
 
 
 def _render_export_json_document(export_package: AnalysisReviewExportPackage) -> str:
+    payload = export_package.model_dump(mode="json")
+    if payload.get("cryp_external_confirmation_signal") is None:
+        payload.pop("cryp_external_confirmation_signal", None)
+
     return (
         json.dumps(
-            export_package.model_dump(mode="json"),
+            payload,
             ensure_ascii=True,
             sort_keys=True,
             separators=(",", ":"),

@@ -3,6 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from pydantic import ValidationError
+
+from future_system.execution_boundary_contract.cryp_confirmation_export import (
+    ReviewedPolymarketExternalConfirmationSignal,
+)
 from future_system.operator_review_models.models import OperatorReviewDecisionRecord
 from future_system.review_outcome_packaging.models import (
     ReviewOutcomePackage,
@@ -10,6 +15,8 @@ from future_system.review_outcome_packaging.models import (
     ReviewOutcomePackagePayload,
     package_dir_for_run,
 )
+
+_CRYP_SIGNAL_KEY = "cryp_external_confirmation_signal"
 
 
 def _read_json_dict(*, path: Path) -> dict[str, object]:
@@ -38,11 +45,9 @@ def build_review_outcome_package(
     if not json_artifact_path.is_file():
         raise ValueError(f"missing_json_artifact: {json_artifact_path}")
     if not operator_review_metadata_path.is_file():
-        raise ValueError(
-            f"missing_operator_review_metadata: {operator_review_metadata_path}"
-        )
+        raise ValueError(f"missing_operator_review_metadata: {operator_review_metadata_path}")
 
-    _read_json_dict(path=json_artifact_path)
+    review_artifact_payload = _read_json_dict(path=json_artifact_path)
     review_payload = _read_json_dict(path=operator_review_metadata_path)
 
     record = OperatorReviewDecisionRecord.model_validate(review_payload)
@@ -75,6 +80,10 @@ def build_review_outcome_package(
         operator_decision=record.operator_decision,
         review_notes_summary=record.review_notes_summary,
         reviewer_identity=record.reviewer_identity,
+        cryp_external_confirmation_signal=_extract_cryp_external_confirmation_signal(
+            review_artifact_payload=review_artifact_payload,
+            operator_review=record,
+        ),
     )
     paths = ReviewOutcomePackagePaths(
         package_dir=str(package_dir),
@@ -84,33 +93,72 @@ def build_review_outcome_package(
     return ReviewOutcomePackage(payload=payload, paths=paths)
 
 
-def render_review_outcome_handoff_markdown(
-    *, package: ReviewOutcomePackage
-) -> str:
+def _extract_cryp_external_confirmation_signal(
+    *,
+    review_artifact_payload: dict[str, object],
+    operator_review: OperatorReviewDecisionRecord,
+) -> dict[str, object] | None:
+    signal_payload = review_artifact_payload.get(_CRYP_SIGNAL_KEY)
+    if signal_payload is None:
+        return None
+    if not isinstance(signal_payload, dict):
+        raise ValueError(f"invalid_{_CRYP_SIGNAL_KEY}: must be an object")
+
+    try:
+        reviewed_signal = ReviewedPolymarketExternalConfirmationSignal.model_validate(
+            signal_payload
+        )
+    except ValidationError as exc:
+        raise ValueError(f"invalid_{_CRYP_SIGNAL_KEY}: {exc}") from exc
+
+    normalized = reviewed_signal.model_dump(mode="json", exclude_none=True)
+    if "correlation_id" not in normalized:
+        normalized["correlation_id"] = operator_review.artifact.run_id
+    if "observed_at_epoch_ns" not in normalized:
+        observed_at_epoch_ns = (
+            operator_review.updated_at_epoch_ns or operator_review.decided_at_epoch_ns
+        )
+        if observed_at_epoch_ns is not None:
+            normalized["observed_at_epoch_ns"] = observed_at_epoch_ns
+    return normalized
+
+
+def render_review_outcome_handoff_markdown(*, package: ReviewOutcomePackage) -> str:
     p = package.payload
-    return "\n".join(
-        [
-            f"# Review Outcome Handoff — {p.run_id}",
-            "",
-            "## Run",
-            f"- Run ID: `{p.run_id}`",
-            f"- Status: `{p.run_status}`",
-            f"- Export Kind: `{p.export_kind}`",
-            "",
-            "## Artifact Paths",
-            f"- Markdown Artifact: `{p.markdown_artifact_path}`",
-            f"- JSON Artifact: `{p.json_artifact_path}`",
-            f"- Decision Metadata: `{p.operator_review_metadata_path}`",
-            "",
-            "## Operator Review Outcome",
-            f"- Review Status: `{p.review_status}`",
-            f"- Operator Decision: `{p.operator_decision or 'none'}`",
-            f"- Review Notes Summary: `{p.review_notes_summary or 'none'}`",
-            f"- Reviewer Identity: `{p.reviewer_identity or 'none'}`",
-            "",
-            "## Local Note",
-            "- This package is a deterministic local review outcome artifact.",
-            "- It does not upload or deliver anything externally.",
-            "",
-        ]
-    )
+    lines = [
+        f"# Review Outcome Handoff — {p.run_id}",
+        "",
+        "## Run",
+        f"- Run ID: `{p.run_id}`",
+        f"- Status: `{p.run_status}`",
+        f"- Export Kind: `{p.export_kind}`",
+        "",
+        "## Artifact Paths",
+        f"- Markdown Artifact: `{p.markdown_artifact_path}`",
+        f"- JSON Artifact: `{p.json_artifact_path}`",
+        f"- Decision Metadata: `{p.operator_review_metadata_path}`",
+        "",
+        "## Operator Review Outcome",
+        f"- Review Status: `{p.review_status}`",
+        f"- Operator Decision: `{p.operator_decision or 'none'}`",
+        f"- Review Notes Summary: `{p.review_notes_summary or 'none'}`",
+        f"- Reviewer Identity: `{p.reviewer_identity or 'none'}`",
+        "",
+        "## Local Note",
+        "- This package is a deterministic local review outcome artifact.",
+        "- It does not upload or deliver anything externally.",
+        "",
+    ]
+    if p.cryp_external_confirmation_signal:
+        signal = p.cryp_external_confirmation_signal
+        lines.extend(
+            [
+                "## cryp External Confirmation Signal",
+                f"- Asset: `{signal.get('asset', 'unknown')}`",
+                f"- Signal: `{signal.get('signal', 'unknown')}`",
+                f"- Source System: `{signal.get('source_system', 'unknown')}`",
+                f"- Correlation ID: `{signal.get('correlation_id', 'none')}`",
+                "",
+            ]
+        )
+    return "\n".join(lines)

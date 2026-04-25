@@ -25,6 +25,7 @@ class ReviewOutcomePackagePayload(BaseModel):
     operator_decision: str | None = None
     review_notes_summary: str | None = None
     reviewer_identity: str | None = None
+    cryp_external_confirmation_signal: dict[str, object] | None = None
     package_marker: str = Field(
         default="deterministic_local_review_outcome_package",
     )

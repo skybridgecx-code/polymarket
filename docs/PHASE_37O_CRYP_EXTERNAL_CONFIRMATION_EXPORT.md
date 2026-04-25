@@ -27,7 +27,8 @@ No `cryp` runtime, execution, strategy, or live-trading code is changed by this 
 ## Source Contract
 
 The exporter reads an already-reviewed package directory containing `handoff_payload.json`.
-The referenced JSON review artifact must contain one reviewed signal block:
+The referenced JSON review artifact and generated handoff payload must contain one
+reviewed signal block:
 
 ```json
 {
@@ -42,6 +43,42 @@ The referenced JSON review artifact must contain one reviewed signal block:
   }
 }
 ```
+
+The upstream producer step that creates this block is the review artifact generation step.
+Run it from `/Users/muhammadaatif/polymarket-arb` against an `OpportunityContextBundle`
+that carries structured asset and Polymarket direction fields:
+
+```bash
+.venv/bin/python -m future_system.cli.review_artifacts \
+  --context-source /absolute/path/context_bundle.json \
+  --target-directory /absolute/path/operator_runs \
+  --analyst-mode stub \
+  --initialize-operator-review
+```
+
+The signal block is derived only from structured fields, not markdown prose:
+
+- asset source: `candidate.primary_symbol`, falling back to structured crypto asset links
+- signal source: `comparison.polymarket_summary.direction`
+- `bullish -> buy`
+- `bearish -> sell`
+- `mixed` or `unknown` -> `veto`
+- any non-`allow` policy decision -> `veto`
+- confidence adjustment: bounded from `candidate.confidence_score`
+
+After operator approval, package the same reviewed run:
+
+```bash
+.venv/bin/python -m future_system.cli.review_outcome_package \
+  --run-id <run_id> \
+  --artifacts-root /absolute/path/operator_runs \
+  --target-root /absolute/path/packages
+```
+
+`review_outcome_package` validates and preserves the reviewed signal into
+`handoff_payload.json`; no manual JSON editing is required. Existing artifacts produced
+before this producer wiring need to be regenerated or they will still be missing the
+structured signal block.
 
 The package must be:
 
@@ -103,5 +140,6 @@ Run from `/Users/muhammadaatif/cryp`:
 
 ```bash
 .venv/bin/pytest -q tests/future_system/test_cryp_external_confirmation_export.py
+.venv/bin/pytest -q tests/future_system/test_review_cli_review_artifacts.py tests/future_system/test_operator_review_outcome_packaging.py
 .venv/bin/ruff check src/future_system/execution_boundary_contract/cryp_confirmation_export.py src/future_system/cli/cryp_external_confirmation_export.py tests/future_system/test_cryp_external_confirmation_export.py
 ```

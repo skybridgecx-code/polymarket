@@ -4,15 +4,28 @@ import importlib
 import json
 import sys
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
+from future_system.candidates.models import CandidateSignalPacket
 from future_system.cli.cryp_external_confirmation_export import main as export_cli_main
+from future_system.comparison.models import ThemeComparisonPacket
+from future_system.context_bundle.builder import build_opportunity_context_bundle
+from future_system.crypto_evidence.models import ThemeCryptoEvidencePacket
+from future_system.divergence.models import ThemeDivergencePacket
+from future_system.evidence.models import ThemeEvidencePacket
 from future_system.execution_boundary_contract.cryp_confirmation_export import (
     build_cryp_external_confirmation_artifact_from_package,
 )
+from future_system.news_evidence.models import ThemeNewsEvidencePacket
+from future_system.review_entrypoints.entry import run_analysis_and_write_review_artifacts
 from future_system.review_outcome_packaging import write_review_outcome_package
+from future_system.runtime.stub_analyst import DeterministicStubAnalyst
+from future_system.theme_graph.models import ThemeLinkPacket
 
 _CRYP_SRC = Path("/Users/muhammadaatif/cryp/src")
+_CONTEXT_FIXTURE_PATH = Path(
+    "tests/fixtures/future_system/context_bundle/context_bundle_inputs.json"
+)
 
 
 def test_reviewed_polymarket_signal_maps_to_expected_cryp_asset(tmp_path: Path) -> None:
@@ -22,9 +35,7 @@ def test_reviewed_polymarket_signal_maps_to_expected_cryp_asset(tmp_path: Path) 
         signal="buy",
     )
 
-    artifact = build_cryp_external_confirmation_artifact_from_package(
-        package_dir=package_dir
-    )
+    artifact = build_cryp_external_confirmation_artifact_from_package(package_dir=package_dir)
 
     assert artifact.asset == "BTCUSD"
     assert artifact.directional_bias == "buy"
@@ -53,9 +64,7 @@ def test_buy_sell_and_veto_mapping_is_deterministic(tmp_path: Path) -> None:
             signal=signal,
         )
 
-        artifact = build_cryp_external_confirmation_artifact_from_package(
-            package_dir=package_dir
-        )
+        artifact = build_cryp_external_confirmation_artifact_from_package(package_dir=package_dir)
 
         assert artifact.asset == "ETHUSD"
         assert artifact.directional_bias == expected_bias
@@ -88,6 +97,18 @@ def test_exported_json_matches_cryp_consumable_schema(
     summary = json.loads(captured.out)
     assert summary["status"] == "exported"
     assert summary["output_path"] == str(output_path.resolve())
+
+    handoff_payload = json.loads((package_dir / "handoff_payload.json").read_text(encoding="utf-8"))
+    assert handoff_payload["cryp_external_confirmation_signal"] == {
+        "asset": "SOL",
+        "confidence_adjustment": 0.12,
+        "correlation_id": "theme_btc_regulation.analysis_success_export",
+        "observed_at_epoch_ns": 1700000000000000002,
+        "rationale": "Reviewed Polymarket outcome supports the crypto advisory.",
+        "signal": "sell",
+        "source_system": "polymarket-arb",
+        "supporting_tags": ["polymarket", "reviewed", "bridge_export"],
+    }
 
     payload = json.loads(output_path.read_text(encoding="utf-8"))
     assert set(payload) == {
@@ -123,6 +144,107 @@ def test_exported_json_matches_cryp_consumable_schema(
     assert cryp_artifact.directional_bias == "sell"
 
 
+def test_generated_review_artifact_packages_and_exports_without_manual_signal_edit(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    target_directory = tmp_path / "operator_runs"
+    target_directory.mkdir()
+    entry = run_analysis_and_write_review_artifacts(
+        context_bundle=_bundle("strong_complete"),
+        analyst=DeterministicStubAnalyst(),
+        target_directory=target_directory,
+    )
+
+    flow_result = entry.entry_result.artifact_flow.flow_result
+    json_path = Path(flow_result.file_write_result.json_file_path)
+    markdown_path = Path(flow_result.file_write_result.markdown_file_path)
+    run_id = json_path.stem
+
+    reviewed_payload = json.loads(json_path.read_text(encoding="utf-8"))
+    assert reviewed_payload["cryp_external_confirmation_signal"]["asset"] == "BTC"
+
+    metadata_path = target_directory / f"{run_id}.operator_review.json"
+    metadata_path.write_text(
+        json.dumps(
+            {
+                "record_kind": "operator_review_decision_record",
+                "record_version": 1,
+                "artifact": {
+                    "run_id": run_id,
+                    "status": "success",
+                    "export_kind": "analysis_success_export",
+                    "json_file_path": str(json_path),
+                    "markdown_file_path": str(markdown_path),
+                    "theme_id": "theme_ctx_strong",
+                    "failure_stage": None,
+                },
+                "review_status": "decided",
+                "operator_decision": "approve",
+                "review_notes_summary": "Approved generated artifact.",
+                "reviewer_identity": "operator_a",
+                "run_flags_snapshot": [],
+                "decided_at_epoch_ns": 1700000000000000010,
+                "updated_at_epoch_ns": 1700000000000000011,
+            },
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+
+    package = write_review_outcome_package(
+        run_id=run_id,
+        markdown_artifact_path=markdown_path,
+        json_artifact_path=json_path,
+        operator_review_metadata_path=metadata_path,
+        target_root=tmp_path / "packages",
+    )
+    package_dir = Path(package.paths.package_dir)
+    output_path = tmp_path / "exports" / "btc_external_confirmation.json"
+
+    exit_code = export_cli_main(
+        [
+            "--package-dir",
+            str(package_dir),
+            "--output-path",
+            str(output_path),
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert captured.err == ""
+    exported_payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert exported_payload["asset"] == "BTCUSD"
+    assert exported_payload["directional_bias"] == "buy"
+    assert exported_payload["confidence_adjustment"] == 0.12
+    assert exported_payload["veto_trade"] is False
+    assert exported_payload["correlation_id"] == run_id
+
+
+def test_generated_review_artifact_vetoes_non_allow_policy(
+    tmp_path: Path,
+) -> None:
+    target_directory = tmp_path / "operator_runs"
+    target_directory.mkdir()
+    entry = run_analysis_and_write_review_artifacts(
+        context_bundle=_bundle("conflicted"),
+        analyst=DeterministicStubAnalyst(),
+        target_directory=target_directory,
+    )
+
+    flow_result = entry.entry_result.artifact_flow.flow_result
+    json_path = Path(flow_result.file_write_result.json_file_path)
+    reviewed_payload = json.loads(json_path.read_text(encoding="utf-8"))
+    signal = reviewed_payload["cryp_external_confirmation_signal"]
+
+    assert signal["asset"] == "BTC"
+    assert signal["signal"] == "veto"
+    assert signal["confidence_adjustment"] == 0.0
+    assert "policy_decision:deny" in signal["supporting_tags"]
+
+
 def _write_reviewed_signal_package(
     tmp_path: Path,
     *,
@@ -146,9 +268,7 @@ def _write_reviewed_signal_package(
                     "asset": asset,
                     "signal": signal,
                     "confidence_adjustment": 0.12,
-                    "rationale": (
-                        "Reviewed Polymarket outcome supports the crypto advisory."
-                    ),
+                    "rationale": ("Reviewed Polymarket outcome supports the crypto advisory."),
                     "source_system": "polymarket-arb",
                     "supporting_tags": ["polymarket", "reviewed", "bridge_export"],
                     "observed_at_epoch_ns": 1700000000000000002,
@@ -195,3 +315,32 @@ def _write_reviewed_signal_package(
         target_root=tmp_path / "packages",
     )
     return Path(package.paths.package_dir)
+
+
+def _bundle(case_name: str) -> Any:
+    case = _context_cases()[case_name]
+    return build_opportunity_context_bundle(
+        theme_link_packet=case["theme_link"],
+        polymarket_evidence_packet=case["polymarket_evidence"],
+        divergence_packet=case["divergence"],
+        crypto_evidence_packet=case["crypto_evidence"],
+        comparison_packet=case["comparison"],
+        news_evidence_packet=case["news_evidence"],
+        candidate_packet=case["candidate"],
+    )
+
+
+def _context_cases() -> dict[str, dict[str, Any]]:
+    payload = json.loads(_CONTEXT_FIXTURE_PATH.read_text(encoding="utf-8"))
+    return {
+        entry["case"]: {
+            "theme_link": ThemeLinkPacket.model_validate(entry["theme_link"]),
+            "polymarket_evidence": ThemeEvidencePacket.model_validate(entry["polymarket_evidence"]),
+            "divergence": ThemeDivergencePacket.model_validate(entry["divergence"]),
+            "crypto_evidence": ThemeCryptoEvidencePacket.model_validate(entry["crypto_evidence"]),
+            "comparison": ThemeComparisonPacket.model_validate(entry["comparison"]),
+            "news_evidence": ThemeNewsEvidencePacket.model_validate(entry["news_evidence"]),
+            "candidate": CandidateSignalPacket.model_validate(entry["candidate"]),
+        }
+        for entry in payload
+    }

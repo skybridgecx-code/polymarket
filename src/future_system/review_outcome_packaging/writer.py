@@ -33,8 +33,11 @@ def write_review_outcome_package(
         render_review_outcome_handoff_markdown(package=package),
         encoding="utf-8",
     )
+    payload = package.payload.model_dump(mode="json")
+    if payload.get("cryp_external_confirmation_signal") is None:
+        payload.pop("cryp_external_confirmation_signal", None)
     Path(package.paths.handoff_payload_path).write_text(
-        json.dumps(package.payload.model_dump(), indent=2, sort_keys=True),
+        json.dumps(payload, indent=2, sort_keys=True),
         encoding="utf-8",
     )
     return package

@@ -66,6 +66,29 @@ def test_cli_review_artifacts_success_outputs_deterministic_summary_and_paths(
     assert json_path.exists()
     assert markdown_path.name == "theme_ctx_strong.analysis_success_export.md"
     assert json_path.name == "theme_ctx_strong.analysis_success_export.json"
+    json_document = json.loads(json_path.read_text(encoding="utf-8"))
+    assert json_document["cryp_external_confirmation_signal"] == {
+        "asset": "BTC",
+        "confidence_adjustment": 0.12,
+        "correlation_id": "theme_ctx_strong.analysis_success_export",
+        "rationale": (
+            "Structured Polymarket review signal from "
+            "comparison.polymarket_summary.direction=bullish; "
+            "asset=BTC; policy_decision=allow."
+        ),
+        "signal": "buy",
+        "source_system": "polymarket-arb",
+        "supporting_tags": [
+            "polymarket",
+            "reviewed",
+            "bridge_export",
+            "direction_source:comparison.polymarket_summary.direction",
+            "comparison_direction:bullish",
+            "comparison_alignment:aligned",
+            "candidate_posture:candidate",
+            "policy_decision:allow",
+        ],
+    }
     assert not (
         target_directory / "theme_ctx_strong.analysis_success_export.operator_review.json"
     ).exists()

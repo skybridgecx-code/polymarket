@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Literal
 
+from future_system.context_bundle.models import OpportunityContextBundle
+from future_system.execution_boundary_contract.cryp_confirmation_export import (
+    ReviewedPolymarketExternalConfirmationSignal,
+)
 from future_system.review_bundles.models import (
     AnalysisFailureReviewBundle,
     AnalysisReviewBundleEnvelope,
@@ -18,6 +23,14 @@ from future_system.review_packets.models import (
     AnalysisFailureReviewPacket,
     AnalysisSuccessReviewPacket,
 )
+
+_SUPPORTED_CRYP_SIGNAL_ASSETS = ("BTC", "ETH", "SOL", "XRP")
+_COMPARISON_DIRECTION_SIGNAL_MAP: dict[str, Literal["buy", "sell", "veto"]] = {
+    "bullish": "buy",
+    "bearish": "sell",
+    "mixed": "veto",
+    "unknown": "veto",
+}
 
 
 def build_review_export_payloads(
@@ -52,6 +65,9 @@ def build_review_export_payloads(
             export_kind=success_payload.export_kind,
             run_flags=list(success_payload.run_flags),
             payload=success_payload,
+            cryp_external_confirmation_signal=_success_cryp_signal_payload(
+                bundle=bundle,
+            ),
         )
 
     if not isinstance(bundle, AnalysisFailureReviewBundle):
@@ -84,6 +100,141 @@ def build_review_export_payloads(
         run_flags=list(failure_payload.run_flags),
         payload=failure_payload,
     )
+
+
+def _success_cryp_signal_payload(
+    *,
+    bundle: AnalysisSuccessReviewBundle,
+) -> dict[str, object] | None:
+    success = bundle.runtime_result.success
+    if success is None:
+        raise ValueError("review_export_success_runtime_payload_missing")
+
+    context_bundle = success.context_bundle
+    asset = _supported_cryp_asset(context_bundle)
+    if asset is None:
+        return None
+
+    comparison_direction = context_bundle.comparison.polymarket_summary.direction
+    signal = _signal_for_policy_decision(
+        comparison_direction=comparison_direction,
+        policy_decision=success.policy_decision.decision,
+    )
+    if signal is None:
+        return None
+
+    reviewed_signal = ReviewedPolymarketExternalConfirmationSignal(
+        asset=asset,
+        signal=signal,
+        confidence_adjustment=_confidence_adjustment_for_signal(
+            signal=signal,
+            candidate_confidence=context_bundle.candidate.confidence_score,
+        ),
+        rationale=_cryp_signal_rationale(
+            asset=asset,
+            comparison_direction=comparison_direction,
+            policy_decision=success.policy_decision.decision,
+        ),
+        source_system="polymarket-arb",
+        supporting_tags=_cryp_signal_supporting_tags(
+            context_bundle=context_bundle,
+            comparison_direction=comparison_direction,
+            policy_decision=success.policy_decision.decision,
+        ),
+        correlation_id=f"{success.theme_id}.analysis_success_export",
+    )
+    return reviewed_signal.model_dump(mode="json", exclude_none=True)
+
+
+def _supported_cryp_asset(context_bundle: OpportunityContextBundle) -> str | None:
+    symbol_candidates: list[str | None] = [
+        context_bundle.candidate.primary_symbol,
+        context_bundle.crypto_evidence.primary_symbol,
+    ]
+    symbol_candidates.extend(
+        proxy.symbol for proxy in context_bundle.crypto_evidence.proxy_evidence if proxy.is_primary
+    )
+    symbol_candidates.extend(
+        asset.symbol
+        for asset in context_bundle.theme_link.matched_assets
+        if asset.role == "primary_proxy"
+    )
+    symbol_candidates.extend(context_bundle.crypto_evidence.matched_symbols)
+
+    for symbol in symbol_candidates:
+        supported_asset = _normalize_supported_cryp_asset(symbol)
+        if supported_asset is not None:
+            return supported_asset
+    return None
+
+
+def _normalize_supported_cryp_asset(symbol: str | None) -> str | None:
+    if symbol is None:
+        return None
+
+    normalized = symbol.strip().upper()
+    if not normalized:
+        return None
+
+    for asset in _SUPPORTED_CRYP_SIGNAL_ASSETS:
+        if normalized == asset:
+            return asset
+        if normalized.startswith(f"{asset}-"):
+            return asset
+        if normalized in {f"{asset}USD", f"{asset}USDT"}:
+            return asset
+    return None
+
+
+def _confidence_adjustment_for_signal(
+    *,
+    signal: Literal["buy", "sell", "veto"],
+    candidate_confidence: float,
+) -> float:
+    if signal == "veto":
+        return 0.0
+    return round(min(0.2, max(0.0, (candidate_confidence - 0.5) / 3.0)), 3)
+
+
+def _signal_for_policy_decision(
+    *,
+    comparison_direction: str,
+    policy_decision: str,
+) -> Literal["buy", "sell", "veto"] | None:
+    if policy_decision != "allow":
+        return "veto"
+    return _COMPARISON_DIRECTION_SIGNAL_MAP.get(comparison_direction)
+
+
+def _cryp_signal_rationale(
+    *,
+    asset: str,
+    comparison_direction: str,
+    policy_decision: str,
+) -> str:
+    return (
+        "Structured Polymarket review signal from "
+        "comparison.polymarket_summary.direction="
+        f"{comparison_direction}; asset={asset}; policy_decision={policy_decision}."
+    )
+
+
+def _cryp_signal_supporting_tags(
+    *,
+    context_bundle: OpportunityContextBundle,
+    comparison_direction: str,
+    policy_decision: str,
+) -> list[str]:
+    return [
+        "polymarket",
+        "reviewed",
+        "bridge_export",
+        "direction_source:comparison.polymarket_summary.direction",
+        f"comparison_direction:{comparison_direction}",
+        f"comparison_alignment:{context_bundle.comparison.alignment}",
+        f"candidate_posture:{context_bundle.candidate.posture}",
+        f"policy_decision:{policy_decision}",
+    ]
 
 
 def _success_json_payload(
