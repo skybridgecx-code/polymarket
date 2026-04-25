@@ -69,6 +69,15 @@ Expected export artifacts:
 - accepted request: `<export_root>/<correlation_id>.execution_boundary_ack.json`
 - rejected request: `<export_root>/<correlation_id>.execution_boundary_reject.json`
 
+### 5) Dispatch directly into cryp canonical inbound tree (automated package -> handoff -> validate -> place)
+```bash
+python -m future_system.cli.execution_boundary_dispatch \
+  --run-id theme_ctx_strong.analysis_success_export \
+  --artifacts-root .tmp/future-system-operator-ui-demo/operator_runs \
+  --cryp-transport-root /Users/muhammadaatif/cryp/.tmp/transport \
+  --attempt-id attempt-000001
+```
+
 ## Package Artifacts vs Full Handoff Request Envelope
 
 Package artifacts (`review_outcome_package` output):
@@ -137,4 +146,3 @@ Shipped local operator path:
 ```bash
 make validate
 ```
-

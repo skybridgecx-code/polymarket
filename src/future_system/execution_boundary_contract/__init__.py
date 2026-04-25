@@ -1,5 +1,10 @@
 """Local execution-boundary contract models and validators."""
 
+from future_system.execution_boundary_contract.dispatch import (
+    ExecutionBoundaryDispatchReceipt,
+    ExecutionBoundaryDispatchResult,
+    dispatch_execution_boundary_handoff_request,
+)
 from future_system.execution_boundary_contract.handoff_request_builder import (
     build_execution_boundary_handoff_request_from_package,
     write_execution_boundary_handoff_request_from_package,
@@ -20,9 +25,12 @@ from future_system.execution_boundary_contract.validator import (
 
 __all__ = [
     "ExecutionBoundaryHandoffRequest",
+    "ExecutionBoundaryDispatchResult",
+    "ExecutionBoundaryDispatchReceipt",
     "ExecutionBoundaryIntakeAckArtifact",
     "ExecutionBoundaryIntakeRejectArtifact",
     "ExecutionBoundaryIntakeExportResult",
+    "dispatch_execution_boundary_handoff_request",
     "build_execution_boundary_handoff_request_from_package",
     "write_execution_boundary_handoff_request_from_package",
     "load_execution_boundary_handoff_request_artifact",
