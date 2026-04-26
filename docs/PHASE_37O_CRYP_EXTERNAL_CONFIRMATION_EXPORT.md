@@ -230,6 +230,27 @@ Required context field:
 Commands:
 
 ```bash
+scripts/export_xrp_cryp_bridge_demo.sh
+```
+
+Output asset: `XRPUSD`.
+
+The included XRP fixture sets `candidate.primary_symbol=XRP` and
+`comparison.polymarket_summary.direction=bullish`, so the exported advisory has
+`directional_bias=buy`. The script is a local operator/demo wrapper around the same
+validated steps:
+
+1. generate reviewed artifacts from the XRP fixture
+2. approve the local operator review companion metadata
+3. package the reviewed run with `review_outcome_package`
+4. export `.tmp/cryp-xrp-bridge-demo/exports/xrp_external_confirmation.json`
+
+The exporter itself still requires a reviewed, approved package. It does not bypass
+the review gate, weaken validation, infer symbols from prose, or write to `cryp`.
+
+Equivalent expanded commands:
+
+```bash
 mkdir -p .tmp/cryp-xrp-bridge-demo/operator_runs/xrp
 
 .venv/bin/python -m future_system.cli.review_artifacts \
@@ -237,6 +258,25 @@ mkdir -p .tmp/cryp-xrp-bridge-demo/operator_runs/xrp
   --target-directory .tmp/cryp-xrp-bridge-demo/operator_runs/xrp \
   --analyst-mode stub \
   --initialize-operator-review
+
+.venv/bin/python - <<'PY'
+from future_system.operator_review_models.updates import (
+    OperatorReviewDecisionUpdateInput,
+    update_existing_operator_review_metadata_companion,
+)
+
+update_existing_operator_review_metadata_companion(
+    target_directory=".tmp/cryp-xrp-bridge-demo/operator_runs/xrp",
+    run_id="theme_ctx_xrp_bullish.analysis_success_export",
+    update_input=OperatorReviewDecisionUpdateInput(
+        review_status="decided",
+        operator_decision="approve",
+        review_notes_summary="Approved deterministic XRP bridge fixture export.",
+        reviewer_identity="xrp_bridge_demo",
+        updated_at_epoch_ns=1700000000000000100,
+    ),
+)
+PY
 
 .venv/bin/python -m future_system.cli.review_outcome_package \
   --run-id theme_ctx_xrp_bullish.analysis_success_export \
@@ -248,22 +288,46 @@ mkdir -p .tmp/cryp-xrp-bridge-demo/operator_runs/xrp
   --output-path .tmp/cryp-xrp-bridge-demo/exports/xrp_external_confirmation.json
 ```
 
-Output asset: `XRPUSD`.
+Inspection command:
 
-The included XRP fixture sets `candidate.primary_symbol=XRP` and
-`comparison.polymarket_summary.direction=bullish`, so the exported advisory has
-`directional_bias=buy`. Package only after the operator review companion has been
-approved; the exporter itself does not bypass the review gate.
+```bash
+.venv/bin/python -m json.tool .tmp/cryp-xrp-bridge-demo/exports/xrp_external_confirmation.json
+```
 
 ## cryp Consumption Command
 
 Run from `/Users/muhammadaatif/cryp`:
 
 ```bash
-.venv/bin/python -m crypto_agent.cli.forward_paper tests/fixtures/paper_candles_breakout_long.jsonl \
-  --runtime-id polymarket-btc-advisory-forward-paper \
+.venv/bin/python -m crypto_agent.cli.forward_paper \
+  --config config/paper_coinbase_xrp_discovery.yaml \
+  --runtime-id poly-xrp-bridge-test-1 \
+  --market-source coinbase_spot \
+  --live-symbol XRP-USD \
+  --live-interval 5m \
+  --session-interval-seconds 300 \
+  --max-sessions 4 \
   --execution-mode paper \
-  --external-confirmation-path /absolute/path/btc_external_confirmation.json
+  --xrp-discovery-liquidity-tuning \
+  --mean-reversion-max-atr-pct 0.00225 \
+  --external-confirmation-path /Users/muhammadaatif/polymarket-arb/.tmp/cryp-xrp-bridge-demo/exports/xrp_external_confirmation.json
+```
+
+Inspect the resulting XRP bridge run:
+
+```bash
+find runs \( \
+  -path 'runs/poly-xrp-bridge-test-1/sessions/session-*.json' -o \
+  -path 'runs/poly-xrp-bridge-test-1-session-*/summary.json' \
+\) -print0 | xargs -0 rg -n '"external_confirmation"|"artifact_loaded"|"asset"|"source_system"|"decision_status_counts"|"proposal_count"|"orders_submitted_count"|"fill_event_count"|"session_outcome"|"message"'
+```
+
+Expected external confirmation statuses:
+
+- `boosted_confirmation`: Polymarket signal direction aligns with a proposal side.
+- `penalized_conflict`: Polymarket signal direction conflicts with a proposal side.
+- `ignored_asset_mismatch`: artifact asset differs from the proposal asset.
+- `vetoed_conflict` or `vetoed_neutral`: `veto_trade=true` blocks the proposal.
 ```
 
 ## Non-Goals
