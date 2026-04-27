@@ -40,7 +40,8 @@ def test_write_review_export_files_success_writes_markdown_and_json_files(
 
     assert markdown_path.read_text(encoding="utf-8") == export_package.payload.markdown_document
     assert json.loads(json_path.read_text(encoding="utf-8")) == export_package.model_dump(
-        mode="json"
+        mode="json",
+        exclude_none=True,
     )
 
 
