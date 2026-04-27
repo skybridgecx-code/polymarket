@@ -16,6 +16,141 @@ It is grounded in current code behavior in:
 
 This runbook does not describe background workers, persistence, remote delivery, or any behavior not currently shipped.
 
+## Recommended End-to-End Path (Primary)
+
+Use this path for local operator handoff and demo use.
+
+1. Validate launcher/tooling first:
+
+```bash
+make future-system-operator-ui-demo-validate
+```
+
+2. Prepare deterministic demo artifacts without starting Uvicorn:
+
+```bash
+make future-system-operator-ui-demo-prepare
+```
+
+Expected demo run id:
+- `theme_ctx_strong.analysis_success_export`
+
+Expected generated temp paths:
+- `.tmp/future-system-operator-ui-demo/context_bundle.json`
+- `.tmp/future-system-operator-ui-demo/operator_runs/`
+
+3. Launch the UI:
+
+```bash
+make future-system-operator-ui-demo
+```
+
+If port `8000` is already in use:
+
+```bash
+PORT=8010 make future-system-operator-ui-demo
+```
+
+4. Open list and detail pages:
+- List: `http://127.0.0.1:8000`
+- Detail: `http://127.0.0.1:8000/runs/theme_ctx_strong.analysis_success_export`
+
+5. Update local decision in detail page:
+- Open `Update Decision`.
+- Set `review_status` and optional decision/notes/reviewer fields.
+- Select `Save Local Decision`.
+- Confirm updated values render on detail page.
+
+6. Confirm write scope:
+- only companion metadata (`X.operator_review.json`) is rewritten
+- run export markdown/json files remain unchanged
+
+7. Package reviewed run outcome:
+
+```bash
+python -m future_system.cli.review_outcome_package \
+  --run-id theme_ctx_strong.analysis_success_export \
+  --artifacts-root .tmp/future-system-operator-ui-demo/operator_runs \
+  --target-root .tmp/future-system-operator-ui-demo/packages
+```
+
+Expected package directory:
+- `.tmp/future-system-operator-ui-demo/packages/theme_ctx_strong.analysis_success_export.package/`
+
+Expected package files:
+- `handoff_summary.md`
+- `handoff_payload.json`
+
+8. Build the full execution-boundary handoff request envelope:
+
+```bash
+python -m future_system.cli.execution_boundary_handoff_request \
+  --package-dir .tmp/future-system-operator-ui-demo/packages/theme_ctx_strong.analysis_success_export.package
+```
+
+Default builder output:
+- `.tmp/future-system-operator-ui-demo/packages/theme_ctx_strong.analysis_success_export.package/handoff_request.json`
+
+Optional explicit output path:
+
+```bash
+python -m future_system.cli.execution_boundary_handoff_request \
+  --package-dir .tmp/future-system-operator-ui-demo/packages/theme_ctx_strong.analysis_success_export.package \
+  --output-path .tmp/future-system-operator-ui-demo/execution_boundary_exports/theme_ctx_strong.analysis_success_export.handoff_request.json
+```
+
+9. Run local execution-boundary intake/export CLI:
+
+```bash
+python -m future_system.cli.execution_boundary_intake \
+  --handoff-request-path /absolute/path/handoff_request.json \
+  --export-root .tmp/future-system-operator-ui-demo/execution_boundary_exports
+```
+
+Optional strict local artifact path checks:
+
+```bash
+python -m future_system.cli.execution_boundary_intake \
+  --handoff-request-path /absolute/path/handoff_request.json \
+  --export-root .tmp/future-system-operator-ui-demo/execution_boundary_exports \
+  --require-local-artifacts
+```
+
+Expected intake output files:
+- accepted request: `<export_root>/<correlation_id>.execution_boundary_ack.json`
+- rejected request: `<export_root>/<correlation_id>.execution_boundary_reject.json`
+
+Important:
+- `--handoff-request-path` must point to a full execution-boundary request envelope JSON.
+- this is not the same file as package output `handoff_payload.json`.
+
+10. Clean demo temp artifacts:
+
+```bash
+make future-system-operator-ui-demo-clean
+```
+
+If launcher startup reports missing multipart form dependency, install:
+
+```bash
+.venv/bin/python -m pip install python-multipart
+```
+
+If packaging CLI reports missing review metadata, confirm the run has:
+- `<run_id>.operator_review.json`
+- matching `artifact.run_id` for the run being packaged
+
+If execution-boundary intake CLI reports `execution_boundary_intake_cli_error`, verify:
+- handoff request JSON file exists and is valid JSON object
+- request shape follows the Phase 37A/37B contract envelope
+
+## Workflow Boundaries
+
+- local artifact-file workflow only
+- no production trading/execution behavior
+- no DB/queues/jobs/notifications/scheduling behavior
+- no `src/polymarket_arb/*` changes in this workflow
+
 ## Prerequisites
 
 From repo root:

@@ -120,6 +120,7 @@ class AnalysisReviewExportPackage(BaseModel):
     export_kind: ReviewExportKind
     run_flags: list[str] = Field(default_factory=list)
     payload: AnalysisReviewExportPayload
+    cryp_external_confirmation_signal: dict[str, object] | None = None
 
     @field_validator("theme_id", mode="before")
     @classmethod
@@ -130,6 +131,25 @@ class AnalysisReviewExportPackage(BaseModel):
     @classmethod
     def _normalize_run_flags(cls, value: Any) -> list[str]:
         return _normalize_string_list(value, "run_flags")
+
+    @field_validator("cryp_external_confirmation_signal", mode="before")
+    @classmethod
+    def _normalize_optional_cryp_signal(
+        cls,
+        value: Any,
+    ) -> dict[str, object] | None:
+        if value is None:
+            return None
+        if not isinstance(value, dict):
+            raise ValueError("cryp_external_confirmation_signal must be a dict.")
+        normalized: dict[str, object] = {}
+        for key, item in value.items():
+            normalized_key = _normalize_required_text(
+                key,
+                "cryp_external_confirmation_signal.key",
+            )
+            normalized[normalized_key] = item
+        return normalized
 
     @model_validator(mode="after")
     def _validate_package_alignment(self) -> Self:

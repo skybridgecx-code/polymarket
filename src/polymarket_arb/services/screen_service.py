@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from decimal import Decimal
 from typing import Any
 
@@ -63,12 +64,32 @@ class ScreenService:
                         "event_slug": event.slug,
                         "question": market.question,
                         "market_id": market.market_id,
-                        "yes_best_bid": str(yes_book.best_bid) if yes_book.best_bid is not None else "none",
-                        "yes_best_ask": str(yes_book.best_ask) if yes_book.best_ask is not None else "none",
-                        "no_best_bid": str(no_book.best_bid) if no_book.best_bid is not None else "none",
-                        "no_best_ask": str(no_book.best_ask) if no_book.best_ask is not None else "none",
+                        "yes_best_bid": (
+                            str(yes_book.best_bid)
+                            if yes_book.best_bid is not None
+                            else "none"
+                        ),
+                        "yes_best_ask": (
+                            str(yes_book.best_ask)
+                            if yes_book.best_ask is not None
+                            else "none"
+                        ),
+                        "no_best_bid": (
+                            str(no_book.best_bid)
+                            if no_book.best_bid is not None
+                            else "none"
+                        ),
+                        "no_best_ask": (
+                            str(no_book.best_ask)
+                            if no_book.best_ask is not None
+                            else "none"
+                        ),
                         "spread": str(spread),
-                        "midpoint": str(yes_book.midpoint) if yes_book.midpoint is not None else "none",
+                        "midpoint": (
+                            str(yes_book.midpoint)
+                            if yes_book.midpoint is not None
+                            else "none"
+                        ),
                         "accepting_orders": market.accepting_orders,
                     }
 
@@ -81,7 +102,11 @@ class ScreenService:
             await gamma_client.aclose()
             await clob_client.aclose()
 
-    async def _fetch_in_batches(self, token_ids: list[str], fetch_fn) -> list:
+    async def _fetch_in_batches(
+        self,
+        token_ids: list[str],
+        fetch_fn: Callable[[str], Awaitable[Any]],
+    ) -> list[Any]:
         results: list[Any] = []
         batch_size = 10
 

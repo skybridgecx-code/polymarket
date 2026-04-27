@@ -1,10 +1,10 @@
 # Current Phase
 
 ## Phase
-26B — local operator UI evidence closeout
+37N — execution-boundary track closeout and merge prep
 
 ## Branch
-phase-26b-local-operator-ui-evidence-closeout
+phase-37a-execution-boundary-contract
 
 ## Intent
-Docs-only closeout for the completed manual evidence pass for the shipped future_system local operator UI workflow. No runtime behavior changes.
+Close out the shipped 37A-37M execution-boundary track with a bounded merge-readiness summary, final operator workflow, preserved boundaries, and recommended post-merge next step.

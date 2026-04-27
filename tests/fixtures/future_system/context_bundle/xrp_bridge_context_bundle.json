@@ -1,0 +1,219 @@
+{
+  "candidate": {
+    "alignment": "aligned",
+    "candidate_score": 0.84,
+    "confidence_score": 0.86,
+    "conflict_score": 0.12,
+    "explanation": "XRP bullish candidate signal packet.",
+    "flags": [],
+    "posture": "candidate",
+    "primary_market_slug": "xrp-bullish-bridge-signal",
+    "primary_symbol": "XRP",
+    "reason_codes": ["strong_cross_market_alignment"],
+    "theme_id": "theme_ctx_xrp_bullish",
+    "title": "XRP Bullish Bridge Signal"
+  },
+  "comparison": {
+    "agreement_score": 0.9,
+    "alignment": "aligned",
+    "confidence_score": 0.83,
+    "crypto_summary": {
+      "coverage_score": 0.92,
+      "direction": "bullish",
+      "family": "crypto",
+      "flags": [],
+      "freshness_score": 0.84,
+      "liquidity_score": 0.78,
+      "strength_score": 0.8
+    },
+    "explanation": "XRP bullish aligned comparison packet.",
+    "flags": [],
+    "polymarket_summary": {
+      "coverage_score": null,
+      "direction": "bullish",
+      "family": "polymarket",
+      "flags": [],
+      "freshness_score": 0.87,
+      "liquidity_score": 0.81,
+      "strength_score": 0.84
+    },
+    "theme_id": "theme_ctx_xrp_bullish"
+  },
+  "crypto_evidence": {
+    "coverage_score": 0.92,
+    "explanation": "XRP bullish crypto evidence packet.",
+    "flags": [],
+    "freshness_score": 0.84,
+    "liquidity_score": 0.78,
+    "matched_symbols": ["XRP-PERP"],
+    "primary_symbol": "XRP-PERP",
+    "proxy_evidence": [
+      {
+        "direction_if_theme_up": "up",
+        "exchange": "deribit",
+        "flags": [],
+        "freshness_score": 0.84,
+        "funding_rate": 0.0001,
+        "is_primary": true,
+        "last_price": 0.52,
+        "liquidity_score": 0.78,
+        "market_type": "perp",
+        "mid_price": 0.52,
+        "open_interest": 11500000.0,
+        "role": "primary_proxy",
+        "symbol": "XRP-PERP"
+      }
+    ],
+    "theme_id": "theme_ctx_xrp_bullish"
+  },
+  "divergence": {
+    "aggregate_yes_probability": 0.66,
+    "dispersion_score": 0.16,
+    "divergence_score": 0.17,
+    "explanation": "Low divergence packet.",
+    "flags": [],
+    "market_disagreements": [
+      {
+        "condition_id": "0xxrpbullish1",
+        "distance_from_aggregate": 0.0,
+        "flags": [],
+        "freshness_score": 0.87,
+        "implied_yes_probability": 0.66,
+        "liquidity_score": 0.81,
+        "market_slug": "xrp-bullish-bridge-signal",
+        "severity": "low"
+      }
+    ],
+    "posture": "aligned",
+    "primary_market_slug": "xrp-bullish-bridge-signal",
+    "quality_penalty": 0.18,
+    "theme_id": "theme_ctx_xrp_bullish"
+  },
+  "flags": [],
+  "news_evidence": {
+    "coverage_score": 0.8,
+    "explanation": "Strong theme-linked news evidence packet.",
+    "flags": ["official_source_present"],
+    "freshness_score": 0.9,
+    "matched_article_count": 2,
+    "matched_records": [
+      {
+        "article_id": "official-001",
+        "entities": ["sec", "digital assets"],
+        "flags": [],
+        "freshness_score": 1.0,
+        "headline": "SEC Updates Digital Asset Guidance",
+        "is_primary": true,
+        "match_reasons": ["entity_match", "official_source_match"],
+        "published_at": "2026-04-11T11:30:00Z",
+        "publisher": "sec",
+        "source_type": "official",
+        "topics": ["regulation", "crypto"],
+        "trust_score": 0.92
+      },
+      {
+        "article_id": "wire-001",
+        "entities": ["federal reserve", "jerome powell"],
+        "flags": [],
+        "freshness_score": 0.8,
+        "headline": "Fed Officials Signal Caution",
+        "is_primary": false,
+        "match_reasons": ["entity_match"],
+        "published_at": "2026-04-11T07:00:00Z",
+        "publisher": "reuters",
+        "source_type": "wire",
+        "topics": ["macro", "rates"],
+        "trust_score": 0.84
+      }
+    ],
+    "official_source_present": true,
+    "primary_article_id": "official-001",
+    "theme_id": "theme_ctx_xrp_bullish",
+    "trust_score": 0.88
+  },
+  "operator_summary": "theme_id=theme_ctx_xrp_bullish; posture=candidate; alignment=aligned; completeness=1.000; freshness=0.870; confidence=0.859; conflict=0.127; flags=none.",
+  "polymarket_evidence": {
+    "aggregate_yes_probability": 0.66,
+    "evidence_score": 0.83,
+    "explanation": "XRP bullish Polymarket evidence packet.",
+    "flags": [],
+    "freshness_score": 0.87,
+    "liquidity_score": 0.81,
+    "market_evidence": [
+      {
+        "condition_id": "0xxrpbullish1",
+        "flags": [],
+        "freshness_score": 0.87,
+        "implied_yes_probability": 0.66,
+        "is_primary": true,
+        "liquidity_score": 0.81,
+        "market_slug": "xrp-bullish-bridge-signal",
+        "spread": 0.03
+      }
+    ],
+    "primary_market_slug": "xrp-bullish-bridge-signal",
+    "theme_id": "theme_ctx_xrp_bullish"
+  },
+  "quality": {
+    "completeness_score": 1.0,
+    "component_statuses": {
+      "candidate": "present",
+      "comparison": "present",
+      "crypto_evidence": "present",
+      "divergence": "present",
+      "news_evidence": "present",
+      "polymarket_evidence": "present",
+      "theme_link": "present"
+    },
+    "confidence_score": 0.859,
+    "conflict_score": 0.127,
+    "flags": [],
+    "freshness_score": 0.87
+  },
+  "theme_id": "theme_ctx_xrp_bullish",
+  "theme_link": {
+    "ambiguity_flags": [],
+    "confidence_score": 0.91,
+    "explanation": "Deterministic XRP bullish bridge fixture.",
+    "matched_assets": [
+      {
+        "asset_type": "spot",
+        "direction_if_theme_up": "up",
+        "link_basis": "manual",
+        "relevance": 0.8,
+        "role": "primary_proxy",
+        "symbol": "XRP"
+      }
+    ],
+    "matched_entities": [
+      {
+        "entity_name": "SEC",
+        "entity_type": "institution",
+        "relevance": 0.9,
+        "required": true
+      },
+      {
+        "entity_name": "Federal Reserve",
+        "entity_type": "institution",
+        "relevance": 0.8,
+        "required": true
+      }
+    ],
+    "matched_polymarket_markets": [
+      {
+        "condition_id": "0xxrpbullish1",
+        "confidence": 0.94,
+        "event_slug": "xrp-bridge-demo",
+        "link_basis": "manual",
+        "market_slug": "xrp-bullish-bridge-signal",
+        "notes": "Deterministic XRP bullish bridge fixture link.",
+        "outcome_map": {
+          "No": "no",
+          "Yes": "yes"
+        }
+      }
+    ],
+    "theme_id": "theme_ctx_xrp_bullish"
+  },
+  "title": "XRP Bullish Bridge Signal"
+}

@@ -14,12 +14,25 @@ The repo is a shipped read-only Polymarket analytics and paper-trade research ba
 - read-only FastAPI operator API
 - bounded real-time refresh orchestration with checkpointing
 - operator runbook, examples, checklists, failure-mode guidance, and validation guide
+- shipped local `future_system` operator UI workflow for local artifact review/edit
+- shipped local review outcome packaging flow with CLI entrypoint
+- docs-locked execution boundary contract for handing approved packages to `cryp` execution review surfaces
+- local Phase 37D operator CLI wrapper over the intake/export surface with deterministic accepted/rejected export artifacts
+- local Phase 37E operator docs covering exact execution-boundary intake CLI usage and artifact outputs
+- local Phase 37F deterministic handoff-request envelope builder from package artifacts and operator metadata
+- local Phase 37G operator CLI wrapper for the handoff-request envelope builder
+- local Phase 37H end-to-end operator handoff docs for package -> handoff_request build -> intake -> ack/reject artifacts
+- local Phase 37I docs-only local transport workflow contract between producer and consumer
+- local Phase 37K cross-repo contract drift checklist for 37I/37J synchronization
+- local Phase 37L deterministic anchor-level cross-repo parity check
+- local Phase 37M section-level cross-repo parity gate for pickup fields, idempotency/duplicates, and non-goal boundaries
+- local Phase 37N execution-boundary track closeout and merge-prep documentation
 
 Not shipped:
 
 - trading or order placement
 - auth or private key work
-- UI
+- production-facing UI for `polymarket_arb` core
 - broad persistence or database work
 - background workers
 - execution automation
@@ -27,9 +40,9 @@ Not shipped:
 
 This frozen baseline does not add:
 
-- Python behavior changes
-- new routes
-- new CLI commands
+- new `src/polymarket_arb/*` runtime behavior
+- new `polymarket_arb` routes
+- new `polymarket_arb` CLI commands
 - scoring changes
 - policy changes
 - live trading behavior
@@ -65,6 +78,35 @@ python -m polymarket_arb.cli review-packet --packet-type opportunities --limit 5
 python -m polymarket_arb.cli replay-evaluate --baseline-path /tmp/baseline.json --candidate-path /tmp/candidate.json
 python -m polymarket_arb.cli orchestrate-refresh --scan-limit 5 --relationship-limit 10 --max-websocket-messages 1
 ```
+
+Future system local operator workflow:
+
+```bash
+make future-system-operator-ui-demo-validate
+make future-system-operator-ui-demo-prepare
+make future-system-operator-ui-demo
+python -m future_system.cli.review_outcome_package \
+  --run-id theme_ctx_strong.analysis_success_export \
+  --artifacts-root .tmp/future-system-operator-ui-demo/operator_runs \
+  --target-root .tmp/future-system-operator-ui-demo/packages
+python -m future_system.cli.execution_boundary_handoff_request \
+  --package-dir /absolute/path/theme_ctx_strong.analysis_success_export.package
+python -m future_system.cli.execution_boundary_intake \
+  --handoff-request-path /absolute/path/handoff_request.json \
+  --export-root /absolute/path/execution-boundary-exports
+make future-system-operator-ui-demo-clean
+```
+
+Packaging track closeout reference:
+- [docs/PHASE_36E_CLI_PACKAGING_TRACK_CLOSEOUT.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_36E_CLI_PACKAGING_TRACK_CLOSEOUT.md)
+
+Execution boundary contract reference:
+- [docs/PHASE_37A_EXECUTION_BOUNDARY_CONTRACT.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37A_EXECUTION_BOUNDARY_CONTRACT.md)
+- [docs/PHASE_37E_EXECUTION_BOUNDARY_CLI_OPERATOR_DOCS.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37E_EXECUTION_BOUNDARY_CLI_OPERATOR_DOCS.md)
+- [docs/PHASE_37H_END_TO_END_HANDOFF_OPERATOR_DOCS.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37H_END_TO_END_HANDOFF_OPERATOR_DOCS.md)
+- [docs/PHASE_37I_LOCAL_TRANSPORT_WORKFLOW_CONTRACT.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37I_LOCAL_TRANSPORT_WORKFLOW_CONTRACT.md)
+- [docs/PHASE_37K_CROSS_REPO_CONTRACT_DRIFT_CHECKLIST.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37K_CROSS_REPO_CONTRACT_DRIFT_CHECKLIST.md)
+- [docs/PHASE_37N_EXECUTION_BOUNDARY_TRACK_CLOSEOUT.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37N_EXECUTION_BOUNDARY_TRACK_CLOSEOUT.md)
 
 API:
 
@@ -141,12 +183,15 @@ python -m uvicorn polymarket_arb.api.main:app --reload
 
 ## Recommended Next Step
 
-Bounded operator validation execution:
+Execution-boundary Phase 37A-37M is closed out for merge prep in Phase 37N:
 
-- verify the runbook commands against fixture-backed flows
-- verify checkpoint and `/health` inspection flow
-- add no new routes
-- add no new scoring logic
-- add no live execution logic
+- local operator path now spans package -> handoff request build -> canonical local transport placement -> pickup/ack-reject boundary -> archive
+- producer/consumer contract sync guardrails now include:
+  - docs contract source (`37I`)
+  - cross-repo drift checklist (`37K`)
+  - deterministic parity gates (`37L`, `37M`)
+- merge-readiness summary is documented in:
+  - [docs/PHASE_37N_EXECUTION_BOUNDARY_TRACK_CLOSEOUT.md](/Users/muhammadaatif/polymarket-arb/docs/PHASE_37N_EXECUTION_BOUNDARY_TRACK_CLOSEOUT.md)
+- after merge, open a new bounded phase only for explicit schema evolution or consumer-side tooling under the same no-live-expansion boundaries
 
 If a future prompt asks for larger product changes, challenge scope first against this frozen baseline.
